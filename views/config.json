@@ -1,0 +1,6 @@
+{
+    "main_page" :"main", 
+    "page_not_found": "404",
+    "prod_error_page": "prod_error",
+    "dev_error_page": "dev_error"
+}

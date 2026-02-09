@@ -1,0 +1,12 @@
+<?=import_tyrux()?>
+
+<script type="module">
+    tyrux({
+        url: window.baseRoute+"admin/add",
+        method: "GET",
+        success: function(response){
+            alert(response);
+        }
+
+    })
+</script>

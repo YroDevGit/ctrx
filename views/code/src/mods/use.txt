@@ -1,0 +1,10 @@
+<link rel="stylesheet" href="<?=codepath('ctr/datatable.css')?>" />
+<script src="<?=codepath('ctr/swal.js')?>"></script>
+<script src="<?=codepath('ctr/jquery.js')?>"></script>
+<script src="<?=codepath('ctr/datatable.js')?>"></script>
+<script src="<?=codepath('ctr/jspost.js')?>"></script>
+
+
+//datatable
+const table = new DataTable("#studenttbl");
+const table = $("#studenttbl").DataTable();
