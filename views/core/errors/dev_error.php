@@ -60,7 +60,7 @@ http_response_code(500);
             <?php foreach ($error['trace'] as $i => $trace): ?>
                 <li class="bg-zinc-900 border border-zinc-800 rounded p-3">
                     <span class="text-red-400">#<?= $i ?></span>
-                    <span class="ml-2"><?= htmlspecialchars($trace) ?></span>
+                    <span class="ml-2"><?php print_r($trace) ?></span>
                 </li>
             <?php endforeach; ?>
         </ol>

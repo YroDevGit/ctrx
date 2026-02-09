@@ -35,6 +35,7 @@ http_response_code(500);
         <div class="mb-6">
             <span class="text-indigo-400 text-sm tracking-widest uppercase">CTRX Framework</span>
             <h1 class="text-7xl font-extrabold glow text-indigo-500 mt-2">500</h1>
+            <h4><?= $reqid ?></h4>
         </div>
 
         <h2 class="text-2xl font-bold mb-4">

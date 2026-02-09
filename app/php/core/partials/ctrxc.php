@@ -4,7 +4,7 @@
 if (! function_exists("rem_php")) {
     function rem_php(string|null $name)
     {
-        if(! $name) return null;
+        if (! $name) return null;
         $ret = str_ends_with($name, ".php") ? substr($name, 0, -4) : $name;
         return $ret;
     }
@@ -13,7 +13,7 @@ if (! function_exists("rem_php")) {
 if (! function_exists("append_php")) {
     function append_php(string $name)
     {
-        $ret = str_ends_with($name, ".php") ? $name : $name.".php";
+        $ret = str_ends_with($name, ".php") ? $name : $name . ".php";
         return $ret;
     }
 }
@@ -23,17 +23,17 @@ if (! function_exists("load_routes")) {
     {
         $serve = "";
         $ep = ctrx_endpoint();
-        
-        if($ep == "FE") $serve = "views/app/routes/";
+
+        if ($ep == "FE") $serve = "views/app/routes/";
         else $serve = "app/_routes/";
-        foreach($routes as $k=>$routing){
+        foreach ($routes as $k => $routing) {
             if (is_string($routing)) {
                 $routing = str_ends_with($routing, ".php") ? $routing : $routing . ".php";
                 unset($_REQUEST['ctrx_global_prefix']);
                 include_once $serve . $routing;
             } else if (is_array($routing)) {
                 foreach ($routing as $k => $r) {
-                    if(! $k){
+                    if (! $k) {
                         unset($_REQUEST['ctrx_global_prefix']);
                         $r = append_php($r);
                         include_once $serve . $r;
@@ -60,13 +60,44 @@ if (! function_exists('json_response')) {
 }
 
 if (! function_exists('ctrx_response')) {
-    function ctrx_response(array $data, int $status = 200)
+    function ctrx_response(array $data, int $status = 200, Throwable|PDOException|Exception|InvalidArgumentException $error = null)
     {
+        $fulltrace = env("full_trace");
         header('Content-Type: application/json');
         http_response_code($status);
-        $data["request_id"] = ctr_get_current_request_id();
-        if(env_in_prod()){
-            if($status == 500){
+        $reqid = ctr_get_current_request_id();
+        $data["request_id"] = $reqid;
+        if ($status == 500) {
+            if ($error) {
+                $e_msg = $error->getMessage();
+                $e_file = $error->getFile();
+                $e_line = $error->getLine();
+                $e_trace = $error->getTrace();
+
+                $fandl = "@";
+
+                if (! str_contains($e_file, "\app\php\core")) {
+                    $fandl = "@" . $e_file . " Line " . $e_line . " ";
+                }
+
+                $all = [];
+                foreach ($e_trace as $k => $v) {
+                    $file = $v['file'] ?? null;
+                    if (! $file) {
+                        continue;
+                    }
+
+                    if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
+                        continue;
+                    }
+                    $all[] = $v;
+                }
+                $e_error = json_encode($all);
+                if (getenv("error_logs") == "yes") {
+                    ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
+                }
+            }
+            if (env_in_prod()) {
                 $newd = json_encode($data);
                 $req = $data["request_id"];
                 $data['message'] = "SERVER ERROR $req";
@@ -105,8 +136,9 @@ if (! function_exists("request_method")) {
     }
 }
 
-if(! function_exists("fe_config")){
-    function fe_config(string $key){
+if (! function_exists("fe_config")) {
+    function fe_config(string $key)
+    {
         $view_config = file_get_contents("views/config.json");
         $view_config = json_decode($view_config, true);
         $mainpage = $view_config[$key] ?? null;
@@ -114,13 +146,14 @@ if(! function_exists("fe_config")){
     }
 }
 
-function ctrx_log(string $message, string $parent, string $id = null, string $filename = null) {
-    $folder = "logs/".$parent;
+function ctrx_log(string $message, string $parent, string $id = null, string $filename = null)
+{
+    $folder = "logs/" . $parent;
     if (!is_dir($folder)) {
         mkdir($folder, 0755, true);
     }
-    $filename = $filename ?? date("Y-m-d").".php";
-    
+    $filename = $filename ?? date("Y-m-d") . ".php";
+
     $filePath = $folder . '/' . $filename . '-log.php';
     $time = date('Y-m-d H:i:s');
 

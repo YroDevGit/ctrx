@@ -2,6 +2,7 @@
 
 namespace Classes;
 
+use Error;
 use Exception;
 
 class Router
@@ -72,7 +73,7 @@ class Router
     {
         $route = append_php($route);
         if (! file_exists("app/_controller/" . $route)) {
-            ctrx_response(["code" => env("notfound_code"), "message" => "Controller $route not found.!"], 500);
+            throw new Exception("Controller $route not found.!");
         }
     }
 
@@ -86,7 +87,7 @@ class Router
         foreach ($middleware as $k => $v) {
             $file = append_php($v);
             if (! file_exists("app/middleware/$file")) {
-                ctrx_response(["code" => env("error_code"), "message" => "middleware '$v' not found.!"], 500);
+                throw new Error("middleware '$v' not found.!");
             }
         }
         $key = $this->route;

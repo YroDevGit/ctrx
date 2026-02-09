@@ -310,10 +310,10 @@ if (! function_exists("add_sql_log")) {
         }
 
         $logConfig = [
-            "info"     => ["env" => "sql_logs",   "dir" => "app/logs/sql_logs",   "prefix" => "INFO"],
-            "error"    => ["env" => "sql_errors", "dir" => "app/logs/sql_errors", "prefix" => "ERROR"],
-            "query"    => ["env" => "query_logs", "dir" => "app/logs/query_logs", "prefix" => $intro],
-            "be_errors" => ["env" => "be_errors",  "dir" => "app/logs/be_errors",  "prefix" => $intro],
+            "info"     => ["env" => "sql_logs",   "dir" => "logs/sql_logs",   "prefix" => "INFO"],
+            "error"    => ["env" => "sql_errors", "dir" => "logs/sql_errors", "prefix" => "ERROR"],
+            "query"    => ["env" => "query_logs", "dir" => "logs/query_logs", "prefix" => $intro],
+            "be_errors" => ["env" => "be_errors",  "dir" => "logs/be_errors",  "prefix" => $intro],
         ];
 
         if (!isset($logConfig[$type])) {
@@ -342,9 +342,9 @@ if (! function_exists("add_sql_log")) {
 }
 
 if (! function_exists("my_log")) {
-    function my_log($text, string $intro = "")
+    function my_log($text, $parent = "mylogs", string $intro = "")
     {
-        $dir = "app/logs/my_logs";
+        $dir = "logs/$parent";
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }

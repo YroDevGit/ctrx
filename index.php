@@ -93,19 +93,20 @@ if (str_starts_with($req, "api/")) {
         }
         include "app/_controller/$route";
     } catch (Throwable $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500);
+        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
     } catch (PDOException $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500);
+        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
     } catch (Exception $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500);
+        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
     } catch (InvalidArgumentException $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500);
+        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
     } finally {
         restore_error_handler();
     }
     exit;
 } else {
     $_SESSION['ctrx_endpoint'] = "FE";
+    $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
     error_reporting(E_ALL);
     if (env_in_prod()) {
@@ -170,19 +171,66 @@ if (str_starts_with($req, "api/")) {
         include $fullpath;
     } catch (Throwable $e) {
         ob_clean();
+        $reqid = ctr_get_current_request_id();
         if (env_in_prod()) {
+            $error = $e;
+            if ($error) {
+                $fulltrace = env("full_trace");
+                $e_msg = $error->getMessage();
+                $e_file = $error->getFile();
+                $e_line = $error->getLine();
+                $e_trace = $error->getTrace();
 
+                $fandl = "@";
+
+                if (! str_contains($e_file, "\app\php\core")) {
+                    $fandl = "@" . $e_file . " Line " . $e_line . " ";
+                }
+
+                $all = [];
+                foreach ($e_trace as $k => $v) {
+                    $file = $v['file'] ?? null;
+                    if (! $file) {
+                        continue;
+                    }
+
+                    if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
+                        continue;
+                    }
+                    $all[] = $v;
+                }
+                $e_error = json_encode($all);
+                if (getenv("error_logs") == "yes") {
+                    ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
+                }
+            }
             $servererror = $view_config["prod_error_page"] ?? "dev_error";
             $servererror = append_php($servererror);
             $file =  "views/core/errors/$servererror";
             include $file;
             exit;
         } else {
+            $trace = $e->getTrace();
+            $fulltrace = env("full_trace");
+
+            $all = [];
+            foreach ($trace as $k => $v) {
+                $file = $v['file'] ?? null;
+                if (! $file) {
+                    continue;
+                }
+
+                if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
+                    continue;
+                }
+                $all[] = $v;
+            }
+
             $error = [
                 'message' => $e->getMessage(),
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),
-                'trace'   => explode("\n", $e->getTraceAsString()),
+                'trace'   => $all
             ];
 
             $servererror = $view_config["dev_error_page"] ?? "dev_error";
