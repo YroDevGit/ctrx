@@ -1,5 +1,5 @@
 {
-    "name": "yrodevgit/codetazer",
+    "name": "yrodevgit/ctrx",
     "description": "A lightweight PHP framework by Tyrone Malocon",
     "type": "project",
     "license": "MIT",
@@ -21,13 +21,13 @@
       }
     },
     "scripts": {
-      "codetazer":"create-project yrodevgit/codetazer",
+      "codetazer":"create-project yrodevgit/ctrx",
       "pre-install-cmd": [
-        "echo '⚡CodeTazer by CodeYRO⚡'",
-        "echo 'Preparing to install Codetazer... Please wait.'"
+        "echo 'CTRX by CodeYRO⚡'",
+        "echo 'Preparing to install CTRX... Please wait.'"
       ],
        "post-create-project-cmd": [
-        "php _frontend/app/php/core/scripts/guide.php"
+        "php app/php/core/guide.php"
       ]
     }
   }
