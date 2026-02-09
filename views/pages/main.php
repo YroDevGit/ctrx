@@ -155,7 +155,7 @@ $code = [
         </div>
 
         <div class="code-block">
-          <code>composer create-project yourname/ctrx ctrapp</code>
+          <code>composer create-project yrodevgit/ctrx</code>
         </div>
 
         <button class="copy-btn mx-auto" onclick="copyToClipboard()">
