@@ -20,9 +20,9 @@ BANNER
 . $reset;
 echo "\n\n";
 
-echo $yellow . "⚡ CODETAZER by CodeYRO ⚡" . $reset . "\n\n";
+echo $yellow . "⚡ CTRX by CodeYRO ⚡" . $reset . "\n\n";
 
-echo $green . "✅ CodeTazer installed successfully! 🎉" . $reset . "\n\n";
+echo $green . "✅ CTRX installed successfully! 🎉" . $reset . "\n\n";
 
 echo $blue . "👉 Next steps:" . $reset . "\n";
 echo "   1. {$yellow}cd {$dir}{$reset}\n";
