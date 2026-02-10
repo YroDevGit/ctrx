@@ -170,3 +170,20 @@ function ctrx_log(string $message, string $parent, string $id = null, string $fi
         file_put_contents($filePath, $logEntry, FILE_APPEND | LOCK_EX);
     }
 }
+
+if (! function_exists("ctrx_same_origin")) {
+    function ctrx_same_origin()
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'];
+        $origin = $_SERVER['HTTP_ORIGIN'];
+
+        $serverOrigin = $scheme . '://' . $host;
+
+        if ($origin === $serverOrigin) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}

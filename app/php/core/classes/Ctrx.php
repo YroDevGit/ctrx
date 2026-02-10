@@ -2,7 +2,7 @@
 
 namespace Classes;
 
-class Ctr
+class Ctrx
 {
     private static string|null $xrateMessage = null;
 
@@ -164,5 +164,78 @@ class Ctr
         $reset = $data['start'] + $window;
         $data['reset'] = $reset;
         return $data;
+    }
+
+    public static function set_logged_in(bool $logged_in, int $duration = 60):void{
+        if(! $logged_in){
+            \Classes\Ccookie::delete("ctrx_logged_in");
+        }else{
+            \Classes\Ccookie::add("ctrx_logged_in", $logged_in ? "Y" : "N", $duration);
+        } 
+    }
+
+    public static function is_logged_in():bool{
+        $logged_in = \Classes\Ccookie::get("ctrx_logged_in");
+        if(! $logged_in){
+            return false;
+        }
+        return true;
+    }
+
+    public static function set_user_role(string|int $role, int $duration = 60):void{
+        \Classes\Ccookie::add("ctrx_user_role", $role, $duration);
+    }
+
+    public static function get_user_role(string|int $role):null|int|string{
+        $role = \Classes\Ccookie::get("ctrx_user_role");
+        if(! $role){
+            return null;
+        }
+        return $role;
+    }
+
+    public static function delete_user_role():void{
+        \Classes\Ccookie::delete("ctrx_user_role");
+    }
+
+    public static function delete_user_data():void{
+        \Classes\Ccookie::delete("ctrx_user_data");
+    }
+
+    public static function reset_all_user_data():void{
+        self::delete_user_data();
+        self::delete_user_role();
+        self::set_logged_in(false);
+    }
+
+    public static function validate_user_role(int|string|null $role){
+        $ctrxrole = \Classes\Ccookie::get("ctrx_user_role");
+        if(! $ctrxrole ){
+            return false;
+        }
+
+        if($ctrxrole === $role){
+            return true;
+        }
+        return false;
+    }
+
+    public static function set_user_data(array $data, int $duration = 60):void{
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if($ctrxdata){
+            $ctrxdata = [...$ctrxdata, ...$data];
+        }else{
+            $ctrxdata = $data;
+        }
+        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
+    }
+
+    public static function get_user_data(string|int $key = "*"){
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if(! $ctrxdata) return null;
+        if($key == "*"){
+            return $ctrxdata;
+        }
+        return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
     }
 }

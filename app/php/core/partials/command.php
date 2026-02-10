@@ -402,7 +402,7 @@ if ($route == "+class") {
     $phpContent = <<<EOT
     <?php
     
-    //Use this as:  use_middleware('$newname');
+    //Middleware: $newname
 
 
 

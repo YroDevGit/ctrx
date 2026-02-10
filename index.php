@@ -37,12 +37,20 @@ include "app/php/core/partials/ctrxc.php";
 
 define("roothpath", getenv("roothpath"));
 
+if ($req == "api") {
+    json_response([
+        "code" => getenv("success_code"),
+        "message" => "CTRX framework by CodeYro"
+    ]);
+}
+
 if (str_starts_with($req, "api/")) {
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
         throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
     });
     try {
         $_SESSION['ctrx_endpoint'] = "BE";
+
         $serve = "";
         $beconfig = glob('app/config/*.php');
 
@@ -79,7 +87,15 @@ if (str_starts_with($req, "api/")) {
         }
         $is_in = $_REQUEST["ctrx_" . $reqmeth . "_" . $newReq] ?? null;
         if (! $is_in) {
-            ctrx_response(["code" => env('notfound_code'), "message" => "Route '$newReq' not found"], 500);
+            if (getenv("auto_routes") == "yes") {
+                $newReqPHP = append_php($newReq);
+                if (! file_exists("app/_controller/$newReqPHP")) {
+                    ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$newReq' not found.!"], 500);
+                }
+            } else {
+                ctrx_response(["code" => env('notfound_code'), "message" => "Route '$newReq' not found"], 500);
+            }
+            include "app/_controller/$newReqPHP";
         }
         $route = append_php($is_in['route']);
         if (isset($is_in['middleware'])) {
@@ -88,7 +104,7 @@ if (str_starts_with($req, "api/")) {
                 include "app/middleware/$mw";
             }
             if (! file_exists("app/_controller/$route")) {
-                ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$route' not found.!", "req" => $_REQUEST], 500);
+                ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$route' not found.!"], 500);
             }
         }
         include "app/_controller/$route";
@@ -107,6 +123,9 @@ if (str_starts_with($req, "api/")) {
 } else {
     $_SESSION['ctrx_endpoint'] = "FE";
     $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
+
+    $csrfHashCode = encrypted_csrf_codetazer(25);
+    $_SESSION[ctr_secure_key] = $csrfHashCode;
 
     error_reporting(E_ALL);
     if (env_in_prod()) {

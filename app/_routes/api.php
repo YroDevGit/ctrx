@@ -3,7 +3,7 @@ use Classes\Router;
 
 
 Router::group(
-    ["get" => "admin/adsd"],
+    ["get" => "admin/add"],
     ["get" => "user/add"],
 );
 
