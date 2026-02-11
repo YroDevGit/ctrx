@@ -19,13 +19,8 @@ $rooth = str_ends_with($rooth, "/") ? substr($rooth, 0, -1) : $rooth;
 $b_all = $basixserver . "/" . $req;
 define("ctrx_param", strtolower($req));
 
-$files = glob('app/helper/*.php');
 $system = glob('app/php/core/partials/bin/*.php');
 include "app/php/core/partials/be.php";
-
-foreach ($files as $k => $v) {
-    include $v;
-}
 
 foreach ($system as $k => $v) {
     include $v;

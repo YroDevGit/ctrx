@@ -832,14 +832,11 @@ if (! function_exists("generate_random_string")) {
     }
 }
 
-if (! function_exists("use_model")) {
-    function use_model(string $model)
+if (! function_exists("use_helper")) {
+    function use_helper(string $helper)
     {
-        $modelFile = substr($model, -4) === ".php" ? $model : $model . ".php";
-        include "app/model/" . $modelFile;
-
-        $className = basename($model, ".php");
-        return new $className();
+        $modelFile = substr($helper, -4) === ".php" ? $helper : $helper . ".php";
+        include "app/helper/" . $modelFile;
     }
 }
 

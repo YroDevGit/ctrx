@@ -121,7 +121,7 @@ if ($route == "run" || $route == "server") {
     passthru($cmd);
     exit;
 }
-if ($route == "tables") {
+else if ($route == "tables") {
     if (! $filename) {
         echo "❌ Invalid tables command.!";
         exit;
@@ -137,7 +137,7 @@ if ($route == "tables") {
         AddAllBaseTable($db);
     }
 }
-if ($route == "+class") {
+else if ($route == "+class") {
     if ($filename == "") {
         echo "❌ Please provide a filename for the class.\n";
         exit(1);
@@ -420,6 +420,56 @@ if ($route == "+class") {
             exit(1);
         }
     }
+}else if ($route == "db:import" || $route == "db:migrate") {
+    include "app/php/core/partials/envloader.php";
+    $dbname = getenv("database");
+    if (! $dbname) {
+        echo "❌ No Database found @ .env\n\n";
+        exit;
+    }
+
+    if ($filename == "") {
+        echo "❌ Please input json filename for migration.\n\n";
+        exit(1);
+    }
+
+    if (! file_exists("app/php/db/".$filename.".php")) {
+        echo "❌ Invalid migration name\n";
+        exit;
+    }
+
+    include "app/php/core/partials/be.php";
+    include "app/php/core/classes/Migration.php";
+
+    $jsonfile = "app/php/db/".$filename.".php";
+
+    $jsonfile = str_ends_with($jsonfile, ".php") ? $jsonfile : $jsonfile . ".php";
+
+    include $jsonfile;
+
+    echo "Auto sync base table, please wait....";
+    echo "\n";
+    AddAllBaseTable($dbname);
+    echo "-------\n";
+    echo "✔️ Done\n";
+
+    exit;
+}else if($route == "sync:tables" || $route == "db:sync"){
+    include "app/php/core/partials/envloader.php";
+    $dbname = getenv("database");
+    if (! $dbname) {
+        echo "❌ No Database found @ .env\n\n";
+        exit;
+    }
+
+    include "app/php/core/partials/be.php";
+    include "app/php/core/classes/Migration.php";
+
+    echo "Auto sync base table, please wait....";
+    echo "\n";
+    AddAllBaseTable($dbname);
+    echo "-------\n";
+    echo "✔️ Done\n";
 } else {
     echo "\n❌ Invalid command.\n\n";
     exit(1);
