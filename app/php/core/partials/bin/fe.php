@@ -395,7 +395,7 @@ if (! function_exists("write_sql_error")) {
     {;
         $setting = getenv('sql_errors');
         if ($setting == true) {
-            $logfile = "_backend/app/db_errors/sqlerrors.txt";
+            $logfile = "app/db_errors/sqlerrors.txt";
 
             $message = preg_replace('/\s+/', ' ', trim($message));
             $query = preg_replace('/\s+/', ' ', trim($query));
@@ -425,13 +425,13 @@ if (! function_exists("include_page")) {
     function include_page(string $page, array $variables = [])
     {
         $page = substr($page, -4) == ".php" ? $page : $page . ".php";
-        if (file_exists("_frontend/includes/$page")) {
+        if (file_exists("views/includes/$page")) {
             if (!empty($variables)) {
                 extract($variables);
             }
-            include "_frontend/includes/$page";
+            include "views/includes/$page";
         } else {
-            echo "<b style='color:red;background:black;padding:5px;font-weight:bold;'>Include page $page doesn't exist.! Please check _frontend/includes/$page</b>";
+            throw new Exception("Include page $page doesn't exist.! Please check views/pages/$page");
         }
     }
 }

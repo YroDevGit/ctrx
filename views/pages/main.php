@@ -1,15 +1,6 @@
 <?php
-$version = "v1.0";
+$version = "v1.6";
 $build = 1;
-$code = [
-  "_frontend/pages/main.php",
-  "_backend/_routes/ctr/sample.php",
-  "_backend/application/routing/api.php",
-  "_backend/application/routing/web.php",
-  "_backend/core/command",
-  "_backend/core/partials/classes/Routing.php",
-  "_frontend/app/core/partials/fe.php"
-];
 ?>
 
 <!DOCTYPE html>
