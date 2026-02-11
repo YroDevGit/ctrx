@@ -1,5 +1,7 @@
 <?php
 
+use PSpell\Config;
+
 if (getenv("rootpath") == "" || getenv("rootpath") == null) {
     $rootpath = get_basixs_root_path();
     putenv("rootpath=$rootpath");
@@ -387,6 +389,22 @@ if (! function_exists("write_sql_log")) {
             $formatted_message = "[" . date('Y-m-d H:i:s') . "] " . $message . PHP_EOL;
             file_put_contents($logfile, $formatted_message, FILE_APPEND);
         }
+    }
+}
+
+if(! function_exists("json_config")){
+    function json_config(string|null $key = "*"){
+        $view_config = file_get_contents("views/config.json");
+        $view_config = json_decode($view_config, true);
+
+        if($key == "*"){
+            return $view_config;
+        }
+
+        if(! $key) return null;
+
+        return isset($view_config[$key]) ? $view_config[$key] : null;
+
     }
 }
 
