@@ -1,7 +1,5 @@
 <?php
 
-use PSpell\Config;
-
 if (getenv("rootpath") == "" || getenv("rootpath") == null) {
     $rootpath = get_basixs_root_path();
     putenv("rootpath=$rootpath");
@@ -392,25 +390,9 @@ if (! function_exists("write_sql_log")) {
     }
 }
 
-if(! function_exists("json_config")){
-    function json_config(string|null $key = "*"){
-        $view_config = file_get_contents("views/config.json");
-        $view_config = json_decode($view_config, true);
-
-        if($key == "*"){
-            return $view_config;
-        }
-
-        if(! $key) return null;
-
-        return isset($view_config[$key]) ? $view_config[$key] : null;
-
-    }
-}
-
 if (! function_exists("write_sql_error")) {
     function write_sql_error($message, string $query = "")
-    {;
+    {
         $setting = getenv('sql_errors');
         if ($setting == true) {
             $logfile = "app/db_errors/sqlerrors.txt";

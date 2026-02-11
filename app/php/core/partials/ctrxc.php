@@ -137,12 +137,18 @@ if (! function_exists("request_method")) {
 }
 
 if (! function_exists("fe_config")) {
-    function fe_config(string $key)
+    function fe_config(string $key = "*")
     {
         $view_config = file_get_contents("views/config.json");
         $view_config = json_decode($view_config, true);
-        $mainpage = $view_config[$key] ?? null;
-        return $mainpage;
+
+        if($key == "*"){
+            return $view_config;
+        }
+
+        if(! $key) return null;
+
+        return isset($view_config[$key]) ? $view_config[$key] : null;
     }
 }
 
