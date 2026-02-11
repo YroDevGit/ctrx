@@ -893,42 +893,6 @@ if (! function_exists("set_sql_batch")) {
     }
 }
 
-if (! function_exists("autoload_php")) {
-    function autoload_php(string|array|null $filename = null)
-    {
-        if (!$filename) {
-            return false;
-        }
-        if (is_array($filename)) {
-            foreach ($filename as $f) {
-                $loadpage = substr($f, -4) == ".php" ? $f : $f . ".php";
-                include "_backend/application/php/" . $loadpage;
-            }
-        } else {
-            $loadpage = substr($filename, -4) == ".php" ? $filename : $filename . ".php";
-            include "_backend/application/php/" . $loadpage;
-        }
-    }
-}
-
-if (! function_exists("autoload_api")) {
-    function autoload_api(string|array $filename)
-    {
-        if (!$filename) {
-            return false;
-        }
-        if (is_array($filename)) {
-            foreach ($filename as $f) {
-                $loadpage = substr($f, -4) == ".php" ? $f : $f . ".php";
-                include "_backend/application/api/" . $loadpage;
-            }
-        } else {
-            $loadpage = substr($filename, -4) == ".php" ? $filename : $filename . ".php";
-            include "_backend/application/api/" . $loadpage;
-        }
-    }
-}
-
 if (! function_exists("current_be")) {
     function current_be(bool $php_exention = false): string
     {

@@ -284,7 +284,7 @@ if ($route == "+class") {
 } else if ($route == "routes" || $route == "get_routes") {
     echo "\n";
     $projectRoot = realpath(__DIR__ . "/../..");
-    $path = $projectRoot . "/_backend/_routes";
+    $path = $projectRoot . "/app/controller";
     if (!is_dir($path)) {
         die("❌ Directory not found: " . $path);
     }

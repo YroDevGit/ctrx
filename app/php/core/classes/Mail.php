@@ -2,9 +2,9 @@
 
 namespace Classes;
 
-require "_backend/core/mail/PHPMailer/src/PHPMailer.php";
-require "_backend/core/mail/PHPMailer/src/SMTP.php";
-require "_backend/core/mail/PHPMailer/src/Exception.php";
+require "app/php/mail/PHPMailer/src/PHPMailer.php";
+require "app/php/mail/PHPMailer/src/SMTP.php";
+require "app/php/mail/PHPMailer/src/Exception.php";
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -16,7 +16,7 @@ class Mail
     {
         $email_template = $template;
         $email_template = substr($email_template, -4) == ".php" ? $email_template : $email_template . ".php";
-        $template = "_backend/core/template/" . $email_template;
+        $template = "app/php/templates/" . $email_template;
         if (file_exists($template)) {
             if (!empty($content)) {
                 extract($content);
