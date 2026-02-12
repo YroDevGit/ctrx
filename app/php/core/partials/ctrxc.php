@@ -193,3 +193,131 @@ if (! function_exists("ctrx_same_origin")) {
         }
     }
 }
+
+if (! function_exists("ctrx_get_routes")) {
+    function ctrx_get_routes($parent, $phpfile = false)
+    {
+        $ep = ctrx_endpoint();
+        $baseDir = "";
+        if ($ep == "FE") {
+            $baseDir = "views/pages/$parent";
+        } else {
+            $baseDir = "_controller/$parent";
+        }
+
+        $arrs = [];
+        if (! is_dir($baseDir)) {
+            throw new Exception("ctr_get_routes error: $baseDir not exist");
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $relativePath = str_replace($baseDir . DIRECTORY_SEPARATOR, '', $item->getPathname());
+
+            $relativePath = str_replace(DIRECTORY_SEPARATOR, "/", $relativePath);
+            if ($item->isDir()) {
+                continue;
+            } else {
+                if ($phpfile) {
+                    $arrs[] = $relativePath;
+                } else {
+                    $arrs[] = $parent . "/" . rem_php($relativePath);
+                }
+            }
+        }
+        return $arrs;
+    }
+}
+
+
+if (! function_exists("ctrx_get_files")) {
+    function ctrx_get_files($baseDirectory, $parent = "", $phpfile = false)
+    {
+        $baseDir = $baseDirectory;
+
+        if($parent){
+            $baseDir = $baseDir."/". $parent;
+        }
+
+        $arrs = [];
+        if (! is_dir($baseDir)) {
+            throw new Exception("ctr_get_files error: $baseDir not exist");
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $relativePath = str_replace($baseDir . DIRECTORY_SEPARATOR, '', $item->getPathname());
+
+            $relativePath = str_replace(DIRECTORY_SEPARATOR, "/", $relativePath);
+            if ($item->isDir()) {
+                continue;
+            } else {
+                if ($phpfile) {
+                    $arrs[] = $relativePath;
+                } else {
+                    if($parent){
+                        $arrs[] = $parent . "/" . rem_php($relativePath);
+                    }else{
+                        $arrs[] = rem_php($relativePath);
+                    }
+                }
+            }
+        }
+        return $arrs;
+    }
+}
+
+if (! function_exists("ctrx_get_filepaths")) {
+    function ctrx_get_filepaths($parent = "", $basePath = "", $phpfile = false)
+    {
+        $baseDir = "";
+        if (! $basePath) {
+            $baseDir = $parent;
+        } else {
+            if ($parent) {
+                $baseDir = $basePath . "/" . $parent;
+            } else {
+                $baseDir = $basePath;
+            }
+        }
+        $arrs = [];
+
+        if (! is_dir($baseDir)) {
+            throw new Exception("ctr_get_filepaths error: $baseDir not exist");
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $relativePath = str_replace($baseDir . DIRECTORY_SEPARATOR, '', $item->getPathname());
+
+            $relativePath = str_replace(DIRECTORY_SEPARATOR, "/", $relativePath);
+            if ($item->isDir()) {
+                continue;
+            } else {
+                if ($phpfile) {
+                    $arrs[] = $relativePath;
+                } else {
+                    $newPath = substr($relativePath, -4) === '.php' ? substr($relativePath, 0, -4) : $relativePath;
+                    if ($parent) {
+                        $arrs[] = $parent . "/" . $newPath;
+                    } else {
+                        $arrs[] = $newPath;
+                    }
+                }
+            }
+        }
+        return $arrs;
+    }
+}

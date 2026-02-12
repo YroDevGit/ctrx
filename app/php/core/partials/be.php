@@ -838,8 +838,11 @@ if (! function_exists("generate_random_string")) {
 if (! function_exists("use_helper")) {
     function use_helper(string $helper)
     {
+        $ep = ctrx_endpoint();
+        $hfolder = "app/helper/";
+        if($ep == "FE") $hfolder = "views/app/helper/";
         $modelFile = substr($helper, -4) === ".php" ? $helper : $helper . ".php";
-        include "app/helper/" . $modelFile;
+        include $hfolder . $modelFile;
     }
 }
 

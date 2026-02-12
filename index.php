@@ -4,13 +4,26 @@
  * This is CTRX framework
  * Made by Tyrone Limen Malocon
  */
+
+ /**
+  * Vendor Autoload (Composer support)
+  */
 require_once 'vendor/autoload.php';
 include "app/php/core/partials/envloader.php";
 
+/**
+ * Session initialize
+ */
 session_start();
 
+/**
+ * Timezone is set to default (@env)
+ */
 date_default_timezone_set(env('time_zone'));
 
+/**
+ * Basix server adopt by codetazer and ctrx
+ */
 $basixserver = $_SERVER['HTTP_HOST'];
 $req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $req = trim($req, "/");
@@ -22,6 +35,9 @@ define("ctrx_param", strtolower($req));
 $system = glob('app/php/core/partials/bin/*.php');
 include "app/php/core/partials/be.php";
 
+/**
+ * Post request initialize
+ */
 $_POST = postdata();
 
 foreach ($system as $k => $v) {
@@ -29,8 +45,6 @@ foreach ($system as $k => $v) {
 }
 
 include "app/php/core/partials/ctrxc.php";
-
-//$req = $req == null || $req == "" ? rem_php(fe_config("main_page")) : $req;
 
 define("roothpath", getenv("roothpath"));
 
@@ -41,6 +55,11 @@ if ($req == "api") {
     ]);
 }
 
+include "app/php/core/system/loader.php";
+
+/**
+ * This is backend endpoint
+ */
 if (str_starts_with($req, "api/")) {
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
         throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
@@ -167,23 +186,21 @@ if (str_starts_with($req, "api/")) {
         $mainpage = $view_config['main_page'] ?? "main";
         $mainpage = append_php($mainpage);
         $mainnophp = rem_php($mainpage);
-
-        $is_in = $_REQUEST["ctrxfe_" . $mainnophp] ?? null;
+        $req = $req ? $req : $mainnophp;
+        $is_in = $_REQUEST["ctrxfe_" . $req] ?? null;
         if ($is_in) {
             $mw = $is_in["middleware"] ?? null;
             $parent = $is_in["parent"] ?? null;
-        }
-
-        if (!$req || $req == "") {
-            $page_to_include = "views/pages/" . $mainpage;
-            if (!file_exists($page_to_include)) {
-                $errorpage = $view_config["page_not_found"] ?? "404";
-                $errorpage = append_php($errorpage);
-                include "views/core/errors/" . $errorpage;
-                exit;
+            if($mw){
+                foreach($mw as $k=>$v){
+                    $phpfile = append_php($v);
+                    $mdfile = "views/app/middleware/". $phpfile;
+                    if(! file_exists($mdfile)){
+                        throw new Exception("Middleware $v not found.!");
+                    }
+                    include $mdfile;
+                }
             }
-            include $page_to_include;
-            exit;
         }
 
         $page = append_php($req);

@@ -1,9 +1,11 @@
 <?php
+
 namespace Classes;
 
 use Exception;
 
-class Page{
+class Page
+{
 
     private static $parent = "";
     private string $route = "";
@@ -15,8 +17,7 @@ class Page{
         if ($group) {
             $this->group = $var;
             $this->arr = $arr;
-        }
-        else $this->route = $var;
+        } else $this->route = $var;
     }
 
     public static function is(string $route)
@@ -29,9 +30,9 @@ class Page{
 
     public function middleware(string ...$middleware)
     {
-        foreach($middleware as $k=>$v){
+        foreach ($middleware as $k => $v) {
             $file = append_php($v);
-            if(! file_exists("views/app/middleware/$file")){
+            if (! file_exists("views/app/middleware/$file")) {
                 throw new Exception("Client: Middleware '$file' not found.!");
             }
         }
@@ -40,10 +41,10 @@ class Page{
             $_REQUEST[$key]["middleware"] = [...$middleware];
             return $this;
         }
-        
-        foreach($this->arr as $k=>$v){
+
+        foreach ($this->arr as $k => $v) {
             $kk = strtolower($k);
-            $key = "ctrxfe_".$v;
+            $key = "ctrxfe_" . $v;
             $_REQUEST[$key]['middleware'] = [...$middleware];
         }
         return $this;
@@ -52,21 +53,45 @@ class Page{
     static function group(array $routes)
     {
         foreach ($routes as $k => $v) {
-            self::checkRoutes($v);
-            $key = strtolower($k);
-            $key = "ctrxfe_" . $v;
-            $_REQUEST[$key] = ["route" => $v];
+            if ($v == "/*") {
+                $routes = [];
+                $allfiles = ctrx_get_files("views/pages");
+                foreach ($allfiles as $keys => $val) {
+                    if (str_contains($val, "/")) continue;
+                    self::checkRoutes($val);
+                    $key = strtolower($keys);
+                    $key = "ctrxfe_" . $val;
+                    $routes[] = $val;
+                    $_REQUEST[$key] = ["route" => $val];
+                }
+            } else if (str_contains($v, "/*") && $v != "/*") {
+                $routes = [];
+                $explode = explode("/*", $v);
+                $parent = $explode[0];
+                $allfiles = ctrx_get_files("views/pages", $parent);
+                foreach ($allfiles as $keys => $val) {
+                    self::checkRoutes($val);
+                    $key = strtolower($keys);
+                    $key = "ctrxfe_" . $val;
+                    $routes[] = $val;
+                    $_REQUEST[$key] = ["route" => $val];
+                }
+            } else {
+                self::checkRoutes($v);
+                $key = strtolower($k);
+                $key = "ctrxfe_" . $v;
+                $_REQUEST[$key] = ["route" => $v];
+            }
         }
         $unique = bin2hex(random_bytes(10));
         return new self($unique, true, $routes);
     }
 
-    private static function checkRoutes(string $route){
+    private static function checkRoutes(string $route)
+    {
         $route = append_php($route);
-        if(! file_exists("views/pages/".$route)){
+        if (! file_exists("views/pages/" . $route)) {
             throw new Exception("Client: Page '$route' not a found or not a file.!");
         }
     }
-
 }
-?>

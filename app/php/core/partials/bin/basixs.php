@@ -72,9 +72,12 @@ function decrypt($encrypted_data, string $key = null)
 
 
 function load_auto(string ...$auto){
+    $ep = ctrx_endpoint();
+    $path = "app/auto/";
+    if($ep == "FE") $path = "views/app/auto/";
     foreach($auto as $k=>$v){
         $vv = append_php($v);
-        include_once "app/auto/".$vv;
+        include_once $path.$vv;
     }
 }
 

@@ -115,7 +115,7 @@ class Routing
             if (str_contains($pages, "/*")) {
                 $exp = explode("/*", $pages);
                 $parent = $exp[0];
-                return self::group_page(ctr_get_routes($parent), ...$args);
+                return self::group_page(ctrx_get_routes($parent), ...$args);
             }
             $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";
             if (! file_exists("_frontend/pages/$path")) {
