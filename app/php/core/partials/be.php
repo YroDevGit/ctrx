@@ -135,21 +135,24 @@ if (! function_exists('json_unauthorized')) {
 
 if (! function_exists("post")) {
     /** (Any) returns the value of the post */
-    function post(string $inputname)
+    function post(string $inputname = null, bool|null|string $trim = true)
     {
-        $post = [];
-        if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'application/json') {
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $post = $data;
-            } else {
-                $post = [];
-            }
-        } else {
-            $post = $_POST;
+        $data = $_POST ?? [];
+        if(! $inputname){
+            return $data;
         }
-        return isset($post[$inputname]) ? $post[$inputname] : null;
+
+        $ret = isset($data[$inputname]) ? $data[$inputname] : null;
+
+        if($ret && $trim){
+            if(is_string($trim)){
+                $ret = trim($ret, $trim);
+            }else{
+                $ret = trim($ret);
+            }
+        }
+
+        return $ret;
     }
 }
 

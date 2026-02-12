@@ -215,7 +215,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
     },
 
     ctrql(option = { ...opt, method: "POST", param: undefined, action: undefined, where: undefined, table: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined}) {
-        option.url = "ctr/ctrql";
+        option.url = "ctrx_x_ctrql_request_authorized_ql";
         let par = option?.param ?? option?.where ?? option.request ?? option.data ?? undefined;
         let newpar = new Object();
         if (par instanceof FormData) {

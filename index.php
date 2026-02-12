@@ -22,6 +22,8 @@ define("ctrx_param", strtolower($req));
 $system = glob('app/php/core/partials/bin/*.php');
 include "app/php/core/partials/be.php";
 
+$_POST = postdata();
+
 foreach ($system as $k => $v) {
     include $v;
 }
@@ -64,7 +66,15 @@ if (str_starts_with($req, "api/")) {
         $_SESSION['basixs_current_be'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
         if (getenv("cross_origin_sharing") == "yes") {
-            header("Access-Control-Allow-Origin: *");
+            $allowAllOrigin = getenv("allow_all_origin");
+            if ($allowAllOrigin == "yes") {
+                header("Access-Control-Allow-Origin: *");
+            } else {
+                $allowed = \Classes\Cors::get_allowed_origin("string");
+                if ($allowed) {
+                    header("Access-Control-Allow-Origin: ". $allowed);
+                }
+            }
             header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
             header("Access-Control-Allow-Headers: " . getenv("allowed_headers"));
         } else {
@@ -75,12 +85,16 @@ if (str_starts_with($req, "api/")) {
                 http_response_code(403);
                 echo json_encode([
                     "code" => 403,
-                    "message" => "Sorry, we are unable to share resources to '$org'"
+                    "message" => "Sorry, we are unable to share resources to '$origin'"
                 ]);
                 exit;
             }
         }
-        $is_in = $_REQUEST["ctrx_" . $reqmeth . "_" . $newReq] ?? null;
+        if ($newReq == "ctrx_x_ctrql_request_authorized_ql") {
+            include "app/php/core/system/ctrql.php";
+            exit;
+        }
+        $is_in = isset($_REQUEST["ctrx_" . $reqmeth . "_" . $newReq]) ? $_REQUEST["ctrx_" . $reqmeth . "_" . $newReq] : null;
         if (! $is_in) {
             if (getenv("auto_routes") == "yes") {
                 $newReqPHP = append_php($newReq);

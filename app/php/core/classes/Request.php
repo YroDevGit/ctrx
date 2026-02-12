@@ -9,19 +9,9 @@ use Classes\Response;
 
 class Request
 {
-    static function post(string $key, bool $trim = true)
+    static function post(string $key, bool|null|string $trim = true)
     {
-        $post = post($key);
-        if (is_null($post)) {
-            return null;
-        }
-        if (is_array($post)) {
-            return $post;
-        }
-        if (is_string($post)) {
-            return $trim ? trim($post) : $post;
-        }
-        return $post;
+       return post($key, $trim);
     }
 
     static function post_decrypt(string $key, $errormessage = null, bool $trim = true)
