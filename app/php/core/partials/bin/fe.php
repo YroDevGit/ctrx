@@ -252,7 +252,7 @@ if (! function_exists('back_end')) {
 if (! function_exists("current_page")) {
     function current_page(bool $php_exention = false): string
     {
-        $filename =  $_SESSION['basixs_current_page'] ?? getenv('app_name') ?? "Page not set";
+        $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
         if (! $php_exention) {
             $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;
             return $filename;

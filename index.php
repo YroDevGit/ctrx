@@ -5,9 +5,9 @@
  * Made by Tyrone Limen Malocon
  */
 
- /**
-  * Vendor Autoload (Composer support)
-  */
+/**
+ * Vendor Autoload (Composer support)
+ */
 require_once 'vendor/autoload.php';
 include "app/php/core/partials/envloader.php";
 
@@ -82,7 +82,7 @@ if (str_starts_with($req, "api/")) {
         if ($serve == "api") $newReq = str_replace("api/", "", $req);
         $reqmeth = strtolower(request_method());
 
-        $_SESSION['basixs_current_be'] = $newReq;
+        $_SESSION['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
         if (getenv("cross_origin_sharing") == "yes") {
             $allowAllOrigin = getenv("allow_all_origin");
@@ -91,7 +91,7 @@ if (str_starts_with($req, "api/")) {
             } else {
                 $allowed = \Classes\Cors::get_allowed_origin("string");
                 if ($allowed) {
-                    header("Access-Control-Allow-Origin: ". $allowed);
+                    header("Access-Control-Allow-Origin: " . $allowed);
                 }
             }
             header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -163,7 +163,6 @@ if (str_starts_with($req, "api/")) {
         ini_set('display_errors', '1');
     }
 
-
     ob_start();
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
         if (!(error_reporting() & $errno)) {
@@ -173,6 +172,14 @@ if (str_starts_with($req, "api/")) {
     });
 
     try {
+        $view_config = file_get_contents("views/config.json");
+        $view_config = json_decode($view_config, true);
+        $mainpage = $view_config['main_page'] ?? "main";
+        $mainpage = append_php($mainpage);
+        $mainnophp = rem_php($mainpage);
+        $req = $req ? $req : $mainnophp;
+        $_SESSION['basixs_current_fe_ctrx'] = $req;
+
         $feconfig = glob('views/app/config/*.php');
         foreach ($feconfig as $k => $v) {
             $vv = append_php($v);
@@ -181,21 +188,16 @@ if (str_starts_with($req, "api/")) {
 
         include "app/php/core/partials/cx.php";
 
-        $view_config = file_get_contents("views/config.json");
-        $view_config = json_decode($view_config, true);
-        $mainpage = $view_config['main_page'] ?? "main";
-        $mainpage = append_php($mainpage);
-        $mainnophp = rem_php($mainpage);
-        $req = $req ? $req : $mainnophp;
+
         $is_in = $_REQUEST["ctrxfe_" . $req] ?? null;
         if ($is_in) {
             $mw = $is_in["middleware"] ?? null;
             $parent = $is_in["parent"] ?? null;
-            if($mw){
-                foreach($mw as $k=>$v){
+            if ($mw) {
+                foreach ($mw as $k => $v) {
                     $phpfile = append_php($v);
-                    $mdfile = "views/app/middleware/". $phpfile;
-                    if(! file_exists($mdfile)){
+                    $mdfile = "views/app/middleware/" . $phpfile;
+                    if (! file_exists($mdfile)) {
                         throw new Exception("Middleware $v not found.!");
                     }
                     include $mdfile;
