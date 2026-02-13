@@ -152,6 +152,12 @@ if (! function_exists("fe_config")) {
     }
 }
 
+if(! function_exists("error_text")){
+    function error_text(string $id, string $tag = "small", $defaultText = ""){
+        return "<$tag id='$id' style=''>$defaultText</$tag>";
+    }
+}
+
 function ctrx_log(string $message, string $parent, string $id = null, string $filename = null)
 {
     $folder = "logs/" . $parent;
