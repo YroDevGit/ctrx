@@ -153,8 +153,12 @@ if (! function_exists("fe_config")) {
 }
 
 if(! function_exists("error_text")){
-    function error_text(string $id, string $tag = "small", $defaultText = ""){
-        return "<$tag id='$id' style=''>$defaultText</$tag>";
+    function error_text(string $id, string $tag = "small", string $color = "red", $class = null , $defaultText = ""){
+        if($class){
+            return "<$tag id='$id' class='$class' style='color:$color;'>$defaultText</$tag>";
+        }else{
+            return "<$tag id='$id' style='color:$color;'>$defaultText</$tag>";
+        }
     }
 }
 
