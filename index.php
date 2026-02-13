@@ -172,6 +172,7 @@ if (str_starts_with($req, "api/")) {
     });
 
     try {
+        include "app/php/core/partials/cx.php";
         $view_config = file_get_contents("views/config.json");
         $view_config = json_decode($view_config, true);
         $mainpage = $view_config['main_page'] ?? "main";
@@ -185,10 +186,6 @@ if (str_starts_with($req, "api/")) {
             $vv = append_php($v);
             include $vv;
         }
-
-        include "app/php/core/partials/cx.php";
-
-
         $is_in = $_REQUEST["ctrxfe_" . $req] ?? null;
         if ($is_in) {
             $mw = $is_in["middleware"] ?? null;

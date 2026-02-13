@@ -135,12 +135,12 @@ if (! function_exists("import_func")) {
 if (!function_exists("import_script")) {
     function import_script(string|bool ...$filenames)
     {
-        if(! $filenames){
+        if (! $filenames) {
             $current = current_page();
             $filenames = [$current];
         }
         foreach ($filenames as $flx) {
-            if(is_bool($flx) && $flx == true){
+            if (is_bool($flx) && $flx == true) {
                 unset($flx);
                 $flx = current_page();
             }
@@ -153,23 +153,30 @@ if (!function_exists("import_script")) {
 if (!function_exists("js")) {
     function js(string|bool ...$filenames)
     {
-        if(! $filenames){
+        if (! $filenames) {
             $current = current_page();
             $filenames = [$current];
         }
+        $jsversion = fe_config("js_version");
         foreach ($filenames as $flx) {
-            if(is_bool($flx) && $flx == true){
+            if (is_bool($flx) && $flx == true) {
                 unset($flx);
                 $flx = current_page();
             }
-            $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
+            $fl = "";
+            if ($jsversion) {
+                $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js?v=' . $jsversion;
+            } else {
+                $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
+            }
             echo '<script type="module" src="' . htmlspecialchars('views/js/' . $fl, ENT_QUOTES) . '"></script>' . PHP_EOL;
         }
     }
 }
 
-if(! function_exists("script")){
-    function script(string|bool ...$filenames){
+if (! function_exists("script")) {
+    function script(string|bool ...$filenames)
+    {
         import_script(...$filenames);
     }
 }
@@ -184,12 +191,12 @@ if(! function_exists("script")){
 if (!function_exists('code_script')) {
     function code_script(string|bool ...$files): void
     {
-        if(! $files){
+        if (! $files) {
             $current = current_page();
             $files = [$current];
         }
         foreach ($files as $file) {
-            if(is_bool($file) && $file == true){
+            if (is_bool($file) && $file == true) {
                 unset($file);
                 $file = current_page();
             }
