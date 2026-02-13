@@ -121,7 +121,8 @@ if (str_starts_with($req, "api/")) {
                     ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$newReq' not found.!"], 500);
                 }
             } else {
-                ctrx_response(["code" => env('notfound_code'), "message" => "Route '$newReq' not found"], 500);
+                $upperReqMethod = strtoupper($reqmeth);
+                ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found"], 500);
             }
             include "app/_controller/$newReqPHP";
         }
