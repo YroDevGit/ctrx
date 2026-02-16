@@ -18,6 +18,7 @@ class Validator
     private string|null $label = '';
     private array $rules = [];
     private static array $collect = [];
+    private static array $errorList = [];
 
     private static $msg = "";
 
@@ -28,16 +29,19 @@ class Validator
 
     public static function input(string $field): self
     {
+        self::$errorList = [];
         return new self($field);
     }
 
     public static function body(string $field): self
     {
+        self::$errorList = [];
         return new self($field);
     }
 
     public static function post(string $field): self
     {
+        self::$errorList = [];
         return new self($field);
     }
 
@@ -101,15 +105,21 @@ class Validator
         return $this;
     }
 
-    public function contain(mixed $val): self
+    public function contain(mixed $val, string|null $error = null): self
     {
         $this->rules[] = "contain:$val";
+        if ($error) {
+            $this->setError("contain", $error);
+        }
         return $this;
     }
 
-    public function exclude(mixed $val): self
+    public function exclude(mixed $val, string|null $error = null): self
     {
         $this->rules[] = "exclude:$val";
+        if ($error) {
+            $this->setError("exclude", $error);
+        }
         return $this;
     }
 
@@ -130,15 +140,21 @@ class Validator
         return $this->column($key);
     }
 
-    public function in(array $options): self
+    public function in(array $options, string|null $error = null): self
     {
         $this->rules[] = "in:" . implode(',', $options);
+        if ($error) {
+            $this->setError("in", $error);
+        }
         return $this;
     }
 
-    public function notIn(array $options): self
+    public function notIn(array $options, string|null $error = null): self
     {
         $this->rules[] = "not_in:" . implode(',', $options);
+        if ($error) {
+            $this->setError("not_in", $error);
+        }
         return $this;
     }
 
@@ -157,7 +173,7 @@ class Validator
     public function unique(string $tablecolumn, string $message = null): self
     {
         $this->rules[] = "unique:$tablecolumn";
-        if($message) self::$msg = $message;
+        if ($message) self::$msg = $message;
         else self::$msg = "Already exist";
         return $this;
     }
@@ -272,9 +288,15 @@ class Validator
         return self::data();
     }
 
+    private static function setError(string $rule, string $error)
+    {
+        self::$errorList[$rule] = $error;
+    }
+
     public static function check($postname, $label, $rules, $allpost = null)
     {
         $postdata = [];
+        $errorList = self::$errorList;
         if ($allpost) {
             $postdata = $allpost;
         } else {
@@ -294,9 +316,9 @@ class Validator
         $value = $postdata[$postname] ?? "";
         $org = $postdata[$postname] ?? null;
 
-        if(in_array("decrypt", $rulesArray) && $org){
+        if (in_array("decrypt", $rulesArray) && $org) {
             $org = decrypt($org);
-            if(! $org){
+            if (! $org) {
                 throw new Exception("Decryption Error.!");
             }
             $value = $org;
@@ -384,7 +406,7 @@ class Validator
                 }
                 $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
                 if ($result) {
-                    self::addError($postname, $label." ".self::$msg);
+                    self::addError($postname, $label . " " . self::$msg);
                     self::addErrs($postname, self::$msg);
                 }
             }
@@ -418,15 +440,25 @@ class Validator
 
             if ($ruleName == "contain" || $ruleName == "having") {
                 if (! str_contains((string)$value, (string)$ruleParam)) {
-                    self::addError($postname, "$label has invalid value.");
-                    self::addErrs($postname, "invalid value.");
+                    if (isset($errorList['contain'])) {
+                        self::addError($postname, $errorList['contain']);
+                        self::addErrs($postname, $errorList['contain']);
+                    } else {
+                        self::addError($postname, "$label has invalid value.");
+                        self::addErrs($postname, "invalid value.");
+                    }
                 }
             }
 
             if ($ruleName == "exclude") {
                 if (str_contains((string)$value, (string)$ruleParam)) {
-                    self::addError($postname, "$label value is not allowed.");
-                    self::addErrs($postname, "value is not allowed.");
+                    if ($errorList['exclude']) {
+                        self::addError($postname, $errorList['exclude']);
+                        self::addErrs($postname, $errorList['exclude']);
+                    } else {
+                        self::addError($postname, "$label value is not allowed.");
+                        self::addErrs($postname, "value is not allowed.");
+                    }
                 }
             }
 
@@ -445,16 +477,26 @@ class Validator
             if ($ruleName === 'in' && $ruleParam) {
                 $options = explode(',', $ruleParam);
                 if (!in_array($value, $options)) {
-                    self::addError($postname, "$label has invalid value.");
-                    self::addErrs($postname, "invalid value.");
+                    if (isset($errorList["in"])) {
+                        self::addError($postname, $errorList["in"]);
+                        self::addErrs($postname, $errorList["in"]);
+                    } else {
+                        self::addError($postname, "$label has invalid value.");
+                        self::addErrs($postname, "invalid value.");
+                    }
                 }
             }
 
             if ($ruleName === 'not_in' && $ruleParam) {
                 $options = explode(',', $ruleParam);
                 if (in_array($value, $options)) {
-                    self::addError($postname, "$label value is not allowed.");
-                    self::addErrs($postname, "value is not allowed.");
+                    if (isset($errorList['not_in'])) {
+                        self::addError($postname, $errorList['not_in']);
+                        self::addErrs($postname, $errorList['not_in']);
+                    } else {
+                        self::addError($postname, "$label value is not allowed.");
+                        self::addErrs($postname, "value is not allowed.");
+                    }
                 }
             }
 
