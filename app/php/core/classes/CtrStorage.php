@@ -12,6 +12,8 @@ class CtrStorage
     protected static $uploads = [];
     protected static $fulluploads = [];
 
+    private static $last_uploaded_files = [];
+
     public static function auto_changename(bool $changename)
     {
         self::$autochangename = $changename;
@@ -56,6 +58,10 @@ class CtrStorage
         return "views\\core\\partials\\storage\\";
     }
 
+    public static function get_last_uploaded(){
+        return self::$last_uploaded_files;
+    }
+
     //Pag gamit $upload =  Storage::upload_file($file)
     // $path = $upload['path'];
     static function upload_file($file, bool $storagePath = true, string|null $path = null)
@@ -78,11 +84,35 @@ class CtrStorage
         if (is_string($file)) {
             $file = Request::file($file);
         }
+
         if($storagePath){
             $data = self::upd($file, $pathname, $path);
+            self::$last_uploaded_files[] = [
+                "filename" => $data["filename"] ?? null,
+                "file" => $data["storage"] ?? null
+            ];
             return isset($data['storage']) ? $data['storage'] : null;
         }
-        return self::upd($file, $pathname, $path);
+        $data = self::upd($file, $pathname, $path);
+        self::$last_uploaded_files[] = [
+            "filename" => $data["filename"] ?? null,
+            "file" => $data["storage"] ?? null
+        ];
+        return $data;
+    }
+
+    public static function rollback(){
+        $lastUploaded = self::get_last_uploaded();
+        if($lastUploaded){
+            foreach($lastUploaded as $k=>$v){
+                $file = $v["file"] ?? null;
+                if(! $file) continue;
+
+                if(file_exists($file)){
+                    unlink($file);
+                }
+            }
+        }
     }
 
     public static function last_uploaded(bool $refresh = true): array|null
