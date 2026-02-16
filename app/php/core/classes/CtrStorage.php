@@ -128,7 +128,7 @@ class CtrStorage
             return false;
         }
         if (is_string($files)) {
-            if (str_contains($files, "views/core/storage") || str_contains($files, "views\\core\\storage")) {
+            if (str_contains($files, "views/core/partials/storage") || str_contains($files, "views\\core\\partials\\storage")) {
                 return unlink($files);
             } else {
                 return unlink(self::fpath($files));
