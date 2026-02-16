@@ -58,7 +58,7 @@ class CtrStorage
 
     //Pag gamit $upload =  Storage::upload_file($file)
     // $path = $upload['path'];
-    static function upload_file($file, string|null $path = null)
+    static function upload_file($file, bool $storagePath = true, string|null $path = null)
     {
         if (! $file) {
             throw new Exception("File not found.!");
@@ -77,6 +77,10 @@ class CtrStorage
 
         if (is_string($file)) {
             $file = Request::file($file);
+        }
+        if($storagePath){
+            $data = self::upd($file, $pathname, $path);
+            return isset($data['storage']) ? $data['storage'] : null;
         }
         return self::upd($file, $pathname, $path);
     }
