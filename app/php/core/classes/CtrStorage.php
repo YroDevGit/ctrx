@@ -53,7 +53,7 @@ class CtrStorage
 
     protected static function relativepath()
     {
-        return "_frontend\\core\\partials\\system\\storage\\";
+        return "views\\core\\partials\\storage\\";
     }
 
     //Pag gamit $upload =  Storage::upload_file($file)
@@ -65,7 +65,7 @@ class CtrStorage
         }
         $pathname = self::storagepath();
         if (! is_dir($pathname)) {
-            throw new Exception("Storage is not yet enabled");
+            mkdir($pathname);
         }
         if ($path) {
             $path = str_replace("/", "\\", $path);
@@ -124,7 +124,7 @@ class CtrStorage
             return false;
         }
         if (is_string($files)) {
-            if (str_contains($files, "partials/system/storage") || str_contains($files, "partials\\system\\storage")) {
+            if (str_contains($files, "views/core/storage") || str_contains($files, "views\\core\\storage")) {
                 return unlink($files);
             } else {
                 return unlink(self::fpath($files));
@@ -224,7 +224,8 @@ class CtrStorage
                     "files" => $ff,
                     "filename" => $ff[0] ?? $ff,
                     "rpath" => $pp[0] ?? $pp,
-                    "path" => $pt[0] ?? $pt
+                    "path" => $pt[0] ?? $pt,
+                    "storage" => $pp[0] ?? $pp
                 ];
             }
             return [
@@ -233,7 +234,8 @@ class CtrStorage
                 "files" => $ff,
                 "filename" => $ff,
                 "rpath" => $pp,
-                "path" => $pt
+                "path" => $pt,
+                "storage" => $pp
             ];
         } else {
             foreach ($files['tmp_name'] as $key => $tmpName) {
@@ -258,7 +260,8 @@ class CtrStorage
                     "files" => $ff,
                     "filename" => $ff[0] ?? $ff,
                     "rpath" => $pp[0] ?? $pp,
-                    "path" => $pt[0] ?? $pt
+                    "path" => $pt[0] ?? $pt,
+                    "storage" => $pp[0] ?? $pp,
                 ];
             }
             return [
@@ -267,7 +270,8 @@ class CtrStorage
                 "files" => $ff,
                 "filename" => $ff,
                 "rpath" => $pp,
-                "path" => $pt
+                "path" => $pt,
+                "storage" => $pp
             ];
         }
     }

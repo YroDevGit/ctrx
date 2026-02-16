@@ -987,3 +987,12 @@ if (! function_exists("my_hash")) {
         return substr(md5($text), 0, $length);
     }
 }
+
+if(! function_exists("storage")){
+    function storage(string|null $file = null){
+        $path = "views/core/storage";
+        if(! $file) return $path;
+
+        return $path."/". $file;
+    }
+}
