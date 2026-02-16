@@ -138,16 +138,16 @@ if (! function_exists("post")) {
     function post(string $inputname = null, bool|null|string $trim = true)
     {
         $data = $_POST ?? [];
-        if(! $inputname){
+        if (! $inputname) {
             return $data;
         }
 
         $ret = isset($data[$inputname]) ? $data[$inputname] : null;
 
-        if($ret && $trim){
-            if(is_string($trim)){
+        if ($ret && $trim) {
+            if (is_string($trim)) {
                 $ret = trim($ret, $trim);
-            }else{
+            } else {
                 $ret = trim($ret);
             }
         }
@@ -840,7 +840,7 @@ if (! function_exists("use_helper")) {
     {
         $ep = ctrx_endpoint();
         $hfolder = "app/helper/";
-        if($ep == "FE") $hfolder = "views/app/helper/";
+        if ($ep == "FE") $hfolder = "views/app/helper/";
         $modelFile = substr($helper, -4) === ".php" ? $helper : $helper . ".php";
         include $hfolder . $modelFile;
     }
@@ -988,11 +988,100 @@ if (! function_exists("my_hash")) {
     }
 }
 
-if(! function_exists("storage")){
-    function storage(string|null $file = null){
+if (! function_exists("storage")) {
+    function storage(string|null $file = null)
+    {
         $path = "views/core/storage";
-        if(! $file) return $path;
+        if (! $file) return $path;
 
-        return $path."/". $file;
+        return $path . "/" . $file;
+    }
+}
+
+if (! function_exists("in_table")) {
+    function in_table(string $tableColumn, string|null $value, bool $wildCard = false)
+    {
+        $explode = explode(":", $tableColumn);
+        $table = $explode[0] ?? null;
+        $columns = $explode[1] ?? null;
+
+        if (! $table || ! $columns) {
+            throw new Exception("Invalid in_table format");
+        }
+
+        if ($wildCard) $value = "%" . $value . "%";
+
+        if (str_contains($columns, ",")) {
+            $exp = explode(",", $columns);
+            $isIn = false;
+            foreach ($exp as $kk => $vv) {
+                $data = [];
+                if ($wildCard) {
+                    $data = \Classes\DB::find($table, ["like" => [$vv => $value]]);
+                } else {
+                    $data = \Classes\DB::find($table, [$vv => $value]);
+                }
+                if ($data) {
+                    $isIn = true;
+                    break;
+                }
+            }
+            return $isIn;
+        } else {
+            $data = [];
+            if ($wildCard) {
+                $data = \Classes\DB::find($table, ["like" => [$columns => $value]]);
+            } else {
+                $data = \Classes\DB::find($table, [$columns => $value]);
+            }
+            if ($data) return true;
+            return false;
+        }
+    }
+}
+
+if (! function_exists("in_table_strict")) {
+    function in_table_strict(string $tableColumn, string|null $value)
+    {
+        $wildCard = false;
+        $explode = explode(":", $tableColumn);
+        $table = $explode[0] ?? null;
+        $columns = $explode[1] ?? null;
+
+        if (! $table || ! $columns) {
+            throw new Exception("Invalid in_table format");
+        }
+
+        $oldValue = $value;
+        if ($wildCard) $value = "%" . $value . "%";
+
+        if (str_contains($columns, ",")) {
+            $exp = explode(",", $columns);
+            $isIn = false;
+            foreach ($exp as $kk => $vv) {
+                $data = [];
+                if ($wildCard) {
+                    $data = \Classes\DB::find($table, ["like" => [$vv => $value]]);
+                } else {
+                    $data = \Classes\DB::find($table, [$vv => $value]);
+                }
+                $data = \Classes\Collection::data($data)->extract($columns)->exec();
+                if (in_array($oldValue, $data)) {
+                    $isIn = true;
+                    break;
+                }
+            }
+            return $isIn;
+        } else {
+            $data = [];
+            if ($wildCard) {
+                $data = \Classes\DB::find($table, ["like" => [$columns => $value]]);
+            } else {
+                $data = \Classes\DB::find($table, [$columns => $value]);
+            }
+            $data = \Classes\Collection::data($data)->extract($columns)->exec();
+            if (in_array($oldValue, $data)) return true;
+            return false;
+        }
     }
 }

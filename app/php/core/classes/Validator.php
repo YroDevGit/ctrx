@@ -390,10 +390,29 @@ class Validator
                 if (! $tblname || !$tblcolumn) {
                     throw new Exception("Invalid in_table format, follow table:column format");
                 }
-                $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
-                if (! $result) {
-                    self::addError($postname, "$label has invalid value.");
-                    self::addErrs($postname, "Invalid value.");
+                if (str_contains($tblcolumn, ",")) {
+                    $explode = explode(",", $tblcolumn);
+                    $hasIt = false;
+                    foreach ($explode as $kkey => $vval) {
+                        $result = \Classes\DB::findOne($tblname, [$vval => $value]);
+                        if ($result) {
+                            $hasIt = true;
+                            break;
+                        }
+                    }
+                    if (! $hasIt) {
+                        $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
+                        if (! $result) {
+                            self::addError($postname, "$label has invalid value.");
+                            self::addErrs($postname, "Invalid value.");
+                        }
+                    }
+                } else {
+                    $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
+                    if (! $result) {
+                        self::addError($postname, "$label has invalid value.");
+                        self::addErrs($postname, "Invalid value.");
+                    }
                 }
             }
 
