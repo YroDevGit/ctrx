@@ -244,9 +244,14 @@ if (! function_exists("pdo")) {
     /** (Any) returns the value of the get */
     function pdo(string|null|array $db = null, $no_database = false)
     {
+        if(getenv("global_db_access") == "no"){
+            $ep = ctrx_endpoint();
+            if($ep != "BE"){
+                throw new Exception("Client access has been declined by the server");
+            }
+        }
         static $pdo = null;
         try {
-
             if (is_array($db)) {
                 $host = $db['host'] ?? "localhost";
                 $user =  $db['user'] ?? "root";
@@ -1082,6 +1087,19 @@ if (! function_exists("in_table_strict")) {
             $data = \Classes\Collection::data($data)->extract($columns)->exec();
             if (in_array($oldValue, $data)) return true;
             return false;
+        }
+    }
+}
+
+if(! function_exists("backend_only")){
+    function backend_only(callable|null $func = null){
+        $ep = ctrx_endpoint();
+        if($ep !== "BE"){
+            if(is_null($func)){
+                die("Client access declined by server.");
+            }else{
+                $func();
+            }
         }
     }
 }

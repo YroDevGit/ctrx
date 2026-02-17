@@ -67,7 +67,7 @@ class CtrStorage
     static function upload_file($file, bool $storagePath = true, string|null $path = null)
     {
         if (! $file) {
-            throw new Exception("File not found.!");
+            return null;
         }
         $pathname = self::storagepath();
         if (! is_dir($pathname)) {
