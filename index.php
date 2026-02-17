@@ -35,6 +35,9 @@ define("ctrx_param", strtolower($req));
 $system = glob('app/php/core/partials/bin/*.php');
 include "app/php/core/partials/be.php";
 
+if (getenv("global_db_access") == "yes") {
+    include_once "app/php/core/partials/backend.php";
+}
 /**
  * Post request initialize
  */
@@ -61,6 +64,8 @@ include "app/php/core/system/loader.php";
  * This is backend endpoint
  */
 if (str_starts_with($req, "api/")) {
+    include_once "app/php/core/partials/backend.php";
+
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
         throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
     });

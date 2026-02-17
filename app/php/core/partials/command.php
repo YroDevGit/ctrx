@@ -120,8 +120,7 @@ if ($route == "run" || $route == "server") {
     $cmd = "php -S $runner" . $dir_comm;
     passthru($cmd);
     exit;
-}
-else if ($route == "tables") {
+} else if ($route == "tables") {
     if (! $filename) {
         echo "❌ Invalid tables command.!";
         exit;
@@ -136,8 +135,7 @@ else if ($route == "tables") {
         }
         AddAllBaseTable($db);
     }
-}
-else if ($route == "+class") {
+} else if ($route == "+class") {
     if ($filename == "") {
         echo "❌ Please provide a filename for the class.\n";
         exit(1);
@@ -249,15 +247,13 @@ else if ($route == "+class") {
     $phpContent = <<<EOT
     <?php 
     namespace Models;
-
-
+    
     class $newname{
         
         public function __construct() {
             // Constructor code here
             // You can initialize properties or perform setup tasks
         }
-
 
         static function test(){
             return "Hello CodeTazer user. This is model file";
@@ -266,7 +262,6 @@ else if ($route == "+class") {
     
 
     }
-    ?>
     EOT;
 
     if (file_exists($phpFile)) {
@@ -420,7 +415,7 @@ else if ($route == "+class") {
             exit(1);
         }
     }
-}else if ($route == "db:import" || $route == "db:migrate") {
+} else if ($route == "db:import" || $route == "db:migrate") {
     include "app/php/core/partials/envloader.php";
     $dbname = getenv("database");
     if (! $dbname) {
@@ -433,7 +428,7 @@ else if ($route == "+class") {
         exit(1);
     }
 
-    if (! file_exists("app/php/db/".$filename.".php")) {
+    if (! file_exists("app/php/db/" . $filename . ".php")) {
         echo "❌ Invalid migration name\n";
         exit;
     }
@@ -441,7 +436,7 @@ else if ($route == "+class") {
     include "app/php/core/partials/be.php";
     include "app/php/core/classes/Migration.php";
 
-    $jsonfile = "app/php/db/".$filename.".php";
+    $jsonfile = "app/php/db/" . $filename . ".php";
 
     $jsonfile = str_ends_with($jsonfile, ".php") ? $jsonfile : $jsonfile . ".php";
 
@@ -454,7 +449,7 @@ else if ($route == "+class") {
     echo "✔️ Done\n";
 
     exit;
-}else if($route == "sync:tables" || $route == "db:sync"){
+} else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
     $dbname = getenv("database");
     if (! $dbname) {
@@ -470,6 +465,52 @@ else if ($route == "+class") {
     AddAllBaseTable($dbname);
     echo "-------\n";
     echo "✔️ Done\n";
+
+} else if ($route == "+library") {
+    if ($filename == "") {
+        echo "❌ Please provide a filename for Library.\n";
+        exit(1);
+    }
+    $phpFile = $filename;
+
+    if (!is_dir("app/library/")) {
+        if (!mkdir("app/library/", 0777, true)) {
+            echo "Failed to create directories: $directory";
+            exit;
+        }
+    }
+    $bname = ucfirst($phpFile);
+
+    $phpContent = <<<EOT
+    <?php
+    namespace Classes;
+
+    class $bname{
+        public function __construct() {
+            //
+        }
+
+        //create a function here...
+        
+
+
+    }
+    EOT;
+
+    $phpFile = "app/library/" . $phpFile;
+
+    if (file_exists($phpFile)) {
+        echo "❌ File already exists. Please choose a different name.\n\n";
+        exit(1);
+    } else {
+        if (file_put_contents($phpFile, $phpContent) !== false) {
+            echo "✔️ Library file created successfully: $phpFile\n\n";
+            exit(0);
+        } else {
+            echo "❌ Failed to create Library file.\n\n";
+            exit(1);
+        }
+    }
 } else {
     echo "\n❌ Invalid command.\n\n";
     exit(1);
