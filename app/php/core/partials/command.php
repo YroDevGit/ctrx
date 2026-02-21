@@ -302,6 +302,147 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n";
     exit;
+}if ($route == "update") {
+    if ($filename == "classes") {
+        function deleteFolder($dir)
+        {
+            if (!file_exists($dir)) return true;
+            if (!is_dir($dir)) return unlink($dir);
+
+            foreach (scandir($dir) as $item) {
+                if ($item == '.' || $item == '..') continue;
+                if (!deleteFolder($dir . DIRECTORY_SEPARATOR . $item)) return false;
+            }
+            return rmdir($dir);
+        }
+
+        function downloadFolder($apiUrl, $targetDir)
+        {
+            $opts = [
+                "http" => [
+                    "header" => "User-Agent: PHP\r\n"
+                ]
+            ];
+            $context = stream_context_create($opts);
+            $response = file_get_contents($apiUrl, false, $context);
+
+            if ($response === FALSE) {
+                echo "❌ Error fetching $apiUrl";
+                exit;
+            }
+
+            $items = json_decode($response, true);
+            if (!is_array($items)) {
+                echo "❌ Invalid API response";
+                exit;
+            }
+
+            @mkdir($targetDir, 0777, true);
+
+            echo "\n\CTRX\n\n";
+            echo "Updating classes....\n\n";
+            $sz = sizeof($items);
+            $ct = 1;
+            foreach ($items as $item) {
+                $localPath = $targetDir . "/" . $item['name'];
+                $p = $ct / $sz;
+                $p = intval($p * 100);
+
+
+                if ($item['type'] === 'file') {
+                    echo "⬇️  $p%  Downloading file: {$item['path']}\n";
+                    $content = file_get_contents($item['download_url']);
+                    file_put_contents($localPath, $content);
+                } elseif ($item['type'] === 'dir') {
+                    downloadFolder($item['url'], $localPath);
+                }
+                $ct += 1;
+            }
+        }
+
+        $root = realpath(__DIR__ . '/../../');
+        $targetDir = $root . "/app/php/core/classes";
+        $apiUrl = "https://api.github.com/repos/YroDevGit/CodeTazer/contents/_backend/core/partials/classes?ref=main";
+
+        deleteFolder($targetDir);
+
+        downloadFolder($apiUrl, $targetDir);
+
+        echo "\n";
+        echo "🎉 CodeTazer App Classes updated!\n\n";
+        exit;
+    } else if ($filename == "file") {
+        $updt = "";
+        if ($extra == "") {
+            echo "❌ Please enter the file relative path to update\n";
+            exit;
+        }
+
+        $root = realpath(__DIR__ . '/../../');
+        $targetFile = $root . DIRECTORY_SEPARATOR . $extra;
+        $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/" . str_replace('\\', '/', $extra);
+
+        if ($extra == "index.php" || $extra == "index") {
+            $targetFile = $root . DIRECTORY_SEPARATOR . "index.php";
+            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/index.php";
+        }
+        if ($extra == "command") {
+            $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
+            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/_backend/core/command";
+        }
+
+        if ($ext == "--main") {
+            $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
+            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/_frontend/pages/main.php";
+        }
+
+        if (!file_exists($targetFile)) {
+            if ($exxr === "--mkdir") {
+                $updt = "✅ $targetFile is created!\n\n";
+                @mkdir(dirname($targetFile), 0777, true);
+                if (file_put_contents($targetFile, "...") === false) {
+                    echo "❌ Failed to create $targetFile\n";
+                    exit;
+                }
+                echo "📂 Directory created and placeholder file added: $targetFile\n";
+            } else {
+                echo "❌ File $targetFile does not exist (use --mkdir to create it)\n";
+                exit;
+            }
+        } else {
+            if (!is_file($targetFile)) {
+                echo "❌ $targetFile is a directory, not a file\n";
+                exit;
+            }
+            echo "🔃 Updating $targetFile.....\n";
+        }
+
+        echo "🔃 Fetching new content from CodeTazer.....\n";
+
+        $content = file_get_contents($rawUrl);
+        if ($content === false) {
+            echo "❌ Failed to fetch content from $rawUrl\n";
+            exit;
+        }
+
+        echo "🔃 Almost done.....\n";
+        @mkdir(dirname($targetFile), 0777, true);
+
+        if (file_put_contents($targetFile, $content) === false) {
+            echo "❌ Failed to write $targetFile\n";
+            exit;
+        }
+
+        if ($updt) {
+            echo $updt;
+            exit;
+        }
+        echo "✅ $targetFile is now updated!\n\n";
+        exit;
+    } else {
+        echo "❌ Invalid update parameter.";
+        exit;
+    }
 } else if ($route == "--secret") {
     $realpath = realpath(__DIR__ . "/../..");
     $dir = $realpath . "/views/code/src/mods/";

@@ -176,13 +176,13 @@ if (! function_exists('page')) {
     function page(string|null $path = "/", array $param = [])
     {
         if (! $path || $path == "/") {
-            if (empty($param)) return "/";
+            if (empty($param)) return mainpath;
         } else {
-            $path = trim($path, "/");
+            $path = trim($path, mainpath);
         }
 
         if (empty($param)) {
-            return rootpath . "/" . $path;
+            return mainpath . "/" . $path;
         }
 
         $arr = [];
@@ -192,10 +192,10 @@ if (! function_exists('page')) {
         $parameter = implode("&", $arr);
 
         if (! $path || $path == "/") {
-            return rootpath . "/?" . $parameter;
+            return mainpath . "/?" . $parameter;
         }
 
-        return rootpath . "/" . $path . "?" . $parameter;
+        return mainpath . "/" . $path . "?" . $parameter;
     }
 }
 

@@ -28,8 +28,22 @@ $basixserver = $_SERVER['HTTP_HOST'];
 $req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $req = trim($req, "/");
 $rooth = getenv("rootpath") ?? "http://localhost:9999";
-$rooth = str_ends_with($rooth, "/") ? substr($rooth, 0, -1) : $rooth;
+$rooth = trim($rooth, "/");
 $b_all = $basixserver . "/" . $req;
+$subdomain = getenv("subdomain") ?? null;
+$subdomain = trim($subdomain, "/");
+if($subdomain){
+    if(str_starts_with($req, $subdomain) && $req){
+        $expl = explode($subdomain, $req);
+        $void = $expl[0] ?? null;
+        $req = $expl[1] ?? null;
+        if($req){
+            $req = trim($req, "/");
+        }
+    }
+}
+
+define('mainpath', $subdomain ? $rooth."/". $subdomain : $rooth);
 define("ctrx_param", strtolower($req));
 
 $system = glob('app/php/core/partials/bin/*.php');
@@ -179,7 +193,7 @@ if (str_starts_with($req, "api/")) {
 
     try {
         include "app/php/core/partials/cx.php";
-        $view_config = file_get_contents("views/config.json");
+        $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
         $mainpage = $view_config['main_page'] ?? "main";
         $mainpage = append_php($mainpage);

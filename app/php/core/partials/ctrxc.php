@@ -139,7 +139,7 @@ if (! function_exists("request_method")) {
 if (! function_exists("fe_config")) {
     function fe_config(string $key = "*")
     {
-        $view_config = file_get_contents("views/config.json");
+        $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
 
         if($key == "*"){
