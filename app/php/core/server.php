@@ -1,33 +1,114 @@
 <?php
 
 /**
- * Yro Blocker
+ * CTRX / CodeTazer Dev Server Router
+ * Made by CodeYRO
  */
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-$blocked = [
-    '/views/pages/',
-    '/views/includes',
-    '/views/core',
-    '/views/app',
-    '/app/_controller',
-    '/app/_routes',
-    '/app/_auto',
-    '/app/php/core'
-];
+$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-foreach ($blocked as $path) {
-    if (strpos($uri, $path) === 0) {
-        http_response_code(403);
-        include "views/core/errors/forbidden.php";
-        exit;
-    }
+/**
+ * Normalize root
+ */
+if ($uri === false) {
+    $uri = '/';
 }
 
 $file = __DIR__ . $uri;
 
-if ($uri !== '/' && file_exists($file) && !is_dir($file)) {
-    return false;
+/**
+ * Protected folders
+ */
+$blocked = [
+    '/views/pages/',
+    '/views/includes/',
+    '/views/core/',
+    '/views/app/',
+    '/app/_controller/',
+    '/app/_routes/',
+    '/app/_auto/',
+    '/app/php/core/',
+];
+
+/**
+ * Block protected access
+ */
+foreach ($blocked as $path) {
+    if (strpos($uri, $path) === 0) {
+        http_response_code(403);
+
+        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
+
+        if (file_exists($forbidden)) {
+            include $forbidden;
+        } else {
+            echo "403 Forbidden";
+        }
+
+        exit;
+    }
 }
 
+/**
+ * Allowed static asset extensions
+ */
+$staticExtensions = [
+    'js',
+    'mjs',
+    'css',
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'svg',
+    'webp',
+    'ico',
+    'woff',
+    'woff2',
+    'ttf',
+    'eot',
+    'map',
+    'json',
+    'txt',
+    'xml',
+    'mp4',
+    'webm',
+    'mp3',
+];
+
+/**
+ * Serve static files directly
+ */
+
+if (
+    $uri !== '/'
+) {
+
+    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    
+    if (in_array($ext, $staticExtensions)) {
+        return false;
+    }
+
+    /**
+     * Block direct PHP access
+     */
+    if ($ext === 'php') {
+        http_response_code(403);
+
+        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
+
+        if (file_exists($forbidden)) {
+            include $forbidden;
+        } else {
+            echo "403 Forbidden";
+        }
+
+        exit;
+    }
+}
+
+/**
+ * Route all requests into CTRX
+ */
 require 'index.php';
