@@ -117,7 +117,7 @@ if ($route == "run" || $route == "server") {
 
     $phpPath = PHP_BINARY;
 
-    $cmd = "php -S $runner" . $dir_comm;
+    $cmd = "php -S $runner app/php/core/server.php" . $dir_comm;
     passthru($cmd);
     exit;
 } else if ($route == "tables") {
@@ -302,7 +302,8 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n";
     exit;
-}if ($route == "update") {
+}
+if ($route == "update") {
     if ($filename == "classes") {
         function deleteFolder($dir)
         {
@@ -606,7 +607,6 @@ if ($route == "run" || $route == "server") {
     AddAllBaseTable($dbname);
     echo "-------\n";
     echo "✔️ Done\n";
-
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "❌ Please provide a filename for Library.\n";
