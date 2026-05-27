@@ -10,3 +10,7 @@ function copyToClipboard() {
       }, 2000);
     });
   }
+
+  document.getElementById("copybtn").onclick = function(){
+    copyToClipboard();
+  }

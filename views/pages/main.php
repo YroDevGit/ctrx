@@ -149,7 +149,7 @@ $build = 1;
           <code>composer create-project yrodevgit/ctrx</code>
         </div>
 
-        <button class="copy-btn mx-auto" onclick="copyToClipboard()">
+        <button class="copy-btn mx-auto" copybtn>
           <i class="far fa-copy"></i> Copy Command
         </button>
       </div>
