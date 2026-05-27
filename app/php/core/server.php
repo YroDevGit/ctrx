@@ -20,6 +20,7 @@ foreach ($blocked as $path) {
     if (strpos($uri, $path) === 0) {
         http_response_code(403);
         include "views/core/errors/forbidden.php";
+        exit;
     }
 }
 
