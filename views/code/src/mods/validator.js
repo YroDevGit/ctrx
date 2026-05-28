@@ -190,60 +190,70 @@ class Validator {
                 case 'required':
                     if (value === undefined || value === null || value === '') {
                         this.addError(`${this.labelName} is required.`);
+                        return value;
                     }
                     break;
 
                 case 'email':
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                         this.addError(`${this.labelName} must be a valid email.`);
+                        return value;
                     }
                     break;
 
                 case 'number':
                     if (isNaN(value)) {
                         this.addError(`${this.labelName} must be a number.`);
+                        return value;
                     }
                     break;
 
                 case 'string':
                     if (typeof value !== 'string') {
                         this.addError(`${this.labelName} must be a string.`);
+                        return value;
                     }
                     break;
 
                 case 'min':
                     if (Number(value) < rule.value) {
                         this.addError(`${this.labelName} must be at least ${rule.value}.`);
+                        return value;
                     }
                     break;
 
                 case 'max':
                     if (Number(value) > rule.value) {
                         this.addError(`${this.labelName} must not exceed ${rule.value}.`);
+                        return value;
                     }
                     break;
 
                 case 'minChars':
                     if (String(value).length < rule.value) {
                         this.addError(`${this.labelName} must be at least ${rule.value} characters.`);
+                        return value;
                     }
                     break;
 
                 case 'maxChars':
                     if (String(value).length > rule.value) {
                         this.addError(`${this.labelName} must not exceed ${rule.value} characters.`);
+                        return value;
                     }
                     break;
 
                 case 'equal':
                     if (value !== rule.value) {
                         this.addError(`${this.labelName} has invalid value.`);
+                        return value;
                     }
                     break;
 
                 case 'regex':
                     if (!new RegExp(rule.value).test(value)) {
                         this.addError(`${this.labelName} format is invalid.`);
+                        return value;
                     }
                     break;
 
@@ -253,6 +263,7 @@ class Validator {
                             this.errorList.contain ||
                             `${this.labelName} has invalid value.`
                         );
+                        return value;
                     }
                     break;
 
@@ -262,6 +273,7 @@ class Validator {
                             this.errorList.exclude ||
                             `${this.labelName} value is not allowed.`
                         );
+                        return value;
                     }
                     break;
 
@@ -271,6 +283,7 @@ class Validator {
                             this.errorList.in ||
                             `${this.labelName} has invalid value.`
                         );
+                        return value;
                     }
                     break;
 
@@ -280,24 +293,28 @@ class Validator {
                             this.errorList.notIn ||
                             `${this.labelName} value is not allowed.`
                         );
+                        return value;
                     }
                     break;
 
                 case 'alpha':
                     if (!/^[A-Za-z]+$/.test(value)) {
                         this.addError(`${this.labelName} must contain only letters.`);
+                        return value;
                     }
                     break;
 
                 case 'alphanumeric':
                     if (!/^[A-Za-z0-9]+$/.test(value)) {
                         this.addError(`${this.labelName} must contain only letters and numbers.`);
+                        return value;
                     }
                     break;
 
                 case 'boolean':
                     if (![true, false, 0, 1, '0', '1'].includes(value)) {
                         this.addError(`${this.labelName} must be boolean.`);
+                        return value;
                     }
                     break;
 
@@ -306,30 +323,35 @@ class Validator {
                         new URL(value);
                     } catch {
                         this.addError(`${this.labelName} must be a valid URL.`);
+                        return value;
                     }
                     break;
 
                 case 'ip':
                     if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) {
                         this.addError(`${this.labelName} must be a valid IP.`);
+                        return value;
                     }
                     break;
 
                 case 'startsWith':
                     if (!String(value).startsWith(rule.value)) {
                         this.addError(`${this.labelName} must start with ${rule.value}.`);
+                        return value;
                     }
                     break;
 
                 case 'endsWith':
                     if (!String(value).endsWith(rule.value)) {
                         this.addError(`${this.labelName} must end with ${rule.value}.`);
+                        return value;
                     }
                     break;
 
                 case 'length':
                     if (String(value).length !== rule.value) {
                         this.addError(`${this.labelName} must be exactly ${rule.value} characters.`);
+                        return value;
                     }
                     break;
             }
