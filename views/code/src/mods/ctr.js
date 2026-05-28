@@ -2,9 +2,9 @@ class CtrClass {
 
     constructor(rootpath = "") {
         this.global_root = rootpath;
-        this.frontend = "?page=";
-        this.backend = "?be=";
-        this.func = "?funcpage=";
+        this.frontend = "";
+        this.backend = "";
+        this.func = "";
     }
 
     page($page = "", params = {}) {

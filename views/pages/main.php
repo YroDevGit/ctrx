@@ -1,5 +1,5 @@
 <?php
-$version = "v1.9";
+$version = "v2.0";
 $build = 1;
 ?>
 
