@@ -1,9 +1,9 @@
 class CtrPath {
-    constructor(rootpath = "http://localhost:9999") {
+    constructor(rootpath = "http://localhost:9009") {
         this.global_root = rootpath;
-        this.frontend = "?page=";
-        this.backend = "?be=";
-        this.func = "?funcpage=";
+        this.frontend = "";
+        this.backend = "";
+        this.func = "";
     }
 
     page($page = "", params = {}) {
