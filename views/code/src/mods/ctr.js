@@ -182,6 +182,13 @@ class CtrClass {
         }
     }
 
+    to_object(data) {
+        if (data instanceof FormData) {
+            return Object.fromEntries(data.entries());
+        }
+        return data;
+    }
+
     scroll_to_element(selector, offset = 0) {
         let elements = [];
 
@@ -204,21 +211,21 @@ class CtrClass {
         });
     }
 
-    scroll_to_top(top = 0, behavior = "smooth"){
+    scroll_to_top(top = 0, behavior = "smooth") {
         window.scrollTo({
             top: top,
             behavior: behavior
         });
     }
 
-    scroll_to_bottom(reduce = 0, behavior = "smooth"){
+    scroll_to_bottom(reduce = 0, behavior = "smooth") {
         window.scrollTo({
             top: document.body.scrollHeight - reduce,
             behavior: behavior
         });
     }
 
-    reverse_object(object){
+    reverse_object(object) {
         let reversed = Object.fromEntries(
             Object.entries(object).reverse()
         );
