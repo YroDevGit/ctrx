@@ -21,6 +21,7 @@ class Validator {
         if (data instanceof FormData) {
             data = Object.fromEntries(data.entries());
         }
+        this.reset();
         this.dataSource = data;
         return this;
     }
@@ -389,7 +390,7 @@ class Validator {
     }
 
     static errorsList() {
-        return this.errors;
+        return this._errors;
     }
 
     static errors() {
@@ -398,10 +399,10 @@ class Validator {
 
     static field_error(field = null) {
         if (!field) {
-            return Object.values(this.errors)[0] || null;
+            return Object.values(this._errors)[0] || null;
         }
 
-        return this.errors[field] || null;
+        return this._errors[field] || null;
     }
 
     static post_error(field = null) {
@@ -409,7 +410,7 @@ class Validator {
     }
 
     static reset() {
-        this.errors = {};
+        this._errors = {};
         this.ers = {};
         this.failedState = false;
         this.collect = {};
