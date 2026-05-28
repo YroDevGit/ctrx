@@ -575,7 +575,19 @@ if ($route == "update") {
         exit;
     }
 
-    include "app/php/core/partials/be.php";
+    include_once "app/php/core/partials/be.php";
+    include "app/php/core/partials/backend.php";
+    $pdo = pdo($dbname, true);
+    $stmnt = $pdo->prepare("SHOW DATABASES LIKE '" . $dbname . "'");
+    $stmnt->execute();
+    $rowcount = $stmnt->rowCount();
+    if (! $rowcount) {
+        $stmnt = $pdo->prepare("Create database `$dbname`;");
+        $stmnt->execute();
+        $rowcount = $stmnt->rowCount();
+        echo "✔️ Database $dbname created\n\n";
+    }
+
     include "app/php/core/classes/Migration.php";
 
     $jsonfile = "app/php/db/" . $filename . ".php";
@@ -591,6 +603,25 @@ if ($route == "update") {
     echo "✔️ Done\n";
 
     exit;
+} elseif ($route == "dbload" || $route == "db:load") {
+    include "app/php/core/partials/envloader.php";
+    $dbname = getenv("database");
+    if ($dbname == null || $dbname == "") {
+        echo "❌ database not found @ .env file\n";
+        exit;
+    }
+    include "app/php/core/partials/be.php";
+    try {
+        $pdo = pdo($dbname, true);
+        $stmnt = $pdo->prepare("Create database `$dbname`;");
+        $stmnt->execute();
+        $rowcount = $stmnt->rowCount();
+        echo "✔️ Database $dbname created\n\n";
+        exit;
+    } catch (PDOException $e) {
+        echo "❌ " . $e->getMessage();
+        exit;
+    }
 } else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
     $dbname = getenv("database");

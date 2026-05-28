@@ -37,17 +37,25 @@ class Migration
         return self::$lastQuery;
     }
 
-    public static function query($query){
+    public static function query($query)
+    {
+        $db = getenv("database");
+        if (empty($db)) {
+            self::setLastQuery("No database found in (.env)");
+            echo "❌ No Database found in .env\n";
+            return false;
+        }
         $pdo = pdo($db);
+        $pdo->exec("USE $db");
         echo "\nRunning Migration query....";
         echo "\n\n";
         $stmt = $pdo->prepare($query);
         $stmt->execute();
         $result = $stmt->rowCount() > 0;
-        if($result){
+        if ($result) {
             echo "✔️ Query has been executed.\n";
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -65,11 +73,12 @@ class Migration
             $columns['created_at'] = "datetime";
             $columns['updated_at'] = "datetime";
         }
-        if($active){
-            $columns['active'] = ["int"=>1, "default"=>1];
+        if ($active) {
+            $columns['active'] = ["int" => 1, "default" => 1];
         }
 
         $pdo = pdo($db);
+        $pdo->exec("USE $db");
 
         $stmt = $pdo->prepare("SHOW TABLES LIKE '$tablename'");
         $stmt->execute();
