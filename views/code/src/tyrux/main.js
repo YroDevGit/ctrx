@@ -5,7 +5,7 @@ import Loading from "../mods/loading.js";
 
 const baseURL = "";   //Backend url end-point
 const baseRoute = "";   // Default api rout
-const backend = "api/";  // This app default backend path
+const backend = "/api/";  // This app default backend path
 
 const headers = headerHandler;
 
