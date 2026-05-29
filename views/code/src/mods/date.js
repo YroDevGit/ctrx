@@ -72,47 +72,79 @@ class CtrDate {
     }
 
 
-    get_date(date, format = "Y-m-d H:i:s") {
-        const d = new Date(date);
-
-        let hours24 = d.getHours();
-        let hours12 = hours24 % 12 || 12;
-        let ampm = hours24 < 12 ? "AM" : "PM";
-
+    get_date(date = null, format = "Y-m-d H:i:s", timezone = "Asia/Manila") {
+        let dt = date ? new Date(date) : new Date();
+    
+        const parts = new Intl.DateTimeFormat("en-PH", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        }).formatToParts(dt);
+    
+        const mapParts = {};
+        for (const p of parts) {
+            mapParts[p.type] = p.value;
+        }
+    
+        const hours24 = parseInt(mapParts.hour, 10);
+        const hours12 = hours24 % 12 || 12;
+        const ampm = hours24 < 12 ? "AM" : "PM";
+    
         const map = {
-            Y: d.getFullYear(),
-            m: String(d.getMonth() + 1).padStart(2, "0"),
-            d: String(d.getDate()).padStart(2, "0"),
+            Y: mapParts.year,
+            m: mapParts.month,
+            d: mapParts.day,
             H: String(hours24).padStart(2, "0"),
             h: String(hours12).padStart(2, "0"),
-            i: String(d.getMinutes()).padStart(2, "0"),
-            s: String(d.getSeconds()).padStart(2, "0"),
+            i: mapParts.minute,
+            s: mapParts.second,
             A: ampm,
             a: ampm.toLowerCase()
         };
-
+    
         return format.replace(/Y|m|d|H|h|i|s|A|a/g, m => map[m]);
     }
 
-    now(format = "Y-m-d H:i:s") {
+    now(format = "Y-m-d H:i:s", timezone = "Asia/Manila") {
         const d = new Date();
-
-        let hours24 = d.getHours();
-        let hours12 = hours24 % 12 || 12;
-        let ampm = hours24 < 12 ? "AM" : "PM";
-
+    
+        const parts = new Intl.DateTimeFormat("en-PH", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        }).formatToParts(d);
+    
+        const mapParts = {};
+        for (const p of parts) {
+            mapParts[p.type] = p.value;
+        }
+    
+        const hours24 = parseInt(mapParts.hour, 10);
+        const hours12 = hours24 % 12 || 12;
+        const ampm = hours24 < 12 ? "AM" : "PM";
+    
         const map = {
-            Y: d.getFullYear(),
-            m: String(d.getMonth() + 1).padStart(2, "0"),
-            d: String(d.getDate()).padStart(2, "0"),
+            Y: mapParts.year,
+            m: mapParts.month,
+            d: mapParts.day,
             H: String(hours24).padStart(2, "0"),
             h: String(hours12).padStart(2, "0"),
-            i: String(d.getMinutes()).padStart(2, "0"),
-            s: String(d.getSeconds()).padStart(2, "0"),
+            i: mapParts.minute,
+            s: mapParts.second,
             A: ampm,
             a: ampm.toLowerCase()
         };
-
+    
         return format.replace(/Y|m|d|H|h|i|s|A|a/g, m => map[m]);
     }
 
