@@ -147,7 +147,7 @@ if (! function_exists("post")) {
             if (is_string($trim)) {
                 $ret = trim($ret, $trim);
             } else {
-                $ret = trim($ret);
+                $ret = $ret;
             }
         }
 
