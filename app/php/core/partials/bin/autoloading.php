@@ -169,7 +169,7 @@ if (!function_exists("js")) {
             } else {
                 $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
             }
-            echo '<script type="module" src="' . htmlspecialchars('views/js/' . $fl, ENT_QUOTES) . '"></script>' . PHP_EOL;
+            echo '<script type="module" src="' . htmlspecialchars('/views/js/' . $fl, ENT_QUOTES) . '"></script>' . PHP_EOL;
         }
     }
 }

@@ -8,8 +8,8 @@ if (getenv("rootpath") == "" || getenv("rootpath") == null) {
 define('rootpath', getenv('rootpath'));
 define('pages', 'views/pages');
 define('_backend', '_backend');
-define('assets', 'views/assets');
-define('codepath', 'views/code');
+define('assets', '/views/assets');
+define('codepath', '/views/code');
 
 define('SUCCESS', getenv('success_code'));
 
