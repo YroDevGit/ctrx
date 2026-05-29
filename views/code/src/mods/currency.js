@@ -13,7 +13,7 @@ class CtrCurrency {
     };
 
     format(code, amount = null) {
-        const symbol = Currency.currencies[code] || "";
+        const symbol = CtrCurrency.currencies[code] || "";
         if (amount === null) {
             return symbol;
         }
@@ -78,4 +78,3 @@ if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
 }
 
 export default Currency;
-
