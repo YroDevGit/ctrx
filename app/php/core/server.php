@@ -85,7 +85,7 @@ if (
 ) {
 
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-    
+    if(str_contains($file,"views/code/src/") || str_contains($file, "views/js/"))return false;
     if (in_array($ext, $staticExtensions)) {
         return false;
     }
