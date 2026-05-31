@@ -11,6 +11,9 @@ class CtrClass {
         if (!$page || $page == "/") {
             return "/";
         }
+        if(! $page.startsWith("/")){
+            $page = "/"+$page;
+        }
         let url = this.frontend + $page;
         if (typeof params === "object" && Object.keys(params).length > 0) {
             const query = Object.entries(params)
@@ -33,6 +36,9 @@ class CtrClass {
     }
 
     redirect(page = "", params = {}) {
+        if(! page.startsWith("/")){
+            page = "/"+page;
+        }
         window.location.href = this.page(page, params);
     }
 

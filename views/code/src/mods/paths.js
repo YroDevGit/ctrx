@@ -1,14 +1,17 @@
 class CtrPath {
-    constructor(rootpath = "http://localhost:9009") {
+    constructor(rootpath = "http://localhost:9999") {
         this.global_root = rootpath;
         this.frontend = "";
-        this.backend = "";
-        this.func = "";
+        this.backend = "/api/";
+        this.func = "?funcpage=";
     }
 
     page($page = "", params = {}) {
-        if(! $page || $page == "/"){
+        if (!$page || $page == "/") {
             return "/";
+        }
+        if(! $page.startsWith("/")){
+            $page = "/"+$page;
         }
         let url = this.frontend + $page;
         if (typeof params === "object" && Object.keys(params).length > 0) {
