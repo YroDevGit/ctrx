@@ -50,7 +50,7 @@ if($realtime){
  * setup limit request per minute
  * default is 10
  */
-$limit_request_per_minute = 10;
+$limit_request_per_minute = 100;
 Ctrx::x_rate_limit($limit_request_per_minute, 60, "ctrql_" . $action);
 
 /**
@@ -59,7 +59,7 @@ Ctrx::x_rate_limit($limit_request_per_minute, 60, "ctrql_" . $action);
 
  $activated = Ctrql::isActive();
  if(! $activated){
-    Response::code(unauthorized_code)->message("Sorry. ctrql is currently disabled or user access is expired.!")->send(unauthorized_code);
+    Response::code(env('ctrql_auth_failed') ?? 707)->message("Sorry. ctrql is currently disabled or user access is expired.!")->send(unauthorized_code);
  }
 
 /**
