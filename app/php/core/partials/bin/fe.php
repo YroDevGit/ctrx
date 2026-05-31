@@ -175,27 +175,20 @@ if (! function_exists("get_date")) {
 if (! function_exists('page')) {
     function page(string|null $path = "/", array $param = [])
     {
-        if (! $path || $path == "/") {
-            if (empty($param)) return mainpath;
-        } else {
-            $path = trim($path, mainpath);
+        if ($path !== "/") {
+            if (! str_starts_with($path, "/")) {
+                $path = "/" . $path;
+            }
         }
-
-        if (empty($param)) {
-            return mainpath . "/" . $path;
+        if ($param) {
+            $arr = [];
+            foreach ($param as $k => $v) {
+                $arr[] = $k . "=" . $v;
+            }
+            $parameter = implode("&", $arr);
+            return $path. "?". $parameter;
         }
-
-        $arr = [];
-        foreach ($param as $k => $v) {
-            $arr[] = $k . "=" . $v;
-        }
-        $parameter = implode("&", $arr);
-
-        if (! $path || $path == "/") {
-            return mainpath . "/?" . $parameter;
-        }
-
-        return mainpath . "/" . $path . "?" . $parameter;
+        return $path;
     }
 }
 
@@ -357,10 +350,15 @@ if (! function_exists("get")) {
 if (! function_exists('href')) {
     function href(string $path = "")
     {
+        if ($path !== "/") {
+            if (! str_starts_with($path, "/")) {
+                $path = "/" . $path;
+            }
+        }
         if ($path == "" || $path == null) {
-            header('location: ' . rootpath);
+            header('location:/');
         } else {
-            header('location: ' . rootpath . "/?page=$path");
+            header('location: ' . $path);
         }
     }
 }
@@ -368,11 +366,13 @@ if (! function_exists('href')) {
 if (! function_exists('redirect')) {
     function redirect(string $path = "", string $type = "page", int $time = 0)
     {
-        if ($type == "page") {
-            header("refresh: $time; url=" . rootpath . "/?page=$path");
+        if ($path !== "/") {
+            if (! str_starts_with($path, "/")) {
+                $path = "/" . $path;
+            }
         }
-        if ($type == "func") {
-            header("refresh: $time; url=" . rootpath . "/?funcpage=$path");
+        if ($type == "page") {
+            header("refresh: $time; url=" . $path);
         }
     }
 }
