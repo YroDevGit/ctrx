@@ -245,14 +245,36 @@ const tyrax = { // tyrux default config :: CodeTazeR
         tyrux(configure._mergeOptions(option, this));
     },
 
-    ctrsync(options){
-        return new Promise((resolve, reject)=>{
+    async ctrsync(options = {...opt, dataOnly : false, errorType: "console"}){
+        let result = await new Promise((resolve, reject)=>{
+            let errs = options.error ? {error: (err)=>reject(err)} : {error: (err)=> alert(err.message ?? "There is an error, please check your console.")};
             this.ctrql({
                 ...options,
                 response: (send)=> resolve(send),
-                error: (error) => reject(error)
-            })
+                ...errs
+            });
         });
+
+        if(options.dataOnly){
+            if(result.code){
+                if(result.code == 200){
+                   return result?.data ?? []; 
+                }else{
+                    if(options.errorType == "console"){
+                        console.error(result);
+                        return;
+                    }else{
+                        alert(result.message ?? "There is an error, please check console");
+                        console.error(result);
+                        return;
+                    }
+                }
+            }else{
+                console.error(result);
+                return;
+            }
+        }
+        return result;
     }
 };
 
