@@ -139,8 +139,12 @@ const configure = {
 
         if (typeof global?.error === "function" || typeof option?.error === "function") {
             merged.error = (err) => {
-                if (typeof global?.error === "function") global.error(err);
-                if (typeof option?.error === "function") option.error(err);
+                if(! option.error){
+                    errorHandler(err, err.message ?? "Error Occur, please check console.");
+                }else{
+                    if (typeof global?.error === "function") global.error(err);
+                    if (typeof option?.error === "function") option.error(err);
+                }                
             };
         }
         return merged;
@@ -247,7 +251,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
 
     async ctrsync(options = {...opt, dataOnly : false, errorType: "console"}){
         let result = await new Promise((resolve, reject)=>{
-            let errs = options.error ? {error: (err)=>reject(err)} : {error: (err)=> alert(err.message ?? "There is an error, please check your console.")};
+            let errs = options.error ? {error: (err)=>reject(err)} : {error: (err)=> errorHandler(err, err.message ?? "There is an error, please check your console.")};
             this.ctrql({
                 ...options,
                 response: (send)=> resolve(send),
