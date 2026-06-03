@@ -16,7 +16,7 @@ class CtrTOAST {
             container.style.transform = "translate(-50%, -50%)";
             container.style.top = "50%";
 
-            container.style.zIndex = "9999";
+            container.style.zIndex = "99999999";
             container.style.display = "flex";
             container.style.flexDirection = "column";
             container.style.alignItems = "center";
