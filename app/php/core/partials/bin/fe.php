@@ -25,8 +25,7 @@ define("no_internet_code", getenv("no_internet_code"));
 define("backend_error_code", getenv("backend_error_code"));
 define("failed_code", getenv("failed_code"));
 define('app_name', getenv('app_name'));
-
-
+define('ctrql_auth_failed', getenv('ctrql_auth_failed'));
 define("now", date("Y-m-d H:i:s"));
 
 if (getenv("time_zone")) {
