@@ -123,17 +123,14 @@ class CtrTOAST {
 
         toast.appendChild(contentWrap);
         toast.appendChild(closeBtn);
-
         container.appendChild(toast);
 
-        // FIRST TOAST CENTER EFFECT
-        if (this.isFirstToast) {
-            this.isFirstToast = false;
 
-            setTimeout(() => {
-                this.moveToTop();
-            }, 300); // small delay so user sees center pop
-        }
+
+        setTimeout(() => {
+            this.moveToTop();
+        }, 300); // small delay so user sees center pop
+
 
         // animate in
         requestAnimationFrame(() => {
@@ -160,7 +157,14 @@ class CtrTOAST {
             default: toast.style.transform = "translateY(-20px)";
         }
 
-        setTimeout(() => toast.remove(), 450);
+
+        setTimeout(() => {
+            toast.remove();
+            if (!document.getElementById(this.containerId).innerHTML) {
+                document.getElementById(this.containerId).remove();
+                this.ensureContainer();
+            }
+        }, 450);
     }
 
     reset() {
