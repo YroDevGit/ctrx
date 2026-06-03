@@ -214,7 +214,7 @@ class TModal {
 
         const formData = config.form || {};
 
-        Object.keys(formData).forEach((key) => {
+        Object.keys(formData).forEach(async(key) => {
 
             let field = formData[key];
 
@@ -283,13 +283,36 @@ class TModal {
 
                 input.className =
                     "tmodal-select " + (field.class || "");
-
+                    
                 if (Array.isArray(field.options)) {
+
+                    if(field.config){
+                        let conf = field.config;
+                        let value = conf.value;
+                        let label = conf.label;
+                        let spl = [];
+                        let opt = field.options;
+                        for(let op in opt){
+                            let separator = conf.separator ?? "";
+                            let lbl = "";
+                            let lblarr = [];
+                            let labl = opt[op][label];
+                            if(Array.isArray(label)){
+                                for(let l in label){
+                                    lblarr = [...lblarr, opt[op][label[l]]];
+                                }
+                                lbl = lblarr.join(separator);
+                            }else{
+                                lbl = labl;
+                            }
+                            spl[op] = { value: opt[op][value], label: lbl };
+                        }
+                        field.options = spl;
+                    }
 
                     field.options.forEach((opt) => {
 
                         const option = document.createElement("option");
-
                         if (typeof opt === "object") {
 
                             option.value = opt.value;
