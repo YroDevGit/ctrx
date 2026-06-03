@@ -288,8 +288,8 @@ class TModal {
 
                     if(field.config){
                         let conf = field.config;
-                        let value = conf.value;
-                        let label = conf.label;
+                        let value = conf.value ?? "value";
+                        let label = conf.label ?? "label";
                         let spl = [];
                         let opt = field.options;
                         for(let op in opt){
@@ -307,7 +307,12 @@ class TModal {
                             }
                             spl[op] = { value: opt[op][value], label: lbl };
                         }
-                        field.options = spl;
+                        if(typeof field?.config.index && field?.config.index == false){
+                            field.options = spl;
+                        }else{
+                            field.options = [{value: "", label: `${field?.config?.index ?? "Select Item"}`},...spl];
+                        }
+                        
                     }
 
                     field.options.forEach((opt) => {
