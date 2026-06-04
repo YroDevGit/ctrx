@@ -24,6 +24,23 @@ class CtrClass {
         return url;
     }
 
+     generateHash() {
+        const now = new Date();
+    
+        const date =
+            now.getFullYear() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') +
+            String(now.getHours()).padStart(2, '0') +
+            String(now.getMinutes()).padStart(2, '0') +
+            String(now.getSeconds()).padStart(2, '0') +
+            String(now.getMilliseconds()).padStart(3, '0');
+    
+        const random = Math.random().toString(36).substring(2,8);
+    
+        return `CTR${date}${random}`;
+    }
+
     backend($be = "", params = {}) {
         let url = this.backend + $be;
         if (typeof params === "object" && Object.keys(params).length > 0) {
