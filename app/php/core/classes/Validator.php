@@ -573,7 +573,6 @@ class Validator
     {
         self::$errors = [];
         self::$failed = false;
-        self::$rules = [];
         self::$collected = [];
         self::$errorList = [];
         self::$ers = [];
