@@ -2,6 +2,7 @@
 if (! function_exists('json_response')) {
     function json_response(array $data, int $status = 200)
     {
+        remove_single_thread();
         header('Content-Type: application/json');
         http_response_code($status);
         echo json_encode($data);

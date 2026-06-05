@@ -331,3 +331,17 @@ if (! function_exists("ctrx_get_filepaths")) {
         return $arrs;
     }
 }
+
+if(! function_exists("ctrxc_ccookie_single_thread")){
+    function ctrxc_ccookie_single_thread(){
+        return "ctrxc_ccookie_single_thread_yroez";
+    }
+}
+
+if(! function_exists("remove_single_thread")){
+    function remove_single_thread(){
+        if(isset($_COOKIE[ctrxc_ccookie_single_thread()])){
+            unset($_COOKIE[ctrxc_ccookie_single_thread()]);
+        } 
+    }
+}

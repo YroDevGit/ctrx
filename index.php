@@ -78,6 +78,12 @@ include "app/php/core/system/loader.php";
  * This is backend endpoint
  */
 if (str_starts_with($req, "api/")) {
+    if(getenv('single_thread') && getenv('single_thread') == "yes"){
+        if(isset($_COOKIE[ctrxc_ccookie_single_thread()])){
+            exit;
+        }
+    }
+    $_COOKIE[ctrxc_ccookie_single_thread()] = ctrxc_ccookie_single_thread();
     include_once "app/php/core/partials/backend.php";
 
     set_error_handler(function ($errno, $errstr, $errfile, $errline) {
