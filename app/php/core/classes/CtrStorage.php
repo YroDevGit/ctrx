@@ -64,10 +64,13 @@ class CtrStorage
 
     //Pag gamit $upload =  Storage::upload_file($file)
     // $path = $upload['path'];
-    static function upload_file($file, bool $storagePath = true, string|null $path = null)
+    static function upload_file($file, bool|string $storagePath = true, string|null $path = null)
     {
         if (! $file) {
             return null;
+        }
+        if(is_string(($storagePath))){
+            $path = $storagePath;
         }
         $pathname = self::storagepath();
         if (! is_dir($pathname)) {
@@ -91,7 +94,12 @@ class CtrStorage
                 "filename" => $data["filename"] ?? null,
                 "file" => $data["storage"] ?? null
             ];
-            return isset($data['storage']) ? $data['storage'] : null;
+            if(is_string($storagePath)){
+                $storagePath = trim($storagePath, "/");
+                $storagePath = trim($storagePath, "\\");
+                return isset($data['file']) ? "/ctrstorage/".$storagePath."/".$data['file'] : null;
+            }
+            return isset($data['file']) ? "/ctrstorage/".$data['file'] : null;
         }
         $data = self::upd($file, $pathname, $path);
         self::$last_uploaded_files[] = [

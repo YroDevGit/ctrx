@@ -11,8 +11,8 @@ class CtrClass {
         if (!$page || $page == "/") {
             return "/";
         }
-        if(! $page.startsWith("/")){
-            $page = "/"+$page;
+        if (!$page.startsWith("/")) {
+            $page = "/" + $page;
         }
         let url = this.frontend + $page;
         if (typeof params === "object" && Object.keys(params).length > 0) {
@@ -24,21 +24,56 @@ class CtrClass {
         return url;
     }
 
-     generateHash() {
+    generateRandom() {
         const now = new Date();
-    
+
         const date =
-            now.getFullYear() +
+            now.getFullYear().toString().slice(-2) +
             String(now.getMonth() + 1).padStart(2, '0') +
             String(now.getDate()).padStart(2, '0') +
             String(now.getHours()).padStart(2, '0') +
             String(now.getMinutes()).padStart(2, '0') +
             String(now.getSeconds()).padStart(2, '0') +
             String(now.getMilliseconds()).padStart(3, '0');
-    
-        const random = Math.random().toString(36).substring(2,8);
-    
+
+        const random = Math.random().toString(36).substring(2, 8);
+
         return `CTR${date}${random}`;
+    }
+
+    async generateHash(max = 16) {
+        const id = this.generateRandom();
+        const buffer = await crypto.subtle.digest(
+            'SHA-256',
+            new TextEncoder().encode(id)
+        );
+        const hash = Array.from(new Uint8Array(buffer))
+            .map(b => b.toString(max).padStart(2, '0'))
+            .join('');
+
+        return hash;
+    }
+
+    async shortHash(max = 16) {
+        const id = this.generateRandom();
+
+        const buffer = await crypto.subtle.digest(
+            'SHA-256',
+            new TextEncoder().encode(id)
+        );
+
+        return Array.from(new Uint8Array(buffer))
+            .map(b => b.toString(max).padStart(2, '0'))
+            .join('')
+            .substring(0, max)
+            .toUpperCase();
+    }
+
+    generateUnique() {
+        const now = Date.now();
+        const uuid = crypto.randomUUID().replace(/-/g, '');
+
+        return `CTR${now}${uuid}`;
     }
 
     backend($be = "", params = {}) {
@@ -53,8 +88,8 @@ class CtrClass {
     }
 
     redirect(page = "", params = {}) {
-        if(! page.startsWith("/")){
-            page = "/"+page;
+        if (!page.startsWith("/")) {
+            page = "/" + page;
         }
         window.location.href = this.page(page, params);
     }
@@ -294,6 +329,30 @@ class CtrClass {
         });
     }
 
+    setOptions(selector, options = [], config = { value: "value", label: "label", onChange: undefined, index: "Select item" }) {
+        let val = config.value ?? "value";
+        let lab = config.label ?? "label";
+        let elements = document.querySelectorAll(selector);
+        if (config.onChange && typeof config.onChange == "function") {
+            elements.forEach(element => {
+                element.addEventListener("change", () => {
+                    config.onChange(element);
+                });
+            });
+        }
+
+        if (Array.isArray(options)) {
+            if (typeof config.index != "boolean") {
+                config.index = config.index ?? "Select item";
+                this.set_html(selector, `<option value=''>${config.index}</option>` ?? "<option value=''>Select item</option>");
+            }
+            for (let op in options) {
+                let row = options[op];
+                this.add_html(selector, `<option value='${row[val]}'>${row[lab]}</option>`)
+            }
+        }
+    }
+
     form_data(selector) {
         let form = null;
         if (selector.charAt(0) === "#" || selector.charAt(0) === ".") {
@@ -312,6 +371,13 @@ class CtrClass {
         });
 
         return dataObject;
+    }
+
+    get_selected(seletor) {
+        const select = document.querySelector(seletor);
+        const value = select.value ?? null;
+        const label = select?.options[select.selectedIndex]?.text ?? null;
+        return { value: value, label: label };
     }
 
     form_object(selector) {
@@ -354,7 +420,6 @@ class CtrClass {
     child(selector) {
         return document.querySelector(selector).innerHTML;
     }
-
 }
 
 const CTR = new CtrClass();
