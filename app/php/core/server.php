@@ -26,7 +26,8 @@ if (str_starts_with($uri, "/ctrstorage/")) {
     $ret = extract([
         "path" => $ctrstorage,
         "file_path" => $filePath,
-        "mime_type" => $mimeType
+        "mime_type" => $mimeType,
+        "dir" => dirname($ctrstorage)
     ]);
     include "app/php/core/partials/filereader.php";
     include "app/config/storage_config.php";
