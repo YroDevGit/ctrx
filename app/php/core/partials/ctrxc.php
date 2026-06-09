@@ -86,13 +86,16 @@ if (! function_exists('ctrx_response')) {
                     if (! $file) {
                         continue;
                     }
-
+                    if(str_contains($file,"/app/_controller/") || str_contains($file,"\\app\\_controller\\")){
+                        $data['message'] = $data['message']." @ ".current_be()." ". $e_line;
+                    }
                     if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
                         continue;
                     }
                     $all[] = $v;
                 }
                 $e_error = json_encode($all);
+                $data['trace'] =$all;
                 if (getenv("error_logs") == "yes") {
                     ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
                 }
