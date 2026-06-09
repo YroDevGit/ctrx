@@ -26,18 +26,18 @@ $rooth = trim($rooth, "/");
 $b_all = $basixserver . "/" . $req;
 $subdomain = getenv("subdomain") ?? null;
 $subdomain = trim($subdomain, "/");
-if($subdomain){
-    if(str_starts_with($req, $subdomain) && $req){
+if ($subdomain) {
+    if (str_starts_with($req, $subdomain) && $req) {
         $expl = explode($subdomain, $req);
         $void = $expl[0] ?? null;
         $req = $expl[1] ?? null;
-        if($req){
+        if ($req) {
             $req = trim($req, "/");
         }
     }
 }
 
-define('mainpath', $subdomain ? $rooth."/". $subdomain : $rooth);
+define('mainpath', $subdomain ? $rooth . "/" . $subdomain : $rooth);
 define("ctrx_param", strtolower($req));
 
 $system = glob('app/php/core/partials/bin/*.php');
@@ -72,8 +72,8 @@ include "app/php/core/system/loader.php";
  * This is backend endpoint
  */
 if (str_starts_with($req, "api/")) {
-    if(getenv('single_thread') && getenv('single_thread') == "yes"){
-        if(isset($_COOKIE[ctrxc_ccookie_single_thread()])){
+    if (getenv('single_thread') && getenv('single_thread') == "yes") {
+        if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
             exit;
         }
     }
@@ -90,6 +90,7 @@ if (str_starts_with($req, "api/")) {
         $beconfig = glob('app/config/*.php');
 
         foreach ($beconfig as $k => $v) {
+            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
             include $v;
         }
 

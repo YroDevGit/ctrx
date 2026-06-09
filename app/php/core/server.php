@@ -19,15 +19,17 @@ if (str_starts_with($uri, "/ctrstorage/")) {
         exit('File not found');
     }
 
-    include "app/config/storage_config.php";
-
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $filePath);
-    finfo_close($finfo);
-
-    header("Content-Type: $mimeType");
-    readfile($filePath);
-    exit;
+    finfo_close($finfo);    
+    
+    $ret = extract([
+        "path" => $ctrstorage,
+        "file_path" => $filePath,
+        "mime_type" => $mimeType
+    ]);
+    include "app/php/core/partials/filereader.php";
+    include "app/config/storage_config.php";
 }
 
 /**
