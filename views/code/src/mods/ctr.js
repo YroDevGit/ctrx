@@ -352,6 +352,13 @@ class CtrClass {
             }
         }
     }
+    
+    base_url(path = null){
+        if(path){
+            return path.startsWith("/") ? window.location.origin + path : window.location.origin +"/"+ path;
+        }
+        return window.location.origin;
+    }
 
     form_data(selector) {
         let form = null;
