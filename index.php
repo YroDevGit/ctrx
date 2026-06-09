@@ -6,12 +6,6 @@
  */
 
 /**
- * Vendor Autoload (Composer support)
- */
-require_once 'vendor/autoload.php';
-include "app/php/core/partials/envloader.php";
-
-/**
  * Session initialize
  */
 session_start();

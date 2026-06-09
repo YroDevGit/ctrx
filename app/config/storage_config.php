@@ -1,0 +1,4 @@
+<?php
+/**
+ * Autoload for CtrStorage
+ */

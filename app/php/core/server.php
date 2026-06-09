@@ -1,5 +1,8 @@
 <?php
 
+require_once 'vendor/autoload.php';
+include "app/php/core/partials/envloader.php";
+
 /**
  * CTRX / CodeTazer Dev Server Router
  * Made by CodeYRO
@@ -15,6 +18,8 @@ if (str_starts_with($uri, "/ctrstorage/")) {
         http_response_code(404);
         exit('File not found');
     }
+
+    include "app/config/storage_config.php";
 
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $filePath);
