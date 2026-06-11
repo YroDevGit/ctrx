@@ -248,8 +248,11 @@ class Ctrx
 
     public static function use_db_tools(string|null $backRoute = null,$exit = true){
         if($backRoute){
-            $backRoute = str_starts_with("/") ? $backRoute : "/". $backRoute;
-            include "app/php/core/system/tools.php?backpage=$backRoute";
+            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
+            extract([
+                "backpage" => $backRoute
+            ]);
+            include "app/php/core/system/tools.php";
         }else{
             include "app/php/core/system/tools.php";
         }

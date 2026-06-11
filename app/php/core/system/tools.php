@@ -528,7 +528,7 @@ if (isset($_POST['import_table'])) {
         </form>
         <div style="margin-top: 1rem; font-size:0.7rem; text-align:center; color:#ccb27c;">supports full schema replace or append • JSON must contain "table" & "data" keys</div>
     </div>
-    <div style="margin-top: 1rem; font-size:16; text-align:center;"><a style="text-decoration:none;color:#ccb27c;" href="<?=$_GET['backpage'] ?? '/'?>">I'm done</a></div>
+    <div style="margin-top: 1rem; font-size:16; text-align:center;"><a style="text-decoration:none;color:#ccb27c;" href="<?=$backpage ?? '/'?>">I'm done</a></div>
     <footer>⚡ CTRX THUNDER EDGE • DATABASE FLOW</footer>
 </div>
 
