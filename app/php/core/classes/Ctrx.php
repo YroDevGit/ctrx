@@ -247,7 +247,7 @@ class Ctrx
     }
 
     public static function use_db_tools(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage;
+        $backRoute = $backpage ?? previous_page();
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
             extract([
@@ -261,7 +261,7 @@ class Ctrx
     }
 
     public static function forbidden_page(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage;
+        $backRoute = $backpage ?? previous_page();
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
             extract([

@@ -72,9 +72,9 @@ include "app/php/core/system/loader.php";
  * Ctrx DB tools for import export
  */
 if(str_starts_with($req, "ctrxtools/db")){
-    if(isset($_GET['backpage'])){
-        $backpage = $_GET['backpage'];
-    }
+    extract([
+        "backpage" => $_GET['backpage'] ?? previous_page()
+    ]);
     include "app/config/db_tools.php";
     exit;
 }
@@ -245,7 +245,16 @@ if (str_starts_with($req, "api/")) {
             include "views/core/errors/" . $errorpage;
             exit;
         }
+        $prevPath = "/";
 
+        if($_GET){
+            $arr = [];
+            foreach($_GET as $kk=>$vv){
+                $arr[] = $kk."=".$vv;
+            }
+            $prevPath = current_page()."?". implode("&", $arr);
+        }
+        $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
         include $fullpath;
     } catch (Throwable $e) {
         ob_clean();

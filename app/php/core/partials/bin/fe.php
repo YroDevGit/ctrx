@@ -300,6 +300,16 @@ if (! function_exists('codepath')) {
     }
 }
 
+if(! function_exists("previous_page")){
+    function previous_page(){
+        if(isset($_SESSION['cTrx_pReviOus_paGee_basixs112100514'])){
+            $val = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'];
+            return str_starts_with($val, "/") ? $val : "/".$val;
+        }
+        return "/";
+    }
+}
+
 if (! function_exists("ctr_generate_request_id")) {
     function ctr_generate_request_id()
     {
