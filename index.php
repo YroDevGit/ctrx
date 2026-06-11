@@ -99,6 +99,7 @@ if (str_starts_with($req, "api/")) {
 
         foreach ($beconfig as $k => $v) {
             if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
+            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
             include $v;
         }
 
