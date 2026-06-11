@@ -238,4 +238,19 @@ class Ctrx
         }
         return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
     }
+
+    public static function has_user_data():bool{
+        if(\Classes\Ccookie::get("ctrx_user_data")){
+            return true;
+        }
+        return false;
+    }
+
+    public static function use_db_tools(){
+        include "app/php/core/system/tools.php";
+    }
+
+    public static function forbidden_page(){
+        include "views/core/errors/forbidden.php";
+    }
 }

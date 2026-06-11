@@ -37,6 +37,14 @@ if ($subdomain) {
     }
 }
 
+/**
+ * Ctrx DB tools for import export
+ */
+if(str_starts_with($req, "ctrxtools/db")){
+    include "app/config/db_tools.php";
+    exit;
+}
+
 define('mainpath', $subdomain ? $rooth . "/" . $subdomain : $rooth);
 define("ctrx_param", strtolower($req));
 
