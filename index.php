@@ -256,8 +256,16 @@ if (str_starts_with($req, "api/")) {
         }else{
             $prevPath = current_page();
         }
-        $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
+        $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/". $prevPath;
         include $fullpath;
+
+        if(previous_page() == $prevPath){
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100515'];
+        }else{
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
+        }
+        
     } catch (Throwable $e) {
         ob_clean();
         $reqid = ctr_get_current_request_id();
