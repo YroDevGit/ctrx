@@ -236,6 +236,7 @@ if (isset($_POST['import_table'])) {
         }
 
         .msg {
+            color:yellowgreen;
             margin-bottom: 1.4rem;
             padding: 0.9rem 1.4rem;
             border-radius: 60px;
@@ -256,7 +257,7 @@ if (isset($_POST['import_table'])) {
             100% { opacity: 1; transform: translateX(0);}
         }
 
-        .msg:has(> :contains('✅')) { border-left-color: #2effb0; color: #ccffdd; background: rgba(46, 255, 176, 0.1);}
+        .msg:has(> :contains('✅')) { border-left-color: #2effb0; color: yellowgreen; background: rgba(46, 255, 176, 0.1);}
         .msg:has(> :contains('❌')) { border-left-color: #ff4d6d; color: #ffb3c6; background: rgba(255, 77, 109, 0.1);}
         .msg:has(> :contains('⚠️')) { border-left-color: #ffcc33; color: #fff0b5;}
 
@@ -692,6 +693,5 @@ if (isset($_POST['import_table'])) {
         }
     })();
 </script>
-
 </body>
 </html>
