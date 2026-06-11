@@ -14,7 +14,8 @@ $pdo = pdo($dbname);
 $message = "";
 
 if (isset($_POST['export_table'])) {
-    $table = $_POST['table'] ?? "";
+    try{
+        $table = $_POST['table'] ?? "";
 
     if ($table == "") {
         $message = "❌ Please input table name.";
@@ -40,52 +41,59 @@ if (isset($_POST['export_table'])) {
         echo json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         exit;
     }
+    }catch(Throwable $e){
+        $message = $e->getMessage();
+    }
 }
 
 if (isset($_POST['import_table'])) {
-
-    if (!isset($_FILES['json_file']) || $_FILES['json_file']['error'] != 0) {
-        $message = "❌ Please upload a valid JSON file.";
-    } else {
-
-        $jsonContent = file_get_contents($_FILES['json_file']['tmp_name']);
-        $data = json_decode($jsonContent, true);
-
-        if (!$data || !isset($data['table'], $data['data'])) {
-            $message = "❌ Invalid JSON format.";
+    try{
+        if (!isset($_FILES['json_file']) || $_FILES['json_file']['error'] != 0) {
+            $message = "❌ Please upload a valid JSON file.";
         } else {
-
-            $table = $data['table'];
-            $rows = $data['data'];
-
-            $replaceAll = isset($_POST['replace_all']);
-
-            if ($replaceAll) {
-                $pdo->exec("TRUNCATE TABLE `$table`");
-            }
-
-            if (count($rows) > 0) {
-
-                foreach ($rows as $row) {
-
-                    $columns = array_keys($row);
-                    $placeholders = ":" . implode(", :", $columns);
-
-                    $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
-                            VALUES ($placeholders)";
-
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute($row);
-                }
-
-                $message = $replaceAll
-                    ? "✅ Table replaced successfully: {$table}"
-                    : "✅ Data appended successfully to {$table}";
+    
+            $jsonContent = file_get_contents($_FILES['json_file']['tmp_name']);
+            $data = json_decode($jsonContent, true);
+    
+            if (!$data || !isset($data['table'], $data['data'])) {
+                $message = "❌ Invalid JSON format.";
             } else {
-                $message = "⚠️ No data found in JSON.";
+    
+                $table = $data['table'];
+                $rows = $data['data'];
+    
+                $replaceAll = isset($_POST['replace_all']);
+    
+                if ($replaceAll) {
+                    $pdo->exec("TRUNCATE TABLE `$table`");
+                }
+    
+                if (count($rows) > 0) {
+    
+                    foreach ($rows as $row) {
+    
+                        $columns = array_keys($row);
+                        $placeholders = ":" . implode(", :", $columns);
+    
+                        $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
+                                VALUES ($placeholders)";
+    
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute($row);
+                    }
+    
+                    $message = $replaceAll
+                        ? "✅ Table replaced successfully: {$table}"
+                        : "✅ Data appended successfully to {$table}";
+                } else {
+                    $message = "⚠️ No data found in JSON.";
+                }
             }
         }
+    }catch(Throwable $e){
+        $message = $e->getMessage();
     }
+    
 }
 ?>
 
