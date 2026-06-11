@@ -253,6 +253,8 @@ if (str_starts_with($req, "api/")) {
                 $arr[] = $kk."=".$vv;
             }
             $prevPath = current_page()."?". implode("&", $arr);
+        }else{
+            $prevPath = current_page();
         }
         $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
         include $fullpath;
