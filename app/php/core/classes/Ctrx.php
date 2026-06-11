@@ -247,7 +247,7 @@ class Ctrx
     }
 
     public static function use_db_tools(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage ?? previous_page();
+        $backRoute = $backpage ?? current_page();
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
             extract([
