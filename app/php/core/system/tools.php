@@ -1,5 +1,5 @@
 <?php
-include "app/php/core/partials/envloader.php";
+include_once "app/php/core/partials/envloader.php";
 
 $dbname = getenv("database");
 if (!$dbname) {
@@ -7,15 +7,12 @@ if (!$dbname) {
 }
 
 include_once "app/php/core/partials/be.php";
-include "app/php/core/partials/backend.php";
+include_once "app/php/core/partials/backend.php";
 
 $pdo = pdo($dbname);
 
 $message = "";
 
-/* =========================
-   EXPORT HANDLER
-========================= */
 if (isset($_POST['export_table'])) {
     $table = $_POST['table'] ?? "";
 
@@ -45,9 +42,6 @@ if (isset($_POST['export_table'])) {
     }
 }
 
-/* =========================
-   IMPORT HANDLER
-========================= */
 if (isset($_POST['import_table'])) {
 
     if (!isset($_FILES['json_file']) || $_FILES['json_file']['error'] != 0) {
@@ -186,7 +180,6 @@ if (isset($_POST['import_table'])) {
         <div class="tab" onclick="switchTab(1)">Import</div>
     </div>
 
-    <!-- EXPORT -->
     <div class="section active">
         <form method="POST">
             <label>Table Name</label>
@@ -195,7 +188,6 @@ if (isset($_POST['import_table'])) {
         </form>
     </div>
 
-    <!-- IMPORT -->
     <div class="section">
         <form method="POST" enctype="multipart/form-data">
             <label>JSON File</label>
@@ -226,4 +218,3 @@ function switchTab(i) {
 </script>
 
 </body>
-</html>

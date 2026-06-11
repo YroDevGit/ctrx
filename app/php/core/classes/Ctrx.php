@@ -246,11 +246,13 @@ class Ctrx
         return false;
     }
 
-    public static function use_db_tools(){
+    public static function use_db_tools($exit = true){
         include "app/php/core/system/tools.php";
+        if($exit) exit;
     }
 
-    public static function forbidden_page(){
+    public static function forbidden_page($exit = true){
         include "views/core/errors/forbidden.php";
+        if($exit) exit;
     }
 }

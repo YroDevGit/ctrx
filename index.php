@@ -72,7 +72,6 @@ include "app/php/core/system/loader.php";
  * Ctrx DB tools for import export
  */
 if(str_starts_with($req, "ctrxtools/db")){
-    include_once "app/php/core/partials/backend.php";
     include "app/config/db_tools.php";
     exit;
 }
