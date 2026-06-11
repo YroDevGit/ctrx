@@ -246,8 +246,13 @@ class Ctrx
         return false;
     }
 
-    public static function use_db_tools($exit = true){
-        include "app/php/core/system/tools.php";
+    public static function use_db_tools(string|null $backRoute = null,$exit = true){
+        if($backRoute){
+            $backRoute = str_starts_with("/") ? $backRoute : "/". $backRoute;
+            include "app/php/core/system/tools.php?backpage=$backRoute";
+        }else{
+            include "app/php/core/system/tools.php";
+        }
         if($exit) exit;
     }
 
