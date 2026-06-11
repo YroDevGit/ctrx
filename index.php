@@ -37,14 +37,6 @@ if ($subdomain) {
     }
 }
 
-/**
- * Ctrx DB tools for import export
- */
-if(str_starts_with($req, "ctrxtools/db")){
-    include "app/config/db_tools.php";
-    exit;
-}
-
 define('mainpath', $subdomain ? $rooth . "/" . $subdomain : $rooth);
 define("ctrx_param", strtolower($req));
 
@@ -76,9 +68,19 @@ if ($req == "api") {
 
 include "app/php/core/system/loader.php";
 
+ /**
+ * Ctrx DB tools for import export
+ */
+if(str_starts_with($req, "ctrxtools/db")){
+    include_once "app/php/core/partials/backend.php";
+    include "app/config/db_tools.php";
+    exit;
+}
+
 /**
  * This is backend endpoint
  */
+
 if (str_starts_with($req, "api/")) {
     if (getenv('single_thread') && getenv('single_thread') == "yes") {
         if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
