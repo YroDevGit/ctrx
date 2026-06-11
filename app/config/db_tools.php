@@ -7,5 +7,6 @@
  */
 use Classes\Ctrx;
 
+
 Ctrx::forbidden_page();
 

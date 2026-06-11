@@ -72,6 +72,9 @@ include "app/php/core/system/loader.php";
  * Ctrx DB tools for import export
  */
 if(str_starts_with($req, "ctrxtools/db")){
+    if(isset($_GET['backpage'])){
+        $backpage = $_GET['backpage'];
+    }
     include "app/config/db_tools.php";
     exit;
 }

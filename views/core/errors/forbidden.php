@@ -105,7 +105,7 @@
         This area is protected by <strong>CodeTazer Security Layer</strong>.
     </p>
 
-    <a href="/" class="btn">Return Home</a>
+    <a href="<?=$backpage ?? '/'?>" class="btn">Return Home</a>
 </div>
 
 </body>

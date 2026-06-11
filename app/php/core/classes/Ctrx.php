@@ -246,7 +246,8 @@ class Ctrx
         return false;
     }
 
-    public static function use_db_tools(string|null $backRoute = null,$exit = true){
+    public static function use_db_tools(string|null $backpage = null,$exit = true){
+        $backRoute = $backpage;
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
             extract([
@@ -259,7 +260,14 @@ class Ctrx
         if($exit) exit;
     }
 
-    public static function forbidden_page($exit = true){
+    public static function forbidden_page(string|null $backpage = null,$exit = true){
+        $backRoute = $backpage;
+        if($backRoute){
+            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
+            extract([
+                "backpage" => $backRoute
+            ]);
+        }
         include "views/core/errors/forbidden.php";
         if($exit) exit;
     }
