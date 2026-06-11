@@ -310,6 +310,24 @@ if(! function_exists("previous_page")){
     }
 }
 
+if(! function_exists("ctrx_save_pages")){
+    function ctrx_save_previous_pages(string $previous_page){
+        $prevPath = $previous_page;
+        if(previous_page() == $prevPath){
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100515'];
+        }else{
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
+        }
+    }
+}
+
+if(! function_exists("ctrx_force_save_pages")){
+    function ctrx_force_save_previous_pages(string $previous_page){
+        $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $previous_page;
+    }
+}
+
 if (! function_exists("ctr_generate_request_id")) {
     function ctr_generate_request_id()
     {

@@ -13,6 +13,8 @@ $pdo = pdo($dbname);
 
 $message = "";
 
+ctrx_force_save_previous_pages(previous_page());
+
 if (isset($_POST['export_table'])) {
     try{
         $table = $_POST['table'] ?? "";
@@ -542,7 +544,6 @@ if (isset($_POST['import_table'])) {
 
 <script>
     (function() {
-        // ---- tab switching with smoothness ----
         const tabs = document.querySelectorAll('.tab');
         const sections = {
             0: document.getElementById('exportSection'),
@@ -569,7 +570,6 @@ if (isset($_POST['import_table'])) {
             });
         });
 
-        // ---- LIGHTNING SPARK EFFECT on button clicks & form submits ----
         function createSpark(event, element) {
             const rect = element.getBoundingClientRect();
             const x = event.clientX || rect.left + rect.width / 2;
@@ -597,22 +597,18 @@ if (isset($_POST['import_table'])) {
             btns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     createSpark(e, btn);
-                    // just for visual, doesn't affect submit
                 });
             });
         }
 
-        // attach also on form submit to have bigger lightning animation
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
             form.addEventListener('submit', function(e) {
-                // find submit button inside
                 const submitBtn = form.querySelector('button[type="submit"], button');
                 if (submitBtn) {
                     const fakeEvent = { clientX: submitBtn.getBoundingClientRect().left + submitBtn.offsetWidth/2, clientY: submitBtn.getBoundingClientRect().top + submitBtn.offsetHeight/2 };
                     for(let s=0; s<20; s++) createSpark(fakeEvent, submitBtn);
                 }
-                // optional: add temporary thunder effect
                 const flashDiv = document.createElement('div');
                 flashDiv.style.position = 'fixed';
                 flashDiv.style.top = '0';
@@ -628,7 +624,6 @@ if (isset($_POST['import_table'])) {
             });
         });
 
-        // add keyframe for flash
         const styleSheet = document.createElement("style");
         styleSheet.textContent = `
             @keyframes fadeOutFlash {
@@ -640,7 +635,6 @@ if (isset($_POST['import_table'])) {
 
         attachSparkToButtons();
 
-        // add extra visual: dynamic cursor lightning trail (optional fun)
         let lastX = 0, lastY = 0;
         let trailTimeout;
         document.body.addEventListener('mousemove', (e) => {
@@ -664,7 +658,6 @@ if (isset($_POST['import_table'])) {
             }, 25);
         });
         
-        // dynamic lightning text feedback on input
         const tableInput = document.querySelector('input[name="table"]');
         if(tableInput) {
             tableInput.addEventListener('focus', () => {
