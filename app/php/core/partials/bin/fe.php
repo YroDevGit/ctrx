@@ -185,7 +185,7 @@ if (! function_exists('page')) {
                 $arr[] = $k . "=" . $v;
             }
             $parameter = implode("&", $arr);
-            return $path. "?". $parameter;
+            return $path . "?" . $parameter;
         }
         return $path;
     }
@@ -300,30 +300,33 @@ if (! function_exists('codepath')) {
     }
 }
 
-if(! function_exists("previous_page")){
-    function previous_page(){
-        if(isset($_SESSION['cTrx_pReviOus_paGee_basixs112100514'])){
+if (! function_exists("previous_page")) {
+    function previous_page()
+    {
+        if (isset($_SESSION['cTrx_pReviOus_paGee_basixs112100514'])) {
             $val = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'];
-            return str_starts_with($val, "/") ? $val : "/".$val;
+            return str_starts_with($val, "/") ? $val : "/" . $val;
         }
         return "/";
     }
 }
 
-if(! function_exists("ctrx_save_pages")){
-    function ctrx_save_previous_pages(string $previous_page){
+if (! function_exists("ctrx_save_pages")) {
+    function ctrx_save_previous_pages(string $previous_page)
+    {
         $prevPath = $previous_page;
-        if(previous_page() == $prevPath){
+        if (previous_page() == $prevPath) {
             $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100515'];
-        }else{
+        } else {
             $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
             $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
         }
     }
 }
 
-if(! function_exists("ctrx_force_save_pages")){
-    function ctrx_force_save_previous_pages(string $previous_page){
+if (! function_exists("ctrx_force_save_pages")) {
+    function ctrx_force_save_previous_pages(string $previous_page)
+    {
         $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $previous_page;
     }
 }
@@ -628,6 +631,76 @@ if (! function_exists("autoload_routing")) {
         } else {
             $loadpage = substr($filename, -4) == ".php" ? $filename : $filename . ".php";
             include $fl . $loadpage;
+        }
+    }
+}
+
+if (! function_exists("translation_icon")) {
+    function translation_icon()
+    {
+        $dbname = getenv("database");
+        if ($dbname) {
+            include "views/core/partials/system/translationicon.php";
+        }
+    }
+}
+
+if (! function_exists("current_language")) {
+    function current_language()
+    {
+        return $_SESSION['ctrx_translate'] ?? null;
+    }
+}
+
+if (! function_exists("t")) {
+    function t(string|null $string, bool|string $trim = true)
+    {
+        if ($trim) {
+            if (is_string($trim)) {
+                $string = trim($string ?? "", $trim);
+            } else {
+                $string = trim($string ?? "");
+            }
+        }
+        if (isset($_SESSION['ctrx_translate']) && is_string($_SESSION['ctrx_translate'])) {
+            $lang = $_SESSION['ctrx_translate'];
+            if (! $lang) return $string;
+            try {
+                include_once "app/php/core/partials/backend.php";
+                $dbname = getenv("database");
+                if (!$dbname) {
+                    throw new Exception("database not found @ .env file");
+                }
+                $pdo = pdo($dbname);
+                $param = [$lang, $string];
+                $hasTableTrsnltn = \Classes\DB::query("select * from translations where lang = ? and en = ? and active = 1", $param);
+                if (! $hasTableTrsnltn) {
+                    return $string;
+                }
+                $row = $hasTableTrsnltn[0];
+                return $row['str'] ?? $string;
+            } catch (Exception $e) {
+                throw new Exception($e);
+            }
+        } else {
+            return $string;
+        }
+    }
+}
+
+if (! function_exists("array_as_param")) {
+    function array_as_param(array $array)
+    {
+        $param = $array;
+        if ($array) {
+            $arr = [];
+            foreach ($param as $k => $v) {
+                $arr[] = $k . "=" . $v;
+            }
+            $parameter = implode("&", $arr);
+            return "?" . $parameter;
+        }else{
+            return "";
         }
     }
 }

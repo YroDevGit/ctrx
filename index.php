@@ -26,6 +26,10 @@ $rooth = trim($rooth, "/");
 $b_all = $basixserver . "/" . $req;
 $subdomain = getenv("subdomain") ?? null;
 $subdomain = trim($subdomain, "/");
+$trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
+if(isset($_GET['ctrx_translate'])){
+    $_SESSION['ctrx_translate'] = $trnsltn;
+}
 if ($subdomain) {
     if (str_starts_with($req, $subdomain) && $req) {
         $expl = explode($subdomain, $req);
@@ -41,7 +45,7 @@ define('mainpath', $subdomain ? $rooth . "/" . $subdomain : $rooth);
 define("ctrx_param", strtolower($req));
 
 $system = glob('app/php/core/partials/bin/*.php');
-include "app/php/core/partials/be.php";
+include_once "app/php/core/partials/be.php";
 
 if (getenv("global_db_access") == "yes") {
     include_once "app/php/core/partials/backend.php";
