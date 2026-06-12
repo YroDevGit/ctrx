@@ -91,9 +91,15 @@ try {
             <span style="opacity:0.6;">→</span>
           </a>
           <?php foreach ($data as $key => $val): ?>
+            <?php
+            $name = $val['name'] ?? $val['lang'] ?? "Unknown";
+            if($name == "" || $name == null){
+              $name = $val['lang'] ?? "Unknown";
+            }
+            ?>
             <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=>$val['lang'] ?? ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); padding: 10px 14px; border-radius: 20px; text-decoration: none; color: #f0f0f0; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;">
               <span style="font-size: 1.2rem;"></span>
-              <span style="flex:1;"><?= $val['name'] ?? $val['lang'] ?? "Unknown" ?></span>
+              <span style="flex:1;"><?= $name ?? "Unknown" ?></span>
               <span style="opacity:0.6;">→</span>
             </a>
           <?php endforeach; ?>
