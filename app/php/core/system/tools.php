@@ -22,6 +22,7 @@ function exportAsCSV($table, $columns, $data)
 {
     $output = fopen('php://output', 'w');
     fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    fputcsv($output, [$table]);
     fputcsv($output, $columns);
     foreach ($data as $row) {
         fputcsv($output, $row);
@@ -33,14 +34,13 @@ function exportAsExcel($table, $columns, $data)
 {
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
-
+    $sheet->setCellValue('A1', $table);
     $colIndex = 'A';
     foreach ($columns as $column) {
-        $sheet->setCellValue($colIndex . '1', $column);
+        $sheet->setCellValue($colIndex . '2', $column);
         $colIndex++;
     }
-
-    $rowIndex = 2;
+    $rowIndex = 3;
     foreach ($data as $row) {
         $colIndex = 'A';
         foreach ($columns as $column) {
@@ -50,11 +50,9 @@ function exportAsExcel($table, $columns, $data)
         }
         $rowIndex++;
     }
-
     foreach (range('A', $colIndex) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     ob_start();
     $writer->save('php://output');
@@ -70,7 +68,8 @@ function readCSV($filePath)
         if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
-
+        $tableNameRow = fgetcsv($handle);
+        $table = $tableNameRow ? $tableNameRow[0] : null;
         $headers = fgetcsv($handle);
         if ($headers) {
             while (($row = fgetcsv($handle)) !== false) {
@@ -80,8 +79,9 @@ function readCSV($filePath)
             }
         }
         fclose($handle);
+        return ['table' => $table, 'data' => $data];
     }
-    return $data;
+    return ['table' => null, 'data' => []];
 }
 
 function readExcel($filePath)
@@ -89,33 +89,30 @@ function readExcel($filePath)
     $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
     $worksheet = $spreadsheet->getActiveSheet();
     $rows = $worksheet->toArray();
-
-    if (empty($rows)) return [];
-
-    $headers = array_shift($rows);
+    if (empty($rows)) return ['table' => null, 'data' => []];
+    $table = $rows[0][0] ?? null;
+    $headers = isset($rows[1]) ? $rows[1] : [];
     $data = [];
-    foreach ($rows as $row) {
+    for ($i = 2; $i < count($rows); $i++) {
+        $row = $rows[$i];
         if (count($row) == count($headers)) {
             $data[] = array_combine($headers, $row);
         }
     }
-    return $data;
+    return ['table' => $table, 'data' => $data];
 }
 
 if (isset($_POST['export_table'])) {
     try {
         $table = $_POST['table'] ?? "";
         $export_format = $_POST['export_format'] ?? 'json';
-
         if ($table == "") {
             $message = "❌ Please select a table.";
         } else {
             $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
             $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
             $stmt = $pdo->query("SELECT * FROM `$table`");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
             switch ($export_format) {
                 case 'csv':
                     header('Content-Type: text/csv; charset=utf-8');
@@ -124,7 +121,6 @@ if (isset($_POST['export_table'])) {
                     header('Expires: 0');
                     exportAsCSV($table, $columns, $data);
                     break;
-
                 case 'excel':
                     if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
                         throw new Exception("PhpSpreadsheet library not installed. Please run: composer require phpoffice/phpspreadsheet");
@@ -135,7 +131,6 @@ if (isset($_POST['export_table'])) {
                     header('Expires: 0');
                     exportAsExcel($table, $columns, $data);
                     break;
-
                 case 'json':
                 default:
                     $json = [
@@ -165,59 +160,52 @@ if (isset($_POST['import_table'])) {
             $fileType = $_POST['file_type'] ?? 'json';
             $fileTmpPath = $_FILES['import_file']['tmp_name'];
             $fileName = $_FILES['import_file']['name'];
-
             $importedData = null;
             $table = null;
-
             switch ($fileType) {
                 case 'csv':
-                    $rows = readCSV($fileTmpPath);
-                    if (empty($rows)) {
+                    $result = readCSV($fileTmpPath);
+                    if (empty($result['data'])) {
                         throw new Exception("CSV file is empty or invalid.");
                     }
-                    $table = $_POST['table_name'] ?? pathinfo($fileName, PATHINFO_FILENAME);
-                    $importedData = $rows;
+                    $table = $result['table'];
+                    $importedData = $result['data'];
                     break;
-
                 case 'excel':
                     if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
                         throw new Exception("PhpSpreadsheet library not installed. Please run: composer require phpoffice/phpspreadsheet");
                     }
-                    $rows = readExcel($fileTmpPath);
-                    if (empty($rows)) {
+                    $result = readExcel($fileTmpPath);
+                    if (empty($result['data'])) {
                         throw new Exception("Excel file is empty or invalid.");
                     }
-                    $table = $_POST['table_name'] ?? pathinfo($fileName, PATHINFO_FILENAME);
-                    $importedData = $rows;
+                    $table = $result['table'];
+                    $importedData = $result['data'];
                     break;
-
                 case 'json':
                 default:
                     $jsonContent = file_get_contents($fileTmpPath);
                     $data = json_decode($jsonContent, true);
-
                     if (!$data || !isset($data['data'])) {
                         throw new Exception("Invalid JSON format. Expected { table: 'name', data: [...] }");
                     }
-                    $table = $data['table'] ?? ($_POST['table_name'] ?? pathinfo($fileName, PATHINFO_FILENAME));
+                    $table = $data['table'] ?? null;
                     $importedData = $data['data'];
                     break;
             }
-
             if ($importedData === null || empty($importedData)) {
                 throw new Exception("No data found in file.");
             }
-
+            if (empty($table)) {
+                $table = $_POST['table_name'] ?? pathinfo($fileName, PATHINFO_FILENAME);
+            }
             $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
             if (empty($table)) {
                 throw new Exception("Invalid table name.");
             }
-
             $replaceAll = isset($_POST['replace_all']);
-
             $stmt = $pdo->query("SHOW TABLES LIKE '$table'");
             $tableExists = $stmt->rowCount() > 0;
-
             if (!$tableExists) {
                 $firstRow = $importedData[0];
                 $columns = array_keys($firstRow);
@@ -230,32 +218,25 @@ if (isset($_POST['import_table'])) {
                 $pdo->exec($sql);
                 $message = "✅ Table '{$table}' created automatically. ";
             }
-
             if ($replaceAll && $tableExists) {
                 $pdo->exec("TRUNCATE TABLE `$table`");
             }
-
             $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
             $dbColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
             $inserted = 0;
             foreach ($importedData as $row) {
                 $filteredRow = [];
                 foreach ($dbColumns as $col) {
                     $filteredRow[$col] = $row[$col] ?? null;
                 }
-
                 $columns = array_keys($filteredRow);
                 $placeholders = ":" . implode(", :", $columns);
-
                 $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
                         VALUES ($placeholders)";
-
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($filteredRow);
                 $inserted++;
             }
-
             $action = $replaceAll ? "replaced" : "appended";
             $message .= "✅ {$inserted} records {$action} successfully to '{$table}'";
         }
@@ -288,7 +269,6 @@ if (isset($_POST['import_table'])) {
             overflow-x: hidden;
         }
 
-        /* Lightning bolts effect - animated background */
         body::before {
             content: "";
             position: fixed;
@@ -305,7 +285,6 @@ if (isset($_POST['import_table'])) {
             z-index: 0;
         }
 
-        /* animated lightning streak */
         .lightning-streak {
             position: fixed;
             top: 0;
@@ -369,7 +348,6 @@ if (isset($_POST['import_table'])) {
             }
         }
 
-        /* main container - glassmorphic + neon */
         .container {
             max-width: 820px;
             margin: 0 auto;
@@ -384,7 +362,6 @@ if (isset($_POST['import_table'])) {
             z-index: 2;
         }
 
-        /* neon pulse around container */
         .container::after {
             content: '';
             position: absolute;
@@ -456,7 +433,6 @@ if (isset($_POST['import_table'])) {
             }
         }
 
-        /* Tabs - electric style */
         .tabs {
             display: flex;
             margin-bottom: 2rem;
@@ -498,7 +474,6 @@ if (isset($_POST['import_table'])) {
             transform: scale(0.98);
         }
 
-        /* sections */
         .section {
             display: none;
             animation: fadeSlide 0.4s ease;
@@ -520,7 +495,6 @@ if (isset($_POST['import_table'])) {
             }
         }
 
-        /* form elements */
         label {
             display: block;
             margin-top: 1.2rem;
@@ -673,7 +647,6 @@ if (isset($_POST['import_table'])) {
             margin-right: 6px;
         }
 
-        /* custom file input enhancement */
         input[type="file"] {
             padding: 0.7rem;
             cursor: pointer;
@@ -711,7 +684,6 @@ if (isset($_POST['import_table'])) {
             margin-top: 0.5rem;
         }
 
-        /* responsive */
         @media (max-width: 550px) {
             body {
                 padding: 1rem;
@@ -736,7 +708,6 @@ if (isset($_POST['import_table'])) {
             }
         }
 
-        /* animated floating particles */
         .spark {
             position: fixed;
             width: 3px;
@@ -795,7 +766,6 @@ if (isset($_POST['import_table'])) {
             <div class="tab" data-tab="1">📥 IMPORT / SURGE</div>
         </div>
 
-        <!-- EXPORT SECTION -->
         <div class="section active" id="exportSection">
             <form method="POST" id="exportForm">
                 <label>🗄️ SELECT TABLE TO EXPORT</label>
@@ -834,7 +804,6 @@ if (isset($_POST['import_table'])) {
             <div class="inline-hint">➤ Lightning export • Select a table and download in your chosen format</div>
         </div>
 
-        <!-- IMPORT SECTION -->
         <div class="section" id="importSection">
             <form method="POST" enctype="multipart/form-data" id="importForm">
                 <label>📂 FILE TYPE</label>
@@ -856,8 +825,8 @@ if (isset($_POST['import_table'])) {
                 <label>📂 SELECT FILE</label>
                 <input type="file" name="import_file" accept=".json,.csv,.xlsx" required>
 
-                <label>🏷️ TABLE NAME (optional for JSON with 'table' field)</label>
-                <input type="text" name="table_name" placeholder="Leave empty to use filename or JSON's 'table' value">
+                <label>🏷️ TABLE NAME (optional if file contains table name in row 1 column A)</label>
+                <input type="text" name="table_name" placeholder="Leave empty to auto-detect from file">
 
                 <div class="checkbox">
                     <input type="checkbox" name="replace_all" id="replace_all">
@@ -868,7 +837,7 @@ if (isset($_POST['import_table'])) {
                     <span>🔥 IMPORT & STRIKE</span>
                 </button>
             </form>
-            <div class="inline-hint">Supports JSON (with 'data' array), CSV (first row as headers), Excel XLSX. Auto-creates table if needed.</div>
+            <div class="inline-hint">CSV/Excel: Row1 ColA = table name, Row2 = headers, then data. JSON: requires 'table' and 'data' fields.</div>
         </div>
         <div style="margin-top: 1rem; font-size:16; text-align:center;"><a style="text-decoration:none;color:#ccb27c;" href="<?= $backpage ?? '/' ?>">← I'm done</a></div>
         <footer>⚡ CTRX THUNDER EDGE • DATABASE FLOW</footer>
