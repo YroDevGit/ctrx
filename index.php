@@ -83,6 +83,17 @@ if(str_starts_with($req, "ctrxtools/db")){
     exit;
 }
 
+ /**
+ * Ctrx Translation tools for import export
+ */
+if(str_starts_with($req, "ctrxtools/translations")){
+    extract([
+        "backpage" => $_GET['backpage'] ?? previous_page()
+    ]);
+    include "app/config/translations.php";
+    exit;
+}
+
 /**
  * This is backend endpoint
  */
@@ -108,6 +119,7 @@ if (str_starts_with($req, "api/")) {
         foreach ($beconfig as $k => $v) {
             if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
             if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
+            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
             include $v;
         }
 
