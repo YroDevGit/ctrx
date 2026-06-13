@@ -111,7 +111,7 @@ try {
       <?php endif; ?>
     </div>
     <div style="border-top: 1px solid rgba(255,255,255,0.08); padding: 8px 16px; font-size: 0.6rem; text-align: center; color: rgba(255,255,255,0.45); background: rgba(0,0,0,0.3);">
-      CodeTazer - By Yro <?= date('Y') ?>
+      CTRX Translations - By <a href="https://www.tiktok.com/@codebasixs" target="_blank" style="text-decoration:none;">CodeYro</a>
     </div>
   </div>
 </div>
