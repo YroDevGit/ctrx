@@ -717,12 +717,12 @@ if (! function_exists("t")) {
                         $finalName = strtoupper($rowstr);
                     } elseif ($string === strtolower($string)) {
                         $finalName = strtolower($rowstr);
-                    } elseif ($string === ucwords($rowstr)) {
+                    } elseif ($string === ucwords($string)) {
                         $finalName = ucwords($rowstr);
-                    } elseif ($string === ucfirst($rowstr)) {
+                    } elseif ($string === ucfirst($string)) {
                         $finalName = ucfirst($rowstr);
                     } else {
-                        $finalName = $rowstr;
+                        $finalName = $row['str'] ?? '';
                     }
                 }
                 return $finalName ?? $string;
