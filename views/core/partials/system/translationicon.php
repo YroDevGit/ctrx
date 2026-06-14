@@ -105,8 +105,8 @@ try {
           <?php endforeach; ?>
         </div>
       <?php else: ?>
-        <div>
-          <?= $emessage ?>
+        <div style="color:red;">
+          <?= "No languages found, please contact admin." ?>
         </div>
       <?php endif; ?>
     </div>

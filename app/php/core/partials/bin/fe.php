@@ -687,7 +687,7 @@ if (! function_exists("t")) {
                 }
                 $pdo = pdo($dbname);
                 $param = [$lang, $string];
-                $hasTableTrsnltn = \Classes\DB::query("select * from translations where lang = ? and en = ? and active = 1", $param);
+                $hasTableTrsnltn = \Classes\DB::query("select * from translations where lang = ? and en = ? and active = 1 order by updated_at desc limit 1", $param);
                 if (! $hasTableTrsnltn) {
                     return $string;
                 }
@@ -727,7 +727,7 @@ if (! function_exists("t")) {
                 }
                 return $finalName ?? $string;
             } catch (Exception $e) {
-                throw new Exception($e);
+                return $string;
             }
         } else {
             return $string;

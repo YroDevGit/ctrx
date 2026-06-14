@@ -268,10 +268,6 @@ if (! function_exists("add_sql_log")) {
         $dir = $logConfig[$type]["dir"];
         $prefix = $logConfig[$type]["prefix"];
 
-        if (getenv($env) !== "true") {
-            return false;
-        }
-
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
