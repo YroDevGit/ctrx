@@ -667,7 +667,7 @@ if (! function_exists("current_language")) {
 }
 
 if (! function_exists("t")) {
-    function t(string|null $string, bool|string $trim = true)
+    function t(string|null $string, string|null $transform = null , bool|string $trim = true)
     {
         if ($trim) {
             if (is_string($trim)) {
@@ -691,8 +691,41 @@ if (! function_exists("t")) {
                 if (! $hasTableTrsnltn) {
                     return $string;
                 }
+
                 $row = $hasTableTrsnltn[0];
-                return $row['str'] ?? $string;
+                $rowstr = strtolower($row['str'] ?? '');
+                
+                $finalName = null;
+                
+                if($transform && is_string($transform)){
+                    if($transform == "uc"){
+                        $finalName = ucfirst($rowstr ?? '');
+                    }
+                    else if($transform == "l"){
+                        $finalName = $rowstr;
+                    }
+                    else if($transform == "u"){
+                        $finalName = strtoupper($rowstr ?? '');
+                    }
+                    else if($transform == "uw"){
+                        $finalName = ucwords($rowstr ?? '');
+                    }else{
+                        $finalName = $rowstr;
+                    }
+                }else{
+                    if ($string === strtoupper($string)) {
+                        $finalName = strtoupper($rowstr);
+                    } elseif ($string === strtolower($string)) {
+                        $finalName = strtolower($rowstr);
+                    } elseif ($string === ucwords($rowstr)) {
+                        $finalName = ucwords($rowstr);
+                    } elseif ($string === ucfirst($rowstr)) {
+                        $finalName = ucfirst($rowstr);
+                    } else {
+                        $finalName = $rowstr;
+                    }
+                }
+                return $finalName ?? $string;
             } catch (Exception $e) {
                 throw new Exception($e);
             }
