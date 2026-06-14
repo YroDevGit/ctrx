@@ -25,7 +25,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `translations` (
     PRIMARY KEY (`id`)
 )");
 
-$pdo->exec("ALTER TABLE `translation` ADD COLUMN IF NOT EXISTS `active` INT DEFAULT 1");
+$pdo->exec("ALTER TABLE `translations` ADD COLUMN IF NOT EXISTS `active` INT DEFAULT 1");
 
 function exportAsCSV($langCode, $langName, $data)
 {
