@@ -636,10 +636,24 @@ if (! function_exists("autoload_routing")) {
 }
 
 if (! function_exists("translation_icon")) {
-    function translation_icon()
+    function translation_icon(array|string|null $config = null)
     {
         $dbname = getenv("database");
         if ($dbname) {
+            if ($config) {
+                if (is_string($config)) {
+                    extract([
+                        "element" => $config
+                    ]);
+                }
+                if (is_array($config)) {
+                    extract([
+                        "element" => $config['element'] ?? null,
+                        "bg" => $config['bg'] ?? null,
+                        "color" => $config['color'] ?? null
+                    ]);
+                }
+            }
             include "views/core/partials/system/translationicon.php";
         }
     }
@@ -699,7 +713,7 @@ if (! function_exists("array_as_param")) {
             }
             $parameter = implode("&", $arr);
             return "?" . $parameter;
-        }else{
+        } else {
             return "";
         }
     }

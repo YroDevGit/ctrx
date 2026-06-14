@@ -74,6 +74,9 @@ if ($route == "run" || $route == "server") {
     $portExp = explode(":", $runner);
     $h = $portExp[0];
     $p = $portExp[1];
+    if (file_exists("exec.php")) {
+        include "exec.php";
+    }
 
     if ($host == null) {
         echo "❌ ERROR: 'rootpath' has no value (.env file)\n";
@@ -557,6 +560,66 @@ if ($route == "update") {
             exit(1);
         }
     }
+}
+else if($route == "author"){
+    echo "\n";
+    $tyronename = "CTRX by CodeYRO";
+    echo "\033[1;33m$tyronename\033[0m\n";
+    echo "Light, Fast, Easy and Full of features\n";
+    echo "Made by Filipino brilliance\n\n";
+    $tyroneEmzname = "Tyrone Limen Malocon 2025";
+    echo "\033[32m$tyroneEmzname\033[0m\n";
+    exit;
+}
+else if ($route == "download:table") {
+    include "app/php/core/partials/envloader.php";
+    $dbname = getenv("database");
+    if (!$dbname) {
+        echo "❌ No Database found @ .env\n\n";
+        exit;
+    }
+
+    if ($filename == "") {
+        echo "❌ Please input table name.\n\n";
+        exit(1);
+    }
+
+    $table = $filename;
+
+    include_once "app/php/core/partials/be.php";
+    include "app/php/core/partials/backend.php";
+    $pdo = pdo($dbname);
+
+    $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
+    $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $stmt = $pdo->query("SELECT * FROM `$table`");
+    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $json = [
+        "table"   => $table,
+        "columns" => $columns,
+        "data"    => $data,
+    ];
+
+    $filename = $table . "_ctrx.json";
+
+    if (file_exists($filename)) {
+        if (!unlink($filename)) {
+            echo "❌ Failed to delete existing file: {$filename}\n";
+            exit(1);
+        }
+    }
+
+    if (file_put_contents(
+        $filename,
+        json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+    ) === false) {
+        echo "❌ Failed to export table.\n";
+        exit(1);
+    }
+
+    echo "✅ Exported to {$filename}\n";
 } else if ($route == "db:import" || $route == "db:migrate") {
     include "app/php/core/partials/envloader.php";
     $dbname = getenv("database");
