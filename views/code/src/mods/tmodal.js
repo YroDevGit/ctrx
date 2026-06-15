@@ -28,7 +28,7 @@ class TModal {
             opacity: 1;
         }
 
-        .errorClass{color:red}
+        .error_text{color:red}
         .tmodal{
             width: 95%;
             max-width: 550px;
@@ -143,7 +143,7 @@ class TModal {
         }
     }
 
-    static resetErrorStr(errorClass = "errorClass"){
+    static resetErrorStr(errorClass = "error_text"){
         let elm = undefined;
         if(errorClass.startsWith(".")){
             elm = document.querySelectorAll(errorClass);
@@ -378,7 +378,7 @@ class TModal {
             }
 
             let err = document.createElement("div");
-            err.className ="errorClass";
+            err.className ="error_text";
             err.setAttribute("id", `err_${input.id}`);
             wrapper.appendChild(input);
             wrapper.appendChild(err);

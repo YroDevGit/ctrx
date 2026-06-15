@@ -456,7 +456,7 @@ class CtrClass {
         }
     }
 
-    resetErrorStr(errorClass = "errorClass") {
+    resetErrorStr(errorClass = "error_text") {
         let elm = undefined;
         if (errorClass.startsWith(".")) {
             elm = document.querySelectorAll(errorClass);
