@@ -84,8 +84,14 @@ try {
 
     <div style="padding: 16px 18px 20px; max-height: 360px; overflow-y: auto; background: rgba(10, 10, 14, 0.5);">
       <?php if ($success): ?>
+        <?php
+          $backg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
+          if(! isset($_SESSION['ctrx_translate']) || ! $_SESSION['ctrx_translate']){
+            $backg_col = " background: #efefb2; color: black;";
+          }
+          ?>
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=> ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); padding: 10px 14px; border-radius: 20px; text-decoration: none; color: #f0f0f0; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;">
+          <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=> ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?=$backg_col?>">
             <span style="font-size: 1.2rem;"></span>
             <span style="flex:1;">Default</span>
             <span style="opacity:0.6;">→</span>
@@ -93,11 +99,18 @@ try {
           <?php foreach ($data as $key => $val): ?>
             <?php
             $name = $val['name'] ?? $val['lang'] ?? "Unknown";
+            $lang = $val['lang'] ?? null;
+              $bg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
+              if($lang && is_string($lang) && isset($_SESSION['ctrx_translate'])){
+                if($lang == $_SESSION['ctrx_translate']){
+                  $bg_col = " background: #efefb2; color: black;";
+                }
+              }
             if($name == "" || $name == null){
               $name = $val['lang'] ?? "Unknown";
             }
             ?>
-            <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=>$val['lang'] ?? ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); padding: 10px 14px; border-radius: 20px; text-decoration: none; color: #f0f0f0; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;">
+            <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=>$val['lang'] ?? ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?=$bg_col?>">
               <span style="font-size: 1.2rem;"></span>
               <span style="flex:1;"><?= $name ?? "Unknown" ?></span>
               <span style="opacity:0.6;">→</span>
@@ -106,7 +119,7 @@ try {
         </div>
       <?php else: ?>
         <div style="color:red;">
-          <?= "No languages found, please contact admin." ?>
+          <?= "No languages found, please contact admin" ?>
         </div>
       <?php endif; ?>
     </div>
@@ -450,11 +463,9 @@ try {
     var links = document.querySelectorAll('.transItem');
     links.forEach(function(link) {
       link.addEventListener('mouseenter', function() {
-        this.style.background = 'rgba(255,255,255,0.22)';
         this.style.transform = 'translateX(3px)';
       });
       link.addEventListener('mouseleave', function() {
-        this.style.background = 'rgba(255,255,255,0.1)';
         this.style.transform = 'translateX(0)';
       });
     });
