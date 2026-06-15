@@ -139,12 +139,12 @@ const configure = {
 
         if (typeof global?.error === "function" || typeof option?.error === "function") {
             merged.error = (err) => {
-                if(! option.error){
+                if (!option.error) {
                     errorHandler(err, err.message ?? "Error Occur, please check console.");
-                }else{
+                } else {
                     if (typeof global?.error === "function") global.error(err);
                     if (typeof option?.error === "function") option.error(err);
-                }                
+                }
             };
         }
         return merged;
@@ -218,7 +218,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         });
     },
 
-    ctrql(option = { ...opt, method: "POST", param: undefined, action: undefined, where: undefined, table: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined}) {
+    ctrql(option = { ...opt, method: "POST", param: undefined, action: undefined, where: undefined, table: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined }) {
         option.url = "ctrx_x_ctrql_request_authorized_ql";
         let par = option?.param ?? option?.where ?? option.request ?? option.data ?? undefined;
         let newpar = new Object();
@@ -249,36 +249,103 @@ const tyrax = { // tyrux default config :: CodeTazeR
         tyrux(configure._mergeOptions(option, this));
     },
 
-    async ctrsync(options = {...opt, dataOnly : false, errorType: "console"}){
-        let result = await new Promise((resolve, reject)=>{
-            let errs = options.error ? {error: (err)=>reject(err)} : {error: (err)=> errorHandler(err, err.message ?? "There is an error, please check your console.")};
+    async ctrsync(options = { ...opt, dataOnly: false, errorType: "console" }) {
+        let result = await new Promise((resolve, reject) => {
+            let errs = options.error ? { error: (err) => reject(err) } : { error: (err) => errorHandler(err, err.message ?? "There is an error, please check your console.") };
             this.ctrql({
                 ...options,
-                response: (send)=> resolve(send),
+                response: (send) => resolve(send),
                 ...errs
             });
         });
 
-        if(options.dataOnly){
-            if(result.code){
-                if(result.code == 200){
-                   return result?.data ?? []; 
-                }else{
-                    if(options.errorType == "console"){
+        if (options.response && typeof options.response == "function") {
+            if (options.dataOnly) {
+                if (result.code) {
+                    if (result.code == 200) {
+                        options.response(result.data ?? []);
+                    } else {
+                        options.response([]);
+                    }
+                }
+            } else {
+                options.response(result);
+            }
+            return;
+        }
+
+        if (options.dataOnly) {
+            if (result.code) {
+                if (result.code == 200) {
+                    return result?.data ?? [];
+                } else {
+                    if (options.errorType == "console") {
                         console.error(result);
                         return;
-                    }else{
+                    } else {
                         alert(result.message ?? "There is an error, please check console");
                         console.error(result);
                         return;
                     }
                 }
-            }else{
+            } else {
                 console.error(result);
                 return;
             }
         }
         return result;
+    },
+
+    async insert(options = { table: undefined, data: undefined, response: undefined }) {
+        return await this.ctrsync({
+            table: options.table,
+            action: "insert",
+            data: options.data,
+            response: options.response
+        });
+    },
+    async update(options = { table: undefined, where: undefined, update: undefined, response: undefined }) {
+        return await this.ctrsync({
+            table: options.table,
+            action: "update",
+            update: options.update,
+            where: options.where,
+            response: options.response
+        });
+    },
+    async delete(options = { table: undefined, where: undefined, response: undefined }) {
+        return await this.ctrsync({
+            table: options.table,
+            action: "delete",
+            where: options.where,
+            response: options.response
+        });
+    },
+    async findOne(options = { table: undefined, where: undefined, dataOnly: false, response: undefined }) {
+        return await this.ctrsync({
+            action: "findOne",
+            table: options.table,
+            where: options.where ?? {},
+            dataOnly: options.dataOnly,
+            response: options.response
+        });
+    },
+    async select(options = { table: undefined, where: undefined, dataOnly: false, response: undefined }) {
+        return await this.ctrsync({
+            action: "select",
+            table: options.table,
+            where: options.where ?? {},
+            dataOnly: options.dataOnly,
+            response: options.response
+        });
+    },
+    async query(options = { query: undefined, dataOnly: false, response: undefined }) {
+        return await this.ctrsync({
+            action: "query",
+            query: options.query,
+            dataOnly: options.dataOnly,
+            response: options.response
+        });
     }
 };
 
