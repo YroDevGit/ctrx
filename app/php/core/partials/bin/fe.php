@@ -66,6 +66,14 @@ if (! function_exists("env_in_prod")) {
     }
 }
 
+if(! function_exists("errorStrId")){
+    function errorStrId(string|null $based = null, string $errorStr = "err_"){
+        $r = $errorStr;
+        if(! $based) return $r;
+        return $r.$based;
+    }
+}
+
 if (!function_exists('dd')) {
     function dd(...$vars)
     {

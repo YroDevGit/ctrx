@@ -352,10 +352,10 @@ class CtrClass {
             }
         }
     }
-    
-    base_url(path = null){
-        if(path){
-            return path.startsWith("/") ? window.location.origin + path : window.location.origin +"/"+ path;
+
+    base_url(path = null) {
+        if (path) {
+            return path.startsWith("/") ? window.location.origin + path : window.location.origin + "/" + path;
         }
         return window.location.origin;
     }
@@ -426,6 +426,46 @@ class CtrClass {
 
     child(selector) {
         return document.querySelector(selector).innerHTML;
+    }
+
+    parentAndChild(selector) {
+        return document.querySelector(selector).outerHTML;
+    }
+
+    errStr(str = null, errorString = "err_") {
+        if (!str) return errorString;
+        if (typeof str == "string") {
+            return `${errorString}${str}`;
+        }
+    }
+    errStrId(str = null, errorString = "err_") {
+        if (!str) return `#${errorString}`;
+        if (typeof str == "string") {
+            return `#${errorString}${str}`;
+        }
+    }
+
+    errStrSet(str = null, value, errorString = "err_") {
+        if (str && typeof str == "string") {
+            if (str.startsWith("#")) {
+                document.querySelector(`${str}`).innerHTML = value;
+            } else {
+                document.querySelector(`#${errorString}${str}`).innerHTML = value;
+            }
+
+        }
+    }
+
+    resetErrorStr(errorClass = "errorClass") {
+        let elm = undefined;
+        if (errorClass.startsWith(".")) {
+            elm = document.querySelectorAll(errorClass);
+        } else {
+            elm = document.querySelectorAll(`.${errorClass}`);
+        }
+        elm.forEach(element => {
+            element.innerHTML = "";
+        });
     }
 }
 

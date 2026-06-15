@@ -28,7 +28,7 @@ class TModal {
             opacity: 1;
         }
 
-        .__err{color:red}
+        .errorClass{color:red}
         .tmodal{
             width: 95%;
             max-width: 550px;
@@ -127,6 +127,32 @@ class TModal {
         `;
 
         document.head.appendChild(style);
+    }
+
+    static errStr(str = null, errorString = "err_"){
+        if(! str) return errorString;
+        if(typeof str == "string"){
+            return `${errorString}${str}`;
+        }
+    }
+
+    static errStrId(str = null, errorString = "err_"){
+        if(! str) return `#${errorString}`;
+        if(typeof str == "string"){
+            return `#${errorString}${str}`;
+        }
+    }
+
+    static resetErrorStr(errorClass = "errorClass"){
+        let elm = undefined;
+        if(errorClass.startsWith(".")){
+            elm = document.querySelectorAll(errorClass);
+        }else{
+            elm = document.querySelectorAll(`.${errorClass}`);
+        }
+        elm.forEach(element => {
+            element.innerHTML = "";
+        });
     }
 
     static init(config = {}) {
@@ -352,8 +378,8 @@ class TModal {
             }
 
             let err = document.createElement("div");
-            err.className ="__err";
-            err.setAttribute("id", `_${input.id}`);
+            err.className ="errorClass";
+            err.setAttribute("id", `err_${input.id}`);
             wrapper.appendChild(input);
             wrapper.appendChild(err);
             
