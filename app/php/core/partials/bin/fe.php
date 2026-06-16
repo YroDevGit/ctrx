@@ -402,7 +402,7 @@ if (! function_exists('href')) {
 }
 
 if (! function_exists('redirect')) {
-    function redirect(string $path = "", string $type = "page", int $time = 0)
+    function redirect(string $path = "", string $type = "page", int $time = 0, $exit = true)
     {
         if ($path !== "/") {
             if (! str_starts_with($path, "/")) {
@@ -411,6 +411,9 @@ if (! function_exists('redirect')) {
         }
         if ($type == "page") {
             header("refresh: $time; url=" . $path);
+        }
+        if($exit){
+            exit;
         }
     }
 }
