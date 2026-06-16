@@ -34,6 +34,10 @@ class CtrStorage
         return self::relativepath();
     }
 
+    public static function create_storage(){
+        
+    }
+
     public static function storage_path($fullpath = true)
     {
         return self::storagepath($fullpath);
@@ -58,7 +62,10 @@ class CtrStorage
         return "views\\core\\partials\\storage\\";
     }
 
-    public static function get_last_uploaded(){
+    public static function get_last_uploaded($single = true){
+        if($single){
+            return self::$last_uploaded_files[0] ?? null;
+        }
         return self::$last_uploaded_files;
     }
 
@@ -141,7 +148,7 @@ class CtrStorage
         return $ret;
     }
 
-    public static function last_single_uploaded_fp(bool $refresh = true): array|null
+    public static function last_single_uploaded_fp(bool $refresh = true): array|null|string
     {
         $ret = self::$fulluploads[0] ?? null;
         if ($refresh) {

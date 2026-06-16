@@ -224,21 +224,47 @@ if (isset($_POST['import_table'])) {
             $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
             $dbColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $inserted = 0;
+            $updated = 0;
             foreach ($importedData as $row) {
-                $filteredRow = [];
-                foreach ($dbColumns as $col) {
-                    $filteredRow[$col] = $row[$col] ?? null;
+                if (isset($row['id']) && $row['id'] !== '' && $row['id'] !== null) {
+                    $setClauses = [];
+                    $params = ['id' => $row['id']];
+
+                    foreach ($dbColumns as $col) {
+                        if ($col === 'id') continue;
+                        if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
+                            $setClauses[] = "`$col` = :$col";
+                            $params[$col] = $row[$col];
+                        }
+                    }
+
+                    if (!empty($setClauses)) {
+                        $sql = "UPDATE `$table` SET " . implode(", ", $setClauses) . " WHERE `id` = :id";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute($params);
+                        $updated++;
+                    }
+                } else {
+                    $filteredRow = [];
+                    foreach ($dbColumns as $col) {
+                        if ($col === 'id') continue;
+                        $kaw = $row[$col] == "" || $row[$col] == null ? null : $row[$col];
+                        if (! $kaw) continue;
+                        $filteredRow[$col] = $kaw;
+                    }
+                    $columns = array_keys($filteredRow);
+                    if (!empty($columns)) {
+                        $placeholders = ":" . implode(", :", $columns);
+                        $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
+                                VALUES ($placeholders)";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute($filteredRow);
+                        $inserted++;
+                    }
                 }
-                $columns = array_keys($filteredRow);
-                $placeholders = ":" . implode(", :", $columns);
-                $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
-                        VALUES ($placeholders)";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($filteredRow);
-                $inserted++;
             }
             $action = $replaceAll ? "replaced" : "appended";
-            $message .= "✅ {$inserted} records {$action} successfully to '{$table}'";
+            $message .= "✅ {$inserted} new records inserted, {$updated} records updated successfully in '{$table}'";
         }
     } catch (Throwable $e) {
         $message = "❌ " . $e->getMessage();

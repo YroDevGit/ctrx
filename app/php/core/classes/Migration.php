@@ -5,6 +5,7 @@ namespace Classes;
 use Classes\DB;
 use PDOException;
 
+include "app/php/core/partials/bin/migration_const.php";
 class Migration
 {
 
@@ -15,7 +16,6 @@ class Migration
     private static $lastQuery = "";
     private static $varcharDefaultLenght = 50;
     private static $intDefaultLenght = 11;
-
 
     public static function setVarcharLength(int $length)
     {
@@ -70,8 +70,8 @@ class Migration
         }
 
         if ($timestamp) {
-            $columns['created_at'] = "datetime";
-            $columns['updated_at'] = "datetime";
+            $columns['created_at'] = "DATETIME DEFAULT CURRENT_TIMESTAMP";
+            $columns['updated_at'] = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP";
         }
         if ($active) {
             $columns['active'] = ["int" => 1, "default" => 1];

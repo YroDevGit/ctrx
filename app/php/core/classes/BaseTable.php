@@ -551,8 +551,15 @@ class BaseTable
         return $rwCount;
     }
 
-    public static function delete(array $where)
+    public static function delete(array|string|int $whereCondition)
     {
+        $where = [];
+        if(is_string($whereCondition) || is_string($whereCondition)){
+            $where = ["id"=> $whereCondition];
+        }
+        if(is_array($whereCondition)){
+            $where = $whereCondition;
+        }
         $self = static::instance();
         $whereClause = implode(' AND ', array_map(fn($col) => "`$col` = :$col", array_keys($where)));
         $sql = "DELETE FROM `{$self->table}` WHERE $whereClause";

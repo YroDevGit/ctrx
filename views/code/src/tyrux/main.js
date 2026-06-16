@@ -313,7 +313,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async delete(options = { table: undefined, where: undefined, response: undefined }) {
+    async remove(options = { table: undefined, where: undefined, response: undefined }) {
         return await this.ctrsync({
             table: options.table,
             action: "delete",
