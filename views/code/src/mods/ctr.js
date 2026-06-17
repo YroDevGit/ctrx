@@ -380,11 +380,33 @@ class CtrClass {
         return dataObject;
     }
 
-    get_selected(seletor) {
+    open_window(url, target = null){
+        if(! target){
+            window.location.href = url;
+        }else{
+            if(typeof target == "string"){
+                window.open(url, target);
+            }
+        }
+        
+    }
+
+    get_selected(seletor, type = null) {
         const select = document.querySelector(seletor);
         const value = select.value ?? null;
         const label = select?.options[select.selectedIndex]?.text ?? null;
-        return { value: value, label: label };
+        if(type == null){
+            return { value: value, label: label };
+        }
+        if(typeof type == "string"){
+            if(type == "value"){
+                return value;
+            }
+            if(type == "label"){
+                return label;
+            }
+            return null;
+        }
     }
 
     form_object(selector) {
