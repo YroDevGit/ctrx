@@ -484,11 +484,21 @@ if (! function_exists("gval")) {
         $ext = "ctrx_gval_forGlobalValue_yro";
         if (! $val) {
             if (isset($_COOKIE[$ext . "_" . $key])) {
-                return $_COOKIE[$ext . "_" . $key];
+                $diy = $_COOKIE[$ext . "_" . $key];
+                $dec = json_decode($diy);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return $dec ?? null;
+                }else{
+                    return $diy ?? null;
+                }
             }
             return null;
         }
-        $_COOKIE[$ext . "_" . $key] = $val;
+        if(is_array($val)){
+            $_COOKIE[$ext . "_" . $key] = json_encode($val);
+        }else{
+            $_COOKIE[$ext . "_" . $key] = $val;
+        }
         return $val;
     }
 }
