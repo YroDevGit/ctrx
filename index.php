@@ -94,6 +94,17 @@ if(str_starts_with($req, "ctrxtools/translations")){
     exit;
 }
 
+ /**
+ * Ctrx Game for devs
+ */
+if(str_starts_with($req, "ctrxtools/game")){
+    extract([
+        "backpage" => $_GET['backpage'] ?? previous_page()
+    ]);
+    include "app/php/core/system/ctrxgame.php";
+    exit;
+}
+
 /**
  * This is backend endpoint
  */
