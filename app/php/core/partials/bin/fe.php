@@ -66,11 +66,12 @@ if (! function_exists("env_in_prod")) {
     }
 }
 
-if(! function_exists("errorStrId")){
-    function errorStrId(string|null $based = null, string $errorStr = "err_"){
+if (! function_exists("errorStrId")) {
+    function errorStrId(string|null $based = null, string $errorStr = "err_")
+    {
         $r = $errorStr;
-        if(! $based) return $r;
-        return $r.$based;
+        if (! $based) return $r;
+        return $r . $based;
     }
 }
 
@@ -412,7 +413,7 @@ if (! function_exists('redirect')) {
         if ($type == "page") {
             header("refresh: $time; url=" . $path);
         }
-        if($exit){
+        if ($exit) {
             exit;
         }
     }
@@ -474,6 +475,21 @@ if (! function_exists("include_page")) {
         } else {
             throw new Exception("Include page $page doesn't exist.! Please check views/pages/$page");
         }
+    }
+}
+
+if (! function_exists("gval")) {
+    function gval($key, $val = null)
+    {
+        $ext = "ctrx_gval_forGlobalValue_yro";
+        if (! $val) {
+            if (isset($_COOKIE[$ext . "_" . $key])) {
+                return $_COOKIE[$ext . "_" . $key];
+            }
+            return null;
+        }
+        $_COOKIE[$ext . "_" . $key] = $val;
+        return $val;
     }
 }
 
@@ -678,7 +694,7 @@ if (! function_exists("current_language")) {
 }
 
 if (! function_exists("t")) {
-    function t(string|null $string, string|null $transform = null , bool|string $trim = true)
+    function t(string|null $string, string|null $transform = null, bool|string $trim = true)
     {
         if ($trim) {
             if (is_string($trim)) {
@@ -705,25 +721,22 @@ if (! function_exists("t")) {
 
                 $row = $hasTableTrsnltn[0];
                 $rowstr = strtolower($row['str'] ?? '');
-                
+
                 $finalName = null;
-                
-                if($transform && is_string($transform)){
-                    if($transform == "uc"){
+
+                if ($transform && is_string($transform)) {
+                    if ($transform == "uc") {
                         $finalName = ucfirst($rowstr ?? '');
-                    }
-                    else if($transform == "l"){
+                    } else if ($transform == "l") {
                         $finalName = $rowstr;
-                    }
-                    else if($transform == "u"){
+                    } else if ($transform == "u") {
                         $finalName = strtoupper($rowstr ?? '');
-                    }
-                    else if($transform == "uw"){
+                    } else if ($transform == "uw") {
                         $finalName = ucwords($rowstr ?? '');
-                    }else{
+                    } else {
                         $finalName = $rowstr;
                     }
-                }else{
+                } else {
                     if ($string === strtoupper($string)) {
                         $finalName = strtoupper($rowstr);
                     } elseif ($string === strtolower($string)) {
