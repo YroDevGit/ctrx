@@ -185,6 +185,7 @@ if (str_starts_with($req, "api/")) {
                 ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found"], 500);
             }
             include "app/_controller/$newReqPHP";
+            exit;
         }
         $route = append_php($is_in['route']);
         if (isset($is_in['middleware'])) {
