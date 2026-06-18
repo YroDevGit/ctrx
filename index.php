@@ -287,6 +287,9 @@ if (str_starts_with($req, "api/")) {
         }
         $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/". $prevPath;
         include $fullpath;
+        if(getenv('debugger') == "yes"){
+            include_once "views/core/partials/system/dev.php";
+        }
         ctrx_save_previous_pages($prevPath);
     } catch (Throwable $e) {
         ob_clean();
