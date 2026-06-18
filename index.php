@@ -198,6 +198,7 @@ if (str_starts_with($req, "api/")) {
             }
         }
         include "app/_controller/$route";
+        throw new Exception("Controller endpoint not reached");
     } catch (Throwable $e) {
         ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
     } catch (PDOException $e) {
