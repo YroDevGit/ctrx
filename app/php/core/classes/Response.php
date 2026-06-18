@@ -31,7 +31,7 @@ class Response
         self::json($response);
     }
 
-    static function error(string $message = "Error", array|null|bool $details = [], int $status = 500)
+    static function ctrx_error(string $message = "Error", array|null|bool $details = [], int $status = 500)
     {
         $details = is_array($details) ? $details : [];
         $response = [
