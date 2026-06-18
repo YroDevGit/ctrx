@@ -1,5 +1,7 @@
 <?=import_tyrux()?>
 
+terser tyrux.js -o tyrux.min.js -c -m
+
 <script type="module">
     tyrux({
         url: window.baseRoute+"admin/add",
