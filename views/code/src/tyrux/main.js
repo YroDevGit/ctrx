@@ -165,6 +165,7 @@ const opt = {
     csrf: true,
     route: undefined,
     page: undefined,
+    res: undefined,
 };
 
 const tyrax = { // tyrux default config :: CodeTazeR
