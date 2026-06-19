@@ -11,6 +11,13 @@
     -webkit-user-select: none;
   }
 
+  .ctrx-footermb{
+    color:gray;
+  }
+  .ctrx-footerpr{
+    padding-top: 5px;
+  }
+
   #ctrx-logCircleBtn {
     width: 35px;
     height: 35px;
@@ -56,9 +63,9 @@
 
   #ctrx-logExpandedPanel {
     position: absolute;
-    bottom: 62px;
+    bottom: 52px;
     right: 0;
-    width: 420px;
+    width: 520px;
     max-height: 650px;
     background: rgba(14, 20, 32, 0.97);
     backdrop-filter: blur(18px);
@@ -525,7 +532,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M13 2L4 14H12L11 22L20 10H12L13 2Z" fill="#FFE484" stroke="#FFD966" stroke-width="1.2" stroke-linejoin="round"/>
         </svg>
-        <span>CTRX logs</span>
+        <span>CTRX JS logs</span>
       </div>
       <div id="ctrx-consoleShortcutHint">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -542,6 +549,11 @@
     <div id="ctrx-logListContainer">
       <div class="ctrx-empty-logs">⏳ waiting for logs…</div>
     </div>
+    <footer>
+      <div align='center' class="ctrx-footerpr">
+        <small class="ctrx-footermb">CTRX by CodeYRO</small>
+      </div>
+    </footer>
   </div>
 </div>
 
