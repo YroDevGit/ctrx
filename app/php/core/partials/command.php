@@ -170,7 +170,29 @@ if ($route == "run" || $route == "server") {
             exit(1);
         }
     }
-} else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
+}
+else if ($route == "generate:htaccess") {
+    //for deployment
+    //for routing
+    $filename = ".htaccess";
+    $content = <<<EOT
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    RewriteRule ^ index.php [L,QSA]
+    EOT;
+
+    if (file_put_contents($filename, $content) !== false) {
+        echo "\n✅ .htaccess has been created.\n\n";
+    }else{
+        echo "\n❌ Failed to create Route file.\n\n";
+    }
+    exit;
+}
+
+else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
     if ($filename == "") {
         echo "❌ Please provide a filename for the controller.\n";
         exit(1);

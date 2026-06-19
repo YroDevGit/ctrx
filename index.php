@@ -1,5 +1,20 @@
 <?php
+/**
+ * CTRX framework by CodeYRO
+ * This framework made by the filipino dev (Technology made in the philippines)
+ * Year created: 2025
+ */
 
+ /**
+  * For deployment please attach or generate htaccess for routing
+  * command: php ctrx generate:htaccess
+  */
+
+
+/**
+ * Load all auto-load files
+ * Load and generate env variables
+ */
 require_once 'vendor/autoload.php';
 include_once "app/php/core/partials/envloader.php";
 
@@ -8,6 +23,9 @@ include_once "app/php/core/partials/envloader.php";
  * Made by CodeYRO
  */
 
+ /**
+  * URL parsing
+  */
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
 if (str_starts_with($uri, "/ctrstorage/")) {
