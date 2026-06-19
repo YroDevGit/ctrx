@@ -1,7 +1,7 @@
 <?php
 include_once "app/php/core/partials/envloader.php";
 
-$dbname = getenv("database");
+$dbname = env("database");
 if (!$dbname) {
     die("❌ No Database found @ .env");
 }

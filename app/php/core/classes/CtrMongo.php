@@ -51,8 +51,8 @@ class CtrMongo
 
     private static function init()
     {
-        $uri = self::$setclient ?? getenv("MONGO_URI");
-        $dbname = self::$setdb ?? getenv("MONGO_DB");
+        $uri = self::$setclient ?? env("MONGO_URI");
+        $dbname = self::$setdb ?? env("MONGO_DB");
 
         if (! $uri) {
             throw new Exception("Mongo URI not set");

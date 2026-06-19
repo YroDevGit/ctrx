@@ -24,7 +24,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("success_code"),
+            "code" => env("success_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -35,7 +35,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("error_code"),
+            "code" => env("error_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -46,7 +46,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("failed_code"),
+            "code" => env("failed_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -57,7 +57,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("notfound_code"),
+            "code" => env("notfound_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -68,7 +68,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("forbidden_code"),
+            "code" => env("forbidden_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -79,7 +79,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("unauthorized_code"),
+            "code" => env("unauthorized_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -90,7 +90,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("badrequest_code"),
+            "code" => env("badrequest_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -101,7 +101,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("warning_code"),
+            "code" => env("warning_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -112,7 +112,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("no_internet_code"),
+            "code" => env("no_internet_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -123,7 +123,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("backend_error_code"),
+            "code" => env("backend_error_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -134,7 +134,7 @@ class Response
     {
         $details = is_array($details) ? $details : [];
         $response = [
-            "code" => getenv("db_error_code"),
+            "code" => env("db_error_code"),
             "message" => $message,
             "details" => $details
         ];
@@ -282,7 +282,7 @@ class Response
 
     public static function dump($details = null, $status = 200){
         $response = [
-            "code" => getenv("error_code"),
+            "code" => env("error_code"),
             "post" => postdata(),
             "get" => $_GET,
             "headers" => server_headers()

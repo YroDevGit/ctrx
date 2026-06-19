@@ -104,7 +104,7 @@ class CtrTest
     public function run()
     {
         $result = Tyrux::request($this->method, [
-            "url" => getenv("rootpath")."?be=". $this->route,
+            "url" => env("rootpath")."?be=". $this->route,
             "data" => $this->data,
             "headers" => $this->headers,
         ]);

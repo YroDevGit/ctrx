@@ -1,35 +1,35 @@
 <?php
 
-if (getenv("rootpath") == "" || getenv("rootpath") == null) {
+if (env("rootpath") == "" || env("rootpath") == null) {
     $rootpath = get_basixs_root_path();
     putenv("rootpath=$rootpath");
     $_ENV['rootpath'] = $rootpath;
 }
-define('rootpath', getenv('rootpath'));
+define('rootpath', env('rootpath'));
 define('pages', 'views/pages');
 define('_backend', '_backend');
 define('assets', '/views/assets');
 define('codepath', '/views/code');
 
-define('SUCCESS', getenv('success_code'));
+define('SUCCESS', env('success_code'));
 
-define("success_code", getenv("success_code"));
-define("error_code", getenv("error_code"));
-define("db_error_code", getenv("db_error_code"));
-define("notfound_code", getenv("notfound_code"));
-define("forbidden_code", getenv("forbidden_code"));
-define("unauthorized_code", getenv("unauthorized_code"));
-define("badrequest_code", getenv("badrequest_code"));
-define("warning_code", getenv("warning_code"));
-define("no_internet_code", getenv("no_internet_code"));
-define("backend_error_code", getenv("backend_error_code"));
-define("failed_code", getenv("failed_code"));
-define('app_name', getenv('app_name'));
-define('ctrql_auth_failed', getenv('ctrql_auth_failed'));
+define("success_code", env("success_code"));
+define("error_code", env("error_code"));
+define("db_error_code", env("db_error_code"));
+define("notfound_code", env("notfound_code"));
+define("forbidden_code", env("forbidden_code"));
+define("unauthorized_code", env("unauthorized_code"));
+define("badrequest_code", env("badrequest_code"));
+define("warning_code", env("warning_code"));
+define("no_internet_code", env("no_internet_code"));
+define("backend_error_code", env("backend_error_code"));
+define("failed_code", env("failed_code"));
+define('app_name', env('app_name'));
+define('ctrql_auth_failed', env('ctrql_auth_failed'));
 define("now", date("Y-m-d H:i:s"));
 
-if (getenv("time_zone")) {
-    date_default_timezone_set(getenv("time_zone"));
+if (env("time_zone")) {
+    date_default_timezone_set(env("time_zone"));
 }
 
 if (! function_exists("now")) {
@@ -52,7 +52,7 @@ if (! function_exists("now")) {
 if (! function_exists("env")) {
     function env(string $key)
     {
-        return getenv($key);
+        return env($key);
     }
 }
 
@@ -422,7 +422,7 @@ if (! function_exists('redirect')) {
 if (! function_exists("write_sql_log")) {
     function write_sql_log($message)
     {
-        $setting = getenv('sql_logs');
+        $setting = env('sql_logs');
         if ($setting) {
             $filename = "sql_" . date("Y-M-d") . "_yros.log";
             $logfile =  "_backend/app/dblogs/" . $filename;
@@ -435,7 +435,7 @@ if (! function_exists("write_sql_log")) {
 if (! function_exists("write_sql_error")) {
     function write_sql_error($message, string $query = "")
     {
-        $setting = getenv('sql_errors');
+        $setting = env('sql_errors');
         if ($setting == true) {
             $logfile = "app/db_errors/sqlerrors.txt";
 
@@ -675,7 +675,7 @@ if (! function_exists("autoload_routing")) {
 if (! function_exists("translation_icon")) {
     function translation_icon(array|string|null $config = null)
     {
-        $dbname = getenv("database");
+        $dbname = env("database");
         if ($dbname) {
             if ($config) {
                 if (is_string($config)) {
@@ -718,7 +718,7 @@ if (! function_exists("t")) {
             if (! $lang) return $string;
             try {
                 include_once "app/php/core/partials/backend.php";
-                $dbname = getenv("database");
+                $dbname = env("database");
                 if (!$dbname) {
                     throw new Exception("database not found @ .env file");
                 }

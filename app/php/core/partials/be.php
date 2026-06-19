@@ -26,7 +26,7 @@ if (! function_exists('error_response')) {
     {
         $data['be_response'] = "error";
         header('Content-Type: application/json');
-        http_response_code(getenv("error_code"));
+        http_response_code(env("error_code"));
         echo json_encode($data);
         exit;
     }
@@ -46,7 +46,7 @@ if (! function_exists('json_error')) {
     function json_error(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("error_code"),
+            "code" => env("error_code"),
             "status" => "ERROR",
             "message" => $message ?? "ERROR",
             "details" => $details
@@ -59,7 +59,7 @@ if (! function_exists('json_success')) {
     function json_success(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("success_code"),
+            "code" => env("success_code"),
             "status" => "SUCCESS",
             "message" => $message ?? "SUCCESS",
             "details" => $details,
@@ -72,7 +72,7 @@ if (! function_exists('json_notfound')) {
     function json_notfound(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("notfound_code"),
+            "code" => env("notfound_code"),
             "status" => "NOT_FOUND",
             "message" => $message ?? "404 not found",
             "details" => $details,
@@ -85,7 +85,7 @@ if (! function_exists('json_failed')) {
     function json_failed(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("failed_code"),
+            "code" => env("failed_code"),
             "status" => "FAILED",
             "message" => $message ?? "Request failed",
             "details" => $details,
@@ -98,7 +98,7 @@ if (! function_exists('json_badrequest')) {
     function json_badrequest(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("badrequest_code"),
+            "code" => env("badrequest_code"),
             "status" => "BAD_REQUEST",
             "message" => $message ?? "Bad Request",
             "details" => $details,
@@ -111,7 +111,7 @@ if (! function_exists('json_forbidden')) {
     function json_forbidden(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("forbidden_code"),
+            "code" => env("forbidden_code"),
             "status" => "ACCESS_FORBIDDEN",
             "message" => $message ?? "Request Forbidden",
             "details" => $details,
@@ -124,7 +124,7 @@ if (! function_exists('json_unauthorized')) {
     function json_unauthorized(array $details = [], string|null $message = null, int $status = 200)
     {
         json_response([
-            "code" => getenv("unauthorized_code"),
+            "code" => env("unauthorized_code"),
             "status" => "UNAUTHORIZED",
             "message" => $message ?? "Unauthorized Request",
             "details" => $details,
@@ -475,7 +475,7 @@ if (! function_exists("set_request_method")) {
             if (strtolower($env) == "prod" || strtolower($env) == "production" || strtolower($env) == "uat" || strtolower($env) == "staging") {
                 $errmsg = "Request method should be " . strtoupper($req_method);
             }
-            json_response(["code" => getenv("badrequest_code"), "message" => $errmsg, "status" => "request_method_invalid"], 501);
+            json_response(["code" => env("badrequest_code"), "message" => $errmsg, "status" => "request_method_invalid"], 501);
         }
     }
 }

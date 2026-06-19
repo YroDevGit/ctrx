@@ -67,7 +67,7 @@ $exxr = isset($arguments[4]) ? $arguments[4] : '';
 
 if ($route == "run" || $route == "server") {
     include "envloader.php";
-    $host = getenv("rootpath");
+    $host = env("rootpath");
     $exp = explode("//", $host);
     $runner = $exp[1];
 
@@ -85,7 +85,7 @@ if ($route == "run" || $route == "server") {
     }
 
     if ($filename == "mobile" || $filename == "public") {
-        $host = getenv("rootpath");
+        $host = env("rootpath");
         $root = realpath(__DIR__ . '/../../');
         $cmd = "php -S 0.0.0.0:$p -t $root";
         echo "\n⚡⚡ CodeTazer Framework by CodeYRO⚡⚡\n\n";
@@ -95,7 +95,7 @@ if ($route == "run" || $route == "server") {
         exit;
     }
 
-    $dir = getenv("main_dir");
+    $dir = env("main_dir");
     $dir_msg = "";
     $dir_comm = "";
     if ($dir != null) {
@@ -573,7 +573,7 @@ else if($route == "author"){
 }
 else if ($route == "download:table") {
     include "app/php/core/partials/envloader.php";
-    $dbname = getenv("database");
+    $dbname = env("database");
     if (!$dbname) {
         echo "❌ No Database found @ .env\n\n";
         exit;
@@ -622,7 +622,7 @@ else if ($route == "download:table") {
     echo "✅ Exported to {$filename}\n";
 } else if ($route == "db:import" || $route == "db:migrate") {
     include "app/php/core/partials/envloader.php";
-    $dbname = getenv("database");
+    $dbname = env("database");
     if (! $dbname) {
         echo "❌ No Database found @ .env\n\n";
         exit;
@@ -668,7 +668,7 @@ else if ($route == "download:table") {
     exit;
 } elseif ($route == "dbload" || $route == "db:load") {
     include "app/php/core/partials/envloader.php";
-    $dbname = getenv("database");
+    $dbname = env("database");
     if ($dbname == null || $dbname == "") {
         echo "❌ database not found @ .env file\n";
         exit;
@@ -687,7 +687,7 @@ else if ($route == "download:table") {
     }
 } else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
-    $dbname = getenv("database");
+    $dbname = env("database");
     if (! $dbname) {
         echo "❌ No Database found @ .env\n\n";
         exit;

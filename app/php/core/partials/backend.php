@@ -28,16 +28,16 @@ if (! function_exists("pdo")) {
                 }
                 return $pdo;
             }
-            $host = getenv('dbhost');
-            $user =  getenv('dbuser');
-            $pass = getenv('dbpass');
-            $dbname = $db == null ? getenv('database') : $db;
+            $host = env('dbhost');
+            $user =  env('dbuser');
+            $pass = env('dbpass');
+            $dbname = $db == null ? env('database') : $db;
             if ($dbname == "" || $dbname == null) {
                 add_sql_log("No database found. please check .env file", "be_errors");
                 error_response(["code" => "404", "status" => "notfound", "message" => "No database found. please check .env file"]);
             }
             if ($pdo == null) {
-                $dbdriver = getenv("dbdriver") == null ? "mysql" : getenv("dbdriver");
+                $dbdriver = env("dbdriver") == null ? "mysql" : env("dbdriver");
                 $ddb = "dbname=$dbname";
                 if ($no_database) {
                     $ddb = "";
@@ -52,7 +52,7 @@ if (! function_exists("pdo")) {
             return $pdo;
         } catch (PDOException $e) {
             add_sql_log($e->getMessage(), "error");
-            error_response(["code" => getenv("error_code"), "status" => "PDO exception error", "message" => $e->getMessage()]);
+            error_response(["code" => env("error_code"), "status" => "PDO exception error", "message" => $e->getMessage()]);
         }
     }
 }
@@ -75,7 +75,7 @@ if (!function_exists('execute_select')) {
             foreach ($params as $key => $value) {
                 if (is_array($value)) {
                     return [
-                        "code" => getenv('error_code'),
+                        "code" => env('error_code'),
                         "status" => "error",
                         "message" => "Parameter cannot be an array: " . json_encode($value, JSON_UNESCAPED_UNICODE)
                     ];
@@ -94,7 +94,7 @@ if (!function_exists('execute_select')) {
             $firstrow = (!empty($results) ? true : false) == true ? $results[0] : [];
 
             $toret = [
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Query executed successfully",
                 "data" => $results,
@@ -111,7 +111,7 @@ if (!function_exists('execute_select')) {
         } catch (PDOException $e) {
             $lastSQL = interpolate_query($query, $params, "error");
             $err =  [
-                "code" => getenv('error_code'),
+                "code" => env('error_code'),
                 "status" => "error",
                 "lastquery" => $lastSQL,
                 "message" => "Database error: " . $e->getMessage()
@@ -159,7 +159,7 @@ if (! function_exists("execute_get")) {
                     $msg = "Parameter cannot be an array: " . json_encode($value, JSON_UNESCAPED_UNICODE);
                     add_sql_log("(ERROR) " . $msg, "error");
                     return [
-                        "code" => getenv('error_code'),
+                        "code" => env('error_code'),
                         "status" => "error",
                         "message" => $msg
                     ];
@@ -176,7 +176,7 @@ if (! function_exists("execute_get")) {
             $firstrow = !empty($results) ? $results[0] : [];
 
             $toret = [
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Query executed successfully",
                 "data" => $results,
@@ -194,7 +194,7 @@ if (! function_exists("execute_get")) {
         } catch (PDOException $e) {
             $lastSQL = interpolate_query($query ?? 'INVALID SQL', $params ?? [], "error");
             $err = [
-                "code" => getenv('error_code'),
+                "code" => env('error_code'),
                 "status" => "error",
                 "lastquery" => $lastSQL,
                 "message" => "Database error: " . $e->getMessage()
@@ -224,7 +224,7 @@ if (! function_exists("execute_insert")) {
             $lastSQL = interpolate_query($sql, $data, "success");
 
             $rett = [
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Data inserted successfully",
                 "lastquery" => $lastSQL,
@@ -238,7 +238,7 @@ if (! function_exists("execute_insert")) {
         } catch (PDOException $e) {
             $lastSql = interpolate_query($sql, $data, "error");
             $err = [
-                "code" => getenv('error_code'),
+                "code" => env('error_code'),
                 "status" => "error",
                 "lastquery" => $lastSql,
                 "message" => "Database error: " . $e->getMessage()
@@ -266,7 +266,7 @@ if (! function_exists("execute_update")) {
             $finalQuery = interpolate_query($sql, $params, "success");
 
             $rett = [
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Data updated successfully",
                 "lastquery" => $finalQuery,
@@ -279,7 +279,7 @@ if (! function_exists("execute_update")) {
         } catch (PDOException $e) {
             $finalQuery = interpolate_query($sql, $params, "error");
             $err = [
-                "code" => getenv('error_code'),
+                "code" => env('error_code'),
                 "status" => "error",
                 "lastquery" => $finalQuery,
                 "message" => "Database error: " . $e->getMessage()
@@ -306,7 +306,7 @@ if (! function_exists("execute_delete")) {
             $lastSQL = interpolate_query($sql, $where, "success");
 
             add_sql_log("(SUCCESS) " . json_encode([
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Data deleted successfully",
                 "lastquery" => $lastSQL,
@@ -315,7 +315,7 @@ if (! function_exists("execute_delete")) {
             ]), "info");
 
             return [
-                "code" => getenv('success_code'),
+                "code" => env('success_code'),
                 "status" => "success",
                 "message" => "Data deleted successfully",
                 "lastquery" => $lastSQL,
@@ -325,7 +325,7 @@ if (! function_exists("execute_delete")) {
         } catch (PDOException $e) {
             $finalQuery = interpolate_query($sql, $where, "error");
             $err = [
-                "code" => getenv('error_code'),
+                "code" => env('error_code'),
                 "status" => "error",
                 "lastquery" => $finalQuery,
                 "message" => "Database error: " . $e->getMessage()
@@ -365,7 +365,7 @@ if (!function_exists('execute_query')) {
                 foreach ($params as $key => $value) {
                     if (is_array($value)) {
                         return [
-                            "code" => getenv('error_code'),
+                            "code" => env('error_code'),
                             "status" => "error",
                             "message" => "Parameter cannot be an array: " . json_encode($value, JSON_UNESCAPED_UNICODE)
                         ];
@@ -384,7 +384,7 @@ if (!function_exists('execute_query')) {
                     case 'DESCRIBE':
                     case 'PRAGMA':
                         $rett =  [
-                            "code" => getenv('success_code'),
+                            "code" => env('success_code'),
                             "status" => "success",
                             "message" => "Query executed successfully",
                             "rowcount" => $stmt->rowCount(),
@@ -397,7 +397,7 @@ if (!function_exists('execute_query')) {
 
                     case 'INSERT':
                         $rett = [
-                            'code' => getenv('success_code'),
+                            'code' => env('success_code'),
                             'status' => 'success',
                             'message' => 'Data inserted successfully',
                             "lastquery" => interpolate_query($sql, $params, "success"),
@@ -409,7 +409,7 @@ if (!function_exists('execute_query')) {
 
                     case 'UPDATE':
                         $rett = [
-                            'code' => getenv('success_code'),
+                            'code' => env('success_code'),
                             'status' => 'success',
                             'message' => 'Data updated successfully',
                             "lastquery" => interpolate_query($sql, $params, "success"),
@@ -420,7 +420,7 @@ if (!function_exists('execute_query')) {
 
                     case 'DELETE':
                         $rett = [
-                            'code' => getenv('success_code'),
+                            'code' => env('success_code'),
                             'status' => 'success',
                             'message' => 'Data deleted successfully',
                             'lastquery' => interpolate_query($sql, $params, "success"),
@@ -431,7 +431,7 @@ if (!function_exists('execute_query')) {
 
                     default: // CREATE, DROP, etc.
                         $rett = [
-                            'code' => getenv('success_code'),
+                            'code' => env('success_code'),
                             'status' => 'success',
                             'message' => "$verb command executed",
                             "lastquery" => interpolate_query($sql, $params, "success"),
@@ -447,7 +447,7 @@ if (!function_exists('execute_query')) {
             } catch (PDOException $e) {
                 $lastSQL = interpolate_query($sql, $params, "error");
                 $rett = [
-                    "code" => getenv('error_code'),
+                    "code" => env('error_code'),
                     "status" => "error",
                     "lastquery" => $lastSQL,
                     "message" => "Database error: " . $e->getMessage(),

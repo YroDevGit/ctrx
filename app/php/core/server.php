@@ -22,10 +22,10 @@ date_default_timezone_set(env('time_zone'));
 $basixserver = $_SERVER['HTTP_HOST'];
 $req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $req = trim($req, "/");
-$rooth = getenv("rootpath") ?? "http://localhost:9999";
+$rooth = env("rootpath") ?? "http://localhost:9999";
 $rooth = trim($rooth, "/");
 $b_all = $basixserver . "/" . $req;
-$subdomain = getenv("subdomain") ?? null;
+$subdomain = env("subdomain") ?? null;
 $subdomain = trim($subdomain, "/");
 $trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
 if(isset($_GET['ctrx_translate'])){
@@ -48,7 +48,7 @@ define("ctrx_param", strtolower($req));
 $system = glob('app/php/core/partials/bin/*.php');
 include_once "app/php/core/partials/be.php";
 
-if (getenv("global_db_access") == "yes") {
+if (env("global_db_access") == "yes") {
     include_once "app/php/core/partials/backend.php";
 }
 /**
@@ -62,11 +62,11 @@ foreach ($system as $k => $v) {
 
 include "app/php/core/partials/ctrxc.php";
 
-define("roothpath", getenv("roothpath"));
+define("roothpath", env("roothpath"));
 
 if ($req == "api") {
     json_response([
-        "code" => getenv("success_code"),
+        "code" => env("success_code"),
         "message" => "CTRX framework by CodeYro"
     ]);
 }
@@ -111,7 +111,7 @@ if(str_starts_with($req, "ctrxtools/game")){
  */
 
 if (str_starts_with($req, "api/")) {
-    if (getenv('single_thread') && getenv('single_thread') == "yes") {
+    if (env('single_thread') && env('single_thread') == "yes") {
         if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
             exit;
         }
@@ -145,8 +145,8 @@ if (str_starts_with($req, "api/")) {
 
         $_SESSION['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
-        if (getenv("cross_origin_sharing") == "yes") {
-            $allowAllOrigin = getenv("allow_all_origin");
+        if (env("cross_origin_sharing") == "yes") {
+            $allowAllOrigin = env("allow_all_origin");
             if ($allowAllOrigin == "yes") {
                 header("Access-Control-Allow-Origin: *");
             } else {
@@ -156,7 +156,7 @@ if (str_starts_with($req, "api/")) {
                 }
             }
             header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-            header("Access-Control-Allow-Headers: " . getenv("allowed_headers"));
+            header("Access-Control-Allow-Headers: " . env("allowed_headers"));
         } else {
             $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
             $rpath = rootpath;
@@ -176,7 +176,7 @@ if (str_starts_with($req, "api/")) {
         }
         $is_in = isset($_REQUEST["ctrx_" . $reqmeth . "_" . $newReq]) ? $_REQUEST["ctrx_" . $reqmeth . "_" . $newReq] : null;
         if (! $is_in) {
-            if (getenv("auto_routes") == "yes") {
+            if (env("auto_routes") == "yes") {
                 $newReqPHP = append_php($newReq);
                 if (! file_exists("app/_controller/$newReqPHP")) {
                     ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$newReq' not found.!"], 500);
@@ -288,7 +288,7 @@ if (str_starts_with($req, "api/")) {
         }
         $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/". $prevPath;
         include $fullpath;
-        if(getenv('debugger') == "yes"){
+        if(env('debugger') == "yes"){
             include_once "views/core/partials/system/dev.php";
         }
         ctrx_save_previous_pages($prevPath);
@@ -323,7 +323,7 @@ if (str_starts_with($req, "api/")) {
                     $all[] = $v;
                 }
                 $e_error = json_encode($all);
-                if (getenv("error_logs") == "yes") {
+                if (env("error_logs") == "yes") {
                     ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
                 }
             }

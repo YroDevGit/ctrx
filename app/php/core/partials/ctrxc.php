@@ -96,7 +96,7 @@ if (! function_exists('ctrx_response')) {
                 }
                 $e_error = json_encode($all);
                 $data['trace'] =$all;
-                if (getenv("error_logs") == "yes") {
+                if (env("error_logs") == "yes") {
                     ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
                 }
             }

@@ -7,7 +7,7 @@ class Hash
 
     public static function encode(String $string, int $size = 16)
     {
-        $secret = getenv("hash_secret");
+        $secret = env("hash_secret");
         return substr(md5($secret . $string), 0, $size);
     }
 

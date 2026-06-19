@@ -54,15 +54,15 @@ class Mail
         }
         $mail = new PHPMailer(true);
         $mail->isSMTP();
-        $mail->Host       = getenv("smtp_host");
+        $mail->Host       = env("smtp_host");
         $mail->SMTPAuth   = true;
-        $mail->Username   = getenv("smtp_user");
-        $mail->Password   = getenv("smtp_password");
+        $mail->Username   = env("smtp_user");
+        $mail->Password   = env("smtp_password");
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = getenv("smtp_port");
+        $mail->Port       = env("smtp_port");
 
-        $e_sender = $sender ?? getenv("sender_name") ?? "CODETAZER";
-        $e_sendemail = $sender_email ?? getenv("sender_email") ?? "codetazer@test.com";
+        $e_sender = $sender ?? env("sender_name") ?? "CODETAZER";
+        $e_sendemail = $sender_email ?? env("sender_email") ?? "codetazer@test.com";
 
         $mail->setFrom($e_sendemail, $e_sender);
         if(is_string($to)){
