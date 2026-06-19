@@ -1,366 +1,140 @@
 <?php
 
-/**
- * This is CTRX framework
- * Made by Tyrone Limen Malocon
- */
+require_once 'vendor/autoload.php';
+include_once "app/php/core/partials/envloader.php";
 
 /**
- * Session initialize
+ * CTRX / CodeTazer Dev Server Router
+ * Made by CodeYRO
  */
-session_start();
 
-/**
- * Timezone is set to default (@env)
- */
-date_default_timezone_set(env('time_zone'));
+$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-/**
- * Basix server adopt by codetazer and ctrx
- */
-$basixserver = $_SERVER['HTTP_HOST'];
-$req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-$req = trim($req, "/");
-$rooth = getenv("rootpath") ?? "http://localhost:9999";
-$rooth = trim($rooth, "/");
-$b_all = $basixserver . "/" . $req;
-$subdomain = getenv("subdomain") ?? null;
-$subdomain = trim($subdomain, "/");
-$trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
-if(isset($_GET['ctrx_translate'])){
-    $_SESSION['ctrx_translate'] = $trnsltn;
-}
-if ($subdomain) {
-    if (str_starts_with($req, $subdomain) && $req) {
-        $expl = explode($subdomain, $req);
-        $void = $expl[0] ?? null;
-        $req = $expl[1] ?? null;
-        if ($req) {
-            $req = trim($req, "/");
-        }
+if (str_starts_with($uri, "/ctrstorage/")) {
+    $ctrstorage = substr($uri, strlen('/ctrstorage/'));
+    $filePath = 'views/core/partials/storage/' . $ctrstorage;
+
+    if (!file_exists($filePath)) {
+        http_response_code(404);
+        exit('File not found');
     }
-}
 
-define('mainpath', $subdomain ? $rooth . "/" . $subdomain : $rooth);
-define("ctrx_param", strtolower($req));
-
-$system = glob('app/php/core/partials/bin/*.php');
-include_once "app/php/core/partials/be.php";
-
-if (getenv("global_db_access") == "yes") {
-    include_once "app/php/core/partials/backend.php";
-}
-/**
- * Post request initialize
- */
-$_POST = postdata();
-
-foreach ($system as $k => $v) {
-    include $v;
-}
-
-include "app/php/core/partials/ctrxc.php";
-
-define("roothpath", getenv("roothpath"));
-
-if ($req == "api") {
-    json_response([
-        "code" => getenv("success_code"),
-        "message" => "CTRX framework by CodeYro"
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $filePath);
+    finfo_close($finfo);    
+    
+    $ret = extract([
+        "path" => $ctrstorage,
+        "file_path" => $filePath,
+        "mime_type" => $mimeType,
+        "dir" => dirname($ctrstorage)
     ]);
-}
-
-include "app/php/core/system/loader.php";
-
- /**
- * Ctrx DB tools for import export
- */
-if(str_starts_with($req, "ctrxtools/db")){
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/config/db_tools.php";
-    exit;
-}
-
- /**
- * Ctrx Translation tools for import export
- */
-if(str_starts_with($req, "ctrxtools/translations")){
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/config/translations.php";
-    exit;
-}
-
- /**
- * Ctrx Game for devs
- */
-if(str_starts_with($req, "ctrxtools/game")){
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/php/core/system/ctrxgame.php";
-    exit;
+    include "app/php/core/partials/filereader.php";
+    include "app/config/storage_config.php";
 }
 
 /**
- * This is backend endpoint
+ * Normalize root
  */
+if ($uri === false) {
+    $uri = '/';
+}
 
-if (str_starts_with($req, "api/")) {
-    if (getenv('single_thread') && getenv('single_thread') == "yes") {
-        if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
-            exit;
-        }
-    }
-    $_COOKIE[ctrxc_ccookie_single_thread()] = ctrxc_ccookie_single_thread();
-    include_once "app/php/core/partials/backend.php";
+$file = __DIR__ . $uri;
 
-    set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-        throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
-    });
-    try {
-        $_SESSION['ctrx_endpoint'] = "BE";
+/**
+ * Protected folders
+ */
+$blocked = [
+    '/views/pages/',
+    '/views/includes/',
+    '/views/core/',
+    '/views/app/',
+    '/app/_controller/',
+    '/app/_routes/',
+    '/app/_auto/',
+    '/app/php/core/',
+];
 
-        $serve = "";
-        $beconfig = glob('app/config/*.php');
+/**
+ * Block protected access
+ */
+foreach ($blocked as $path) {
+    if (strpos($uri, $path) === 0) {
+        http_response_code(403);
 
-        foreach ($beconfig as $k => $v) {
-            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
-            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
-            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
-            include $v;
-        }
+        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
 
-        $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
-
-        $req = strtolower($req);
-        if (str_starts_with($req, "api/")) $serve = "api";
-        $newReq = "";
-        if ($serve == "api") $newReq = str_replace("api/", "", $req);
-        $reqmeth = strtolower(request_method());
-
-        $_SESSION['basixs_current_be_ctrx'] = $newReq;
-        defined("route") || define("ROUTE", rem_php($newReq));
-        if (getenv("cross_origin_sharing") == "yes") {
-            $allowAllOrigin = getenv("allow_all_origin");
-            if ($allowAllOrigin == "yes") {
-                header("Access-Control-Allow-Origin: *");
-            } else {
-                $allowed = \Classes\Cors::get_allowed_origin("string");
-                if ($allowed) {
-                    header("Access-Control-Allow-Origin: " . $allowed);
-                }
-            }
-            header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-            header("Access-Control-Allow-Headers: " . getenv("allowed_headers"));
+        if (file_exists($forbidden)) {
+            include $forbidden;
         } else {
-            $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-            $rpath = rootpath;
-            if ($origin !== '' && $origin !== $rpath) {
-                header('Content-Type: application/json');
-                http_response_code(403);
-                echo json_encode([
-                    "code" => 403,
-                    "message" => "Sorry, we are unable to share resources to '$origin'"
-                ]);
-                exit;
-            }
-        }
-        if ($newReq == "ctrx_x_ctrql_request_authorized_ql") {
-            include "app/php/core/system/ctrql.php";
-            exit;
-        }
-        $is_in = isset($_REQUEST["ctrx_" . $reqmeth . "_" . $newReq]) ? $_REQUEST["ctrx_" . $reqmeth . "_" . $newReq] : null;
-        if (! $is_in) {
-            if (getenv("auto_routes") == "yes") {
-                $newReqPHP = append_php($newReq);
-                if (! file_exists("app/_controller/$newReqPHP")) {
-                    ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$newReq' not found.!"], 500);
-                }
-            } else {
-                $upperReqMethod = strtoupper($reqmeth);
-                ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found"], 500);
-            }
-            include "app/_controller/$newReqPHP";
-            throw new Exception("Controller endpoint not reached");
-        }
-        $route = append_php($is_in['route']);
-        if (isset($is_in['middleware'])) {
-            foreach ($is_in['middleware'] as $k => $v) {
-                $mw = append_php($v);
-                include "app/middleware/$mw";
-            }
-            if (! file_exists("app/_controller/$route")) {
-                ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$route' not found.!"], 500);
-            }
-        }
-        include "app/_controller/$route";
-        throw new Exception("Controller endpoint not reached");
-    } catch (Throwable $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
-    } catch (PDOException $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
-    } catch (Exception $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
-    } catch (InvalidArgumentException $e) {
-        ctrx_response(["code" => error_code, "message" => $e->getMessage(), "trace" => $e->getTrace()], 500, $e);
-    } finally {
-        restore_error_handler();
-    }
-    exit;
-} else {
-    $_SESSION['ctrx_endpoint'] = "FE";
-    $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
-
-    $csrfHashCode = encrypted_csrf_codetazer(25);
-    $_SESSION[ctr_secure_key] = $csrfHashCode;
-
-    error_reporting(E_ALL);
-    if (env_in_prod()) {
-        ini_set('display_errors', '0');
-        ini_set('log_errors', '1');
-    } else {
-        ini_set('display_errors', '1');
-    }
-
-    ob_start();
-    set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-        if (!(error_reporting() & $errno)) {
-            return false;
-        }
-        throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
-    });
-
-    try {
-        include "app/php/core/partials/cx.php";
-        $view_config = file_get_contents("views/fe_config.json");
-        $view_config = json_decode($view_config, true);
-        $mainpage = $view_config['main_page'] ?? "main";
-        $mainpage = append_php($mainpage);
-        $mainnophp = rem_php($mainpage);
-        $req = $req ? $req : $mainnophp;
-        $_SESSION['basixs_current_fe_ctrx'] = $req;
-
-        $feconfig = glob('views/app/config/*.php');
-        foreach ($feconfig as $k => $v) {
-            $vv = append_php($v);
-            include $vv;
-        }
-        $is_in = $_REQUEST["ctrxfe_" . $req] ?? null;
-        if ($is_in) {
-            $mw = $is_in["middleware"] ?? null;
-            $parent = $is_in["parent"] ?? null;
-            if ($mw) {
-                foreach ($mw as $k => $v) {
-                    $phpfile = append_php($v);
-                    $mdfile = "views/app/middleware/" . $phpfile;
-                    if (! file_exists($mdfile)) {
-                        throw new Exception("Middleware $v not found.!");
-                    }
-                    include $mdfile;
-                }
-            }
+            echo "403 Forbidden";
         }
 
-        $page = append_php($req);
-        $fullpath = "views/pages/" . $page;
-
-        if (!file_exists($fullpath)) {
-            $errorpage = $view_config["page_not_found"] ?? "404";
-            $errorpage = append_php($errorpage);
-            include "views/core/errors/" . $errorpage;
-            exit;
-        }
-        $prevPath = "/";
-
-        if($_GET){
-            $arr = [];
-            foreach($_GET as $kk=>$vv){
-                $arr[] = $kk."=".$vv;
-            }
-            $prevPath = current_page()."?". implode("&", $arr);
-        }else{
-            $prevPath = current_page();
-        }
-        $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/". $prevPath;
-        include $fullpath;
-        if(getenv('debugger') == "yes"){
-            include_once "views/core/partials/system/dev.php";
-        }
-        ctrx_save_previous_pages($prevPath);
-    } catch (Throwable $e) {
-        ob_clean();
-        $reqid = ctr_get_current_request_id();
-        if (env_in_prod()) {
-            $error = $e;
-            if ($error) {
-                $fulltrace = env("full_trace");
-                $e_msg = $error->getMessage();
-                $e_file = $error->getFile();
-                $e_line = $error->getLine();
-                $e_trace = $error->getTrace();
-
-                $fandl = "@";
-
-                if (! str_contains($e_file, "\app\php\core")) {
-                    $fandl = "@" . $e_file . " Line " . $e_line . " ";
-                }
-
-                $all = [];
-                foreach ($e_trace as $k => $v) {
-                    $file = $v['file'] ?? null;
-                    if (! $file) {
-                        continue;
-                    }
-
-                    if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
-                        continue;
-                    }
-                    $all[] = $v;
-                }
-                $e_error = json_encode($all);
-                if (getenv("error_logs") == "yes") {
-                    ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
-                }
-            }
-            $servererror = $view_config["prod_error_page"] ?? "dev_error";
-            $servererror = append_php($servererror);
-            $file =  "views/core/errors/$servererror";
-            include $file;
-            exit;
-        } else {
-            $trace = $e->getTrace();
-            $fulltrace = env("full_trace");
-
-            $all = [];
-            foreach ($trace as $k => $v) {
-                $file = $v['file'] ?? null;
-                if (! $file) {
-                    continue;
-                }
-
-                if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
-                    continue;
-                }
-                $all[] = $v;
-            }
-
-            $error = [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => $all
-            ];
-
-            $servererror = $view_config["dev_error_page"] ?? "dev_error";
-            $servererror = append_php($servererror);
-            include "views/core/errors/$servererror";
-        }
-    } finally {
-        restore_error_handler();
-        ob_end_flush();
+        exit;
     }
 }
+
+/**
+ * Allowed static asset extensions
+ */
+$staticExtensions = [
+    'js',
+    'mjs',
+    'css',
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'svg',
+    'webp',
+    'ico',
+    'woff',
+    'woff2',
+    'ttf',
+    'eot',
+    'map',
+    'json',
+    'txt',
+    'xml',
+    'mp4',
+    'webm',
+    'mp3',
+];
+
+/**
+ * Serve static files directly
+ */
+
+if (
+    $uri !== '/'
+) {
+
+    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    if(str_contains($file,"views/code/src/") || str_contains($file, "views/js/"))return false;
+    if (in_array($ext, $staticExtensions)) {
+        return false;
+    }
+
+    /**
+     * Block direct PHP access
+     */
+    if ($ext === 'php') {
+        http_response_code(403);
+
+        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
+
+        if (file_exists($forbidden)) {
+            include $forbidden;
+        } else {
+            echo "403 Forbidden";
+        }
+
+        exit;
+    }
+}
+
+/**
+ * Route all requests into CTRX
+ */
+require 'app/php/core/server.php';

@@ -120,7 +120,7 @@ if ($route == "run" || $route == "server") {
 
     $phpPath = PHP_BINARY;
 
-    $cmd = "php -S $runner app/php/core/server.php" . $dir_comm;
+    $cmd = "php -S $runner index.php" . $dir_comm;
     passthru($cmd);
     exit;
 } else if ($route == "tables") {
