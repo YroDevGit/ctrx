@@ -99,10 +99,14 @@ class Ctrx
     private static function ctrratelimit($limit = 100, $seconds = 60, $route = "")
     {
         $ip = $_SERVER['REMOTE_ADDR'];
+        $dir = "app/php/core/partials/dir";
+        if(! is_dir($dir)){
+            mkdir($dir, 0777, true);
+        }
         $window = $seconds;
         $org = $route;
         $route = ! $route ? current_be() : "ctzr_" . $route;
-        $file = sys_get_temp_dir() . '/ratelimit_' . md5($route . '_' . $ip);
+        $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
         if (file_exists($file)) {
             $data = json_decode(file_get_contents($file), true);
             if (time() - $data['start'] > $window) {
@@ -145,11 +149,15 @@ class Ctrx
 
     private static function ctrratedetails($route = "")
     {
+        $dir = "app/php/core/partials/dir";
+        if(! is_dir($dir)){
+            mkdir($dir, 0777, true);
+        }
         $ip = $_SERVER['REMOTE_ADDR'];
         $window = 60;
         $limit = 100;
         $route = ! $route ? current_be() : "ctzr_" . $route;
-        $file = sys_get_temp_dir() . '/ratelimit_' . md5($route . '_' . $ip);
+        $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
         if (file_exists($file)) {
             $data = json_decode(file_get_contents($file), true);
             $window = $data['seconds'] ?? $window;
