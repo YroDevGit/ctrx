@@ -380,29 +380,29 @@ class CtrClass {
         return dataObject;
     }
 
-    open_window(url, target = null){
-        if(! target){
+    open_window(url, target = null) {
+        if (!target) {
             window.location.href = url;
-        }else{
-            if(typeof target == "string"){
+        } else {
+            if (typeof target == "string") {
                 window.open(url, target);
             }
         }
-        
+
     }
 
     get_selected(seletor, type = null) {
         const select = document.querySelector(seletor);
         const value = select.value ?? null;
         const label = select?.options[select.selectedIndex]?.text ?? null;
-        if(type == null){
+        if (type == null) {
             return { value: value, label: label };
         }
-        if(typeof type == "string"){
-            if(type == "value"){
+        if (typeof type == "string") {
+            if (type == "value") {
                 return value;
             }
-            if(type == "label"){
+            if (type == "label") {
                 return label;
             }
             return null;
@@ -443,15 +443,33 @@ class CtrClass {
     }
 
     value(selector) {
-        return document.querySelector(selector).value;
+        try {
+            let val = document.querySelector(selector).value;
+            return val;
+        } catch (err) {
+            console.warn(`value: '${selector}' has an issue`, err);
+            return null;
+        }
     }
 
     child(selector) {
-        return document.querySelector(selector).innerHTML;
+        try {
+            let val = document.querySelector(selector).innerHTML;
+            return val;
+        } catch (err) {
+            console.warn(`child: '${selector}' has an issue`, err);
+            return null;
+        }
     }
 
     parentAndChild(selector) {
-        return document.querySelector(selector).outerHTML;
+        try {
+            let val = document.querySelector(selector).outerHTML;
+            return val;
+        } catch (err) {
+            console.warn(`parentAndChild: '${selector}' has an issue`, err);
+            return null;
+        }
     }
 
     errStr(str = null, errorString = "err_") {
@@ -468,26 +486,33 @@ class CtrClass {
     }
 
     errStrSet(str = null, value, errorString = "err_") {
-        if (str && typeof str == "string") {
-            if (str.startsWith("#")) {
-                document.querySelector(`${str}`).innerHTML = value;
-            } else {
-                document.querySelector(`#${errorString}${str}`).innerHTML = value;
+        try {
+            if (str && typeof str == "string") {
+                if (str.startsWith("#")) {
+                    document.querySelector(`${str}`).innerHTML = value;
+                } else {
+                    document.querySelector(`#${errorString}${str}`).innerHTML = value;
+                }
             }
-
+        } catch (err) {
+            console.warn(`errStrSet: '${str}' has an issue`, err);
         }
     }
 
     resetErrorStr(errorClass = "error_text") {
-        let elm = undefined;
-        if (errorClass.startsWith(".")) {
-            elm = document.querySelectorAll(errorClass);
-        } else {
-            elm = document.querySelectorAll(`.${errorClass}`);
+        try {
+            let elm = undefined;
+            if (errorClass.startsWith(".")) {
+                elm = document.querySelectorAll(errorClass);
+            } else {
+                elm = document.querySelectorAll(`.${errorClass}`);
+            }
+            elm.forEach(element => {
+                element.innerHTML = "";
+            });
+        } catch (err) {
+            console.warn("resetErrorStr has an issue", err);
         }
-        elm.forEach(element => {
-            element.innerHTML = "";
-        });
     }
 }
 
