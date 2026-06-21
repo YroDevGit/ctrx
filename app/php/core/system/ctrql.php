@@ -119,6 +119,11 @@ if ($action == "disable") {
     Response::code(success_code)->message("Yes.! ctrql disabled.")->send();
 }
 
+if($action == "userdata"){
+    $data = Ctrx::get_user_data();
+    Response::code(success_code)->message("OK")->data($data)->send();
+}
+
 if ($action == "query") {
     if (! Ctrql::checkAccess("Q")) Response::code(unauthorized_code)->message("ctrql: User is not possible to use query function.!")->send(unauthorized_code);
     $result = DB::query($query, $param);
