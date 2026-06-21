@@ -409,6 +409,15 @@ class CtrClass {
         }
     }
 
+    empty_obect(object){
+        try{
+            return Object.keys(object).length > 0;
+        }catch(err){
+            console.warn(`empty_object: '${object}' has an issue`, err);
+            return true;
+        }
+    }
+
     form_object(selector) {
         const element = document.querySelector(selector);
         const formdata = new FormData(element);
