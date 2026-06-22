@@ -277,8 +277,8 @@
             box-shadow: 0 4px 0 #0a111f;
             cursor: pointer;
             touch-action: none;
-            min-width: 55px;
-            min-height: 55px;
+            min-width: 85px;
+            min-height: 85px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -376,13 +376,13 @@
 
             .ctrl-grid {
                 grid-template-columns: repeat(4, 1fr);
-                gap: 0.3rem;
+                gap: 0.9rem;
                 max-width: 240px;
             }
 
             .ctrl-grid .ctrl-btn {
-                min-width: 42px;
-                min-height: 42px;
+                min-width: 62px;
+                min-height: 62px;
                 font-size: 1.2rem;
                 padding: 0.4rem;
             }
@@ -412,8 +412,8 @@
             }
 
             .ctrl-grid .ctrl-btn {
-                min-width: 36px;
-                min-height: 36px;
+                min-width: 56px;
+                min-height: 56px;
                 font-size: 1rem;
                 padding: 0.3rem;
             }
