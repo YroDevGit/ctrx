@@ -167,7 +167,7 @@ const opt = {
     route: undefined,
     page: undefined,
     res: undefined,
-    loading: true,
+    loading: false,
     dataOnly: false,
     action: undefined,
     table: undefined,
@@ -255,7 +255,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         delete option.data;
         option.method = "POST";
         if(option.loading == undefined){
-            option.loading = true;
+            option.loading = false;
         }
         tyrux(configure._mergeOptions(option, this));
     },
@@ -313,7 +313,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             action: "insert",
             data: options.data,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async update(options = {...opt, update: undefined }) {
@@ -323,7 +324,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             update: options.update,
             where: options.where,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async remove(options = {...opt }) {
@@ -332,7 +334,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             action: "delete",
             where: options.where,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async findOne(options = {...opt }) {
@@ -342,7 +345,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             where: options.where ?? {},
             dataOnly: options.dataOnly,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async select(options = {...opt }) {
@@ -352,7 +356,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             where: options.where ?? {},
             dataOnly: options.dataOnly,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async query(options = {...opt}) {
@@ -361,7 +366,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             query: options.query,
             dataOnly: options.dataOnly,
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     },
     async userData(){
@@ -383,7 +389,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             action: "removeUserData",
             data: options.data ?? {},
             response: options.response,
-            res: options.res
+            res: options.res,
+            loading: options.loading
         });
     }
 };
