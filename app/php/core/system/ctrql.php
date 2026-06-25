@@ -118,8 +118,22 @@ if ($action == "disable") {
 }
 
 if($action == "userdata"){
-    $data = Ctrx::get_user_data();
+    $data =Ctrx::get_user_data();
+    if(! $data){
+        Response::code(error_code)->message("No userdata found")->data([])->var(['empty'=>true])->send(error_code);
+    }
+    Response::code(success_code)->message("OK")->data($data)->var(['empty'=>false])->send();
+}
+
+if($action == "setUserData"){
+    $data = $param;
+    Ctrx::set_user_data($data);
     Response::code(success_code)->message("OK")->data($data)->send();
+}
+
+if($action == "removeUserData"){
+    Ctrx::delete_user_data();
+    Response::code(success_code)->message("OK")->send();
 }
 
 if ($action == "query") {

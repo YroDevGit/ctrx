@@ -107,7 +107,7 @@ class CtrClass {
         }
     }
 
-    get refresh() {
+    get refresh(){
         this.reload();
     }
 
@@ -413,12 +413,31 @@ class CtrClass {
         }
     }
 
-    empty_obect(object) {
-        try {
+    empty_obect(object){
+        try{
             return Object.keys(object).length > 0;
-        } catch (err) {
+        }catch(err){
             console.warn(`empty_object: '${object}' has an issue`, err);
             return true;
+        }
+    }
+
+    empty_array(array){
+        try{
+            return array.length === 0;
+        }catch(err){
+            console.warn(`empty_object: '${array}' has an issue`, err);
+            return true;
+        }
+    }
+
+    is_empty(data){
+        if (Array.isArray(data)) {
+            return data.length === 0 ? true: false
+        } else if (data && typeof data === "object") {
+            return Object.keys(data).length === 0
+            ? true
+            : false
         }
     }
 

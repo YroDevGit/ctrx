@@ -312,7 +312,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             table: options.table,
             action: "insert",
             data: options.data,
-            response: options.response
+            response: options.response,
+            res: options.res
         });
     },
     async update(options = {...opt, update: undefined }) {
@@ -321,7 +322,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             action: "update",
             update: options.update,
             where: options.where,
-            response: options.response
+            response: options.response,
+            res: options.res
         });
     },
     async remove(options = {...opt }) {
@@ -329,7 +331,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             table: options.table,
             action: "delete",
             where: options.where,
-            response: options.response
+            response: options.response,
+            res: options.res
         });
     },
     async findOne(options = {...opt }) {
@@ -338,7 +341,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             table: options.table,
             where: options.where ?? {},
             dataOnly: options.dataOnly,
-            response: options.response
+            response: options.response,
+            res: options.res
         });
     },
     async select(options = {...opt }) {
@@ -347,7 +351,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
             table: options.table,
             where: options.where ?? {},
             dataOnly: options.dataOnly,
-            response: options.response
+            response: options.response,
+            res: options.res
         });
     },
     async query(options = {...opt}) {
@@ -355,7 +360,30 @@ const tyrax = { // tyrux default config :: CodeTazeR
             action: "query",
             query: options.query,
             dataOnly: options.dataOnly,
-            response: options.response
+            response: options.response,
+            res: options.res
+        });
+    },
+    async userData(){
+        let data = await this.ctrsync({
+            action: "userdata",
+            dataOnly: true
+        });
+
+        return data;
+    },
+    async setUserData(data){
+        return await this.ctrsync({
+            action: "setUserData",
+            data: data ?? {}
+        });
+    },
+    async deleteUserData(options = {...opt}){
+        return await this.ctrsync({
+            action: "removeUserData",
+            data: options.data ?? {},
+            response: options.response,
+            res: options.res
         });
     }
 };
