@@ -132,6 +132,7 @@ if (str_starts_with($req, "api/")) {
             if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
             if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
             if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
+            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
             include $v;
         }
 

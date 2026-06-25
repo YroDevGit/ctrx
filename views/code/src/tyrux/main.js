@@ -1,6 +1,5 @@
 import { Tyrux } from "./lib/tyrux.js";
-import { headerHandler, errorHandler } from "./config.js";
-import Loading from "../mods/loading.js";
+import { headerHandler, errorHandler, CtrLoading } from "../../tyrax/config.js";
 
 
 const baseURL = "";   //Backend url end-point
@@ -102,11 +101,13 @@ const tyrequest = { // For raw/universal request :: CodeYRO
 const configure = {
     _mergeOptions(option, tyrax) {
         const global = tyrax.config || {};
-        if (!option?.wait) {
-            option.wait = () => Loading.load(true);
-        }
-        if (!option?.done) {
-            option.done = () => Loading.load(false);
+        if(option?.loading){
+            if (!option?.wait) {
+                option.wait = CtrLoading.wait();
+            }
+            if (!option?.done) {
+                option.done = CtrLoading.done();
+            }
         }
         const merged = {
             ...global,
@@ -166,6 +167,12 @@ const opt = {
     route: undefined,
     page: undefined,
     res: undefined,
+    loading: true,
+    dataOnly: false,
+    action: undefined,
+    table: undefined,
+    where: undefined,
+    query: undefined,
 };
 
 const tyrax = { // tyrux default config :: CodeTazeR
@@ -219,7 +226,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         });
     },
 
-    ctrql(option = { ...opt, method: "POST", param: undefined, action: undefined, where: undefined, table: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined }) {
+    ctrql(option = { ...opt, method: "POST", param: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined }) {
         option.url = "ctrx_x_ctrql_request_authorized_ql";
         let par = option?.param ?? option?.where ?? option.request ?? option.data ?? undefined;
         let newpar = new Object();
@@ -247,6 +254,9 @@ const tyrax = { // tyrux default config :: CodeTazeR
         };
         delete option.data;
         option.method = "POST";
+        if(option.loading == undefined){
+            option.loading = true;
+        }
         tyrux(configure._mergeOptions(option, this));
     },
 
@@ -297,7 +307,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         return result;
     },
 
-    async insert(options = { table: undefined, data: undefined, response: undefined }) {
+    async insert(options = {...opt, data: undefined}) {
         return await this.ctrsync({
             table: options.table,
             action: "insert",
@@ -305,7 +315,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async update(options = { table: undefined, where: undefined, update: undefined, response: undefined }) {
+    async update(options = {...opt, update: undefined }) {
         return await this.ctrsync({
             table: options.table,
             action: "update",
@@ -314,7 +324,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async remove(options = { table: undefined, where: undefined, response: undefined }) {
+    async remove(options = {...opt }) {
         return await this.ctrsync({
             table: options.table,
             action: "delete",
@@ -322,7 +332,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async findOne(options = { table: undefined, where: undefined, dataOnly: false, response: undefined }) {
+    async findOne(options = {...opt }) {
         return await this.ctrsync({
             action: "findOne",
             table: options.table,
@@ -331,7 +341,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async select(options = { table: undefined, where: undefined, dataOnly: false, response: undefined }) {
+    async select(options = {...opt }) {
         return await this.ctrsync({
             action: "select",
             table: options.table,
@@ -340,7 +350,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             response: options.response
         });
     },
-    async query(options = { query: undefined, dataOnly: false, response: undefined }) {
+    async query(options = {...opt}) {
         return await this.ctrsync({
             action: "query",
             query: options.query,

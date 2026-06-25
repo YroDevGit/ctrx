@@ -47,11 +47,9 @@ if($realtime){
 }
 
 /**
- * setup limit request per minute
- * default is 10
+ * Include ql.php as middleware
  */
-$limit_request_per_minute = 100;
-Ctrx::x_rate_limit($limit_request_per_minute, 60, "ctrql_" . $action);
+include "app/config/ql.php";
 
 /**
  * Check if ctrql is active

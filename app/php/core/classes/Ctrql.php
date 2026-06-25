@@ -32,6 +32,16 @@ class Ctrql
         return true;
     }
 
+    public static function extendDuration(int $minutes){
+        $ctrqlString = self::$ctrqlString;
+        $ccookie = Ccookie::exist($ctrqlString);
+        if(! $ccookie){
+            return false;
+        }
+        $get = Ccookie::get($ctrqlString);
+        Ccookie::add($ctrqlString, $get, $minutes);
+    }
+
     public static function isActive():bool{
         $ctrqlString = self::$ctrqlString;
         $ccookie = Ccookie::exist($ctrqlString);
