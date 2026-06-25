@@ -107,6 +107,10 @@ class CtrClass {
         }
     }
 
+    get refresh() {
+        this.reload();
+    }
+
     funcpage($page = "", params = {}) {
         let url = this.func + $page;
         if (typeof params === "object" && Object.keys(params).length > 0) {
@@ -409,10 +413,10 @@ class CtrClass {
         }
     }
 
-    empty_obect(object){
-        try{
+    empty_obect(object) {
+        try {
             return Object.keys(object).length > 0;
-        }catch(err){
+        } catch (err) {
             console.warn(`empty_object: '${object}' has an issue`, err);
             return true;
         }

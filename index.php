@@ -1,14 +1,15 @@
 <?php
+
 /**
  * CTRX framework by CodeYRO
  * This framework made by the filipino dev (Technology made in the philippines)
  * Year created: 2025
  */
 
- /**
-  * For deployment please attach or generate htaccess for routing
-  * command: php ctrx generate:htaccess
-  */
+/**
+ * For deployment please attach or generate htaccess for routing
+ * command: php ctrx generate:htaccess
+ */
 
 
 /**
@@ -23,11 +24,49 @@ include_once "app/php/core/partials/envloader.php";
  * Made by CodeYRO
  */
 
- /**
-  * URL parsing
-  */
+/**
+ * URL parsing
+ */
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
+/**
+ * Load javascript without extensions (in javascript import)
+ * This load javascript from frontend (js) folder (views/js)
+ */
+if (str_starts_with($uri, "\\views\js\\") || str_starts_with($uri, "/views/js/")) {
+    if (! str_ends_with($uri, ".js")) {
+        $uri = $uri . ".js";
+        $uri = trim($uri, "/");
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $uri);
+        finfo_close($finfo);
+        header('Content-Type: application/javascript');
+        readfile($uri);
+        exit;
+    }
+}
+
+/**
+ * Load javascript without extensions (in javascript import)
+ * This load javascript from frontend (js) folder (views/code/*)
+ */
+if (str_starts_with($uri, "\\views\code\src\\") || str_starts_with($uri, "/views/code/src/") || str_starts_with($uri, "/views/code/script/")) {
+    if (! str_ends_with($uri, ".js")) {
+        $uri = $uri . ".js";
+        $uri = trim($uri, "/");
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $uri);
+        finfo_close($finfo);
+        header('Content-Type: application/javascript');
+        readfile($uri);
+        exit;
+    }
+}
+
+/**
+ * This is Ctr storage reader
+ * where you can read public and filter private files
+ */
 if (str_starts_with($uri, "/ctrstorage/")) {
     $ctrstorage = substr($uri, strlen('/ctrstorage/'));
     $filePath = 'views/core/partials/storage/' . $ctrstorage;
@@ -39,8 +78,8 @@ if (str_starts_with($uri, "/ctrstorage/")) {
 
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $filePath);
-    finfo_close($finfo);    
-    
+    finfo_close($finfo);
+
     $ret = extract([
         "path" => $ctrstorage,
         "file_path" => $filePath,
@@ -129,7 +168,7 @@ if (
 ) {
 
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-    if(str_contains($file,"views/code/src/") || str_contains($file, "views/js/"))return false;
+    if (str_contains($file, "views/code/src/") || str_contains($file, "views/js/")) return false;
     if (in_array($ext, $staticExtensions)) {
         return false;
     }

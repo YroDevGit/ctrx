@@ -389,12 +389,23 @@ class Validator {
         return this.failedState;
     }
 
+    static get isFailed() {
+        return this.failedState;
+    }
+
     static errorsList() {
         return this._errors;
     }
 
     static errors() {
         return this._errors;
+    }
+
+    static get hasErrors() {
+        if (this.failed) {
+            return this._errors;
+        }
+        return false;
     }
 
     static field_error(field = null) {
