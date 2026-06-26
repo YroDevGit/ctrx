@@ -411,9 +411,10 @@ if ($tableExists) {
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>CTRX Lightning | Translation Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Manager</title>
     <style>
+        /* ===== RESET ===== */
         * {
             margin: 0;
             padding: 0;
@@ -421,615 +422,542 @@ if ($tableExists) {
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Poppins', sans-serif;
-            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
-            min-height: 100vh;
-            padding: 2rem 1.5rem;
-            position: relative;
-            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
         }
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(45deg,
-                    rgba(255, 215, 0, 0.02) 0px,
-                    rgba(255, 215, 0, 0.02) 2px,
-                    transparent 2px,
-                    transparent 8px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .lightning-streak {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.3;
-        }
-
-        .lightning-streak::after {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: 20%;
-            width: 4px;
-            height: 120%;
-            background: linear-gradient(180deg, transparent, #ffea80, #ffc107, #ffb347, transparent);
-            filter: blur(3px);
-            animation: lightningFlash 3s infinite ease-in-out;
-            box-shadow: 0 0 20px #ffd966;
-        }
-
-        .lightning-streak::before {
-            content: '';
-            position: absolute;
-            top: -5%;
-            right: 35%;
-            width: 2px;
-            height: 110%;
-            background: linear-gradient(180deg, transparent, #ffe69b, #ffaa33, transparent);
-            filter: blur(5px);
-            animation: lightningFlash 4.2s infinite ease-in-out 1s;
-        }
-
-        @keyframes lightningFlash {
-
-            0%,
-            90%,
-            100% {
-                opacity: 0;
-                transform: scaleY(0.8);
-            }
-
-            92% {
-                opacity: 1;
-                transform: scaleY(1);
-            }
-
-            94% {
-                opacity: 0.4;
-            }
-
-            96% {
-                opacity: 1;
-            }
-
-            98% {
-                opacity: 0;
-            }
-        }
-
+        /* ===== CONTAINER ===== */
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: rgba(12, 18, 28, 0.75);
-            backdrop-filter: blur(12px);
-            border-radius: 2rem;
-            padding: 2rem 2rem 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 200, 50, 0.2), 0 0 0 5px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 200, 70, 0.5);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
-        .container::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, #00ccff, #ffaa22, #4aadc5, #00ccff);
-            border-radius: 2rem;
-            z-index: -1;
-            opacity: 0.2;
-            filter: blur(18px);
-            animation: borderPulse 2.5s infinite alternate;
+        /* ===== HEADER ===== */
+        .header {
+            border-bottom: 2px solid #e8e8e8;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
 
-        @keyframes borderPulse {
-            0% {
-                opacity: 0.2;
-                filter: blur(12px);
-            }
-
-            100% {
-                opacity: 0.6;
-                filter: blur(20px);
-            }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #1a1a1a;
         }
 
-        h2 {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFF3C9, #00ccff, #FDBB17);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-shadow: 0 0 8px rgba(255, 200, 0, 0.3);
-            margin-bottom: 1.2rem;
+        .header h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #888;
+            display: block;
+            margin-top: 4px;
         }
 
-        .msg {
-            color: yellowgreen;
-            margin-bottom: 1.4rem;
-            padding: 0.9rem 1.4rem;
-            border-radius: 60px;
-            font-weight: 500;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
-            border-left: 6px solid;
-            font-size: 0.95rem;
-            letter-spacing: 0.3px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: flickerMsg 0.4s ease;
+        /* ===== MESSAGES ===== */
+        .message {
+            padding: 12px 18px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
         }
 
-        @keyframes flickerMsg {
-            0% {
-                opacity: 0;
-                transform: translateX(-12px);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .message-success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
         }
 
+        .message-error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .message-info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        /* ===== STATS BAR ===== */
         .stats-bar {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: 20px;
             flex-wrap: wrap;
+            margin-bottom: 25px;
         }
 
         .stat-card {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
-            border-radius: 1rem;
-            padding: 0.8rem 1.5rem;
-            border: 1px solid rgba(255, 200, 80, 0.3);
+            background: #f8f9fa;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            padding: 12px 20px;
             flex: 1;
             min-width: 150px;
         }
 
         .stat-card .label {
-            font-size: 0.7rem;
+            font-size: 11px;
             text-transform: uppercase;
-            color: #ffdb8e;
-            letter-spacing: 1px;
+            color: #888;
+            letter-spacing: 0.5px;
         }
 
         .stat-card .value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #FFE5A3;
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
         }
 
-        .language-badge {
+        .lang-badge {
             display: inline-block;
-            background: rgba(255, 200, 80, 0.2);
-            border: 1px solid #ffcc66;
-            border-radius: 20px;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.8rem;
-            margin: 0.2rem;
+            background: #e8e8e8;
+            border-radius: 12px;
+            padding: 2px 12px;
+            font-size: 13px;
+            margin: 2px 4px 2px 0;
         }
 
+        /* ===== TABS ===== */
         .tabs {
             display: flex;
-            margin-bottom: 2rem;
-            gap: 0.8rem;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 0.5rem;
-            border-radius: 80px;
-            backdrop-filter: blur(8px);
+            gap: 4px;
+            border-bottom: 2px solid #e8e8e8;
+            margin-bottom: 25px;
         }
 
         .tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.8rem 0;
-            font-weight: 700;
-            font-size: 1.1rem;
+            padding: 10px 24px;
+            font-weight: 500;
             cursor: pointer;
-            border-radius: 60px;
-            transition: all 0.25s ease;
-            letter-spacing: 1px;
-            background: rgba(20, 28, 40, 0.7);
-            color: #b9c7d9;
-            border: 1px solid rgba(255, 200, 80, 0.2);
-            backdrop-filter: blur(4px);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #1a1a1a;
         }
 
         .tab.active {
-            background: linear-gradient(95deg, #FFD966, #FFB347);
-            color: #0a0a1a;
-            box-shadow: 0 0 12px #ffcc44, 0 4px 12px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
-            border-color: #FFE484;
+            color: #1a1a1a;
+            border-bottom-color: #2196f3;
         }
 
-        .tab:hover:not(.active) {
-            background: rgba(255, 205, 70, 0.25);
-            color: #ffe6aa;
-            border-color: #ffcc66;
-            transform: scale(0.98);
-        }
-
+        /* ===== SECTIONS ===== */
         .section {
             display: none;
-            animation: fadeSlide 0.4s ease;
+            animation: fadeIn 0.3s ease;
         }
 
         .section.active {
             display: block;
         }
 
-        @keyframes fadeSlide {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translateY(6px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        .activation-screen {
-            text-align: center;
-            padding: 3rem 2rem;
-        }
-
-        .activation-screen p {
-            color: #ffdb8e;
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-        }
-
-        .activation-buttons {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .activation-buttons button {
-            width: auto;
-            min-width: 180px;
-            padding: 0.9rem 2rem;
-            font-size: 1.1rem;
-            margin-top: 0;
-        }
-
-        .btn-cancel {
-            background: linear-gradient(95deg, #3a2a2a, #2a1a1a);
-            border-color: #ff8866;
-            color: #ffaa88;
-        }
-
-        .btn-cancel:hover {
-            background: linear-gradient(95deg, #cc5533, #aa4422);
-            color: white;
-            border-color: #ffaa88;
-        }
-
-        .btn-activate {
-            background: linear-gradient(95deg, #FFD966, #FFB347);
-            color: #0a0a1a;
-            font-weight: bold;
-        }
-
-        .btn-activate:hover {
-            background: linear-gradient(95deg, #FFE484, #FFC857);
-            box-shadow: 0 0 25px #ffcc44;
+        /* ===== FORMS ===== */
+        .form-group {
+            margin-bottom: 18px;
         }
 
         label {
             display: block;
-            margin-top: 1.2rem;
-            margin-bottom: 0.4rem;
-            font-weight: 600;
-            color: #FFE5A3;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #444;
         }
 
         input,
         select,
-        button,
-        .file-label {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            background: rgba(5, 10, 20, 0.7);
-            border: 1.5px solid rgba(255, 200, 80, 0.5);
-            border-radius: 1.2rem;
-            font-size: 0.95rem;
-            color: #F0F3FA;
-            transition: all 0.2s;
-            outline: none;
-            font-weight: 500;
+        button {
+            font-family: inherit;
+            font-size: 14px;
         }
 
+        input,
         select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23FFD966' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-        }
-
-        select option {
-            background: #0a0f1e;
-            color: #F0F3FA;
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            transition: border-color 0.2s;
         }
 
         input:focus,
         select:focus {
-            border-color: #FFD966;
-            box-shadow: 0 0 15px rgba(255, 210, 70, 0.6);
-            background: rgba(8, 14, 24, 0.9);
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        select option {
+            padding: 4px;
         }
 
         button {
-            background: linear-gradient(95deg, #2b2f3f, #1a1e2c);
-            border: 1px solid #ffcd7e;
-            margin-top: 1.8rem;
-            font-weight: bold;
-            font-size: 1rem;
-            letter-spacing: 0.5px;
+            padding: 9px 28px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            color: #FFE9B6;
         }
 
-        button:hover {
-            background: linear-gradient(95deg, #FFC857, #FFA82E);
-            color: #0f0f1a;
-            border-color: #FFE484;
-            box-shadow: 0 0 18px #ffbb44, 0 4px 12px black;
-            transform: translateY(-2px);
+        .btn-primary {
+            background: #2196f3;
+            color: #fff;
         }
 
-        .checkbox {
+        .btn-primary:hover {
+            background: #1976d2;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #388e3c;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: #fff;
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .btn-default {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .btn-default:hover {
+            background: #d5d5d5;
+        }
+
+        .btn-activate {
+            background: #4caf50;
+            color: #fff;
+            padding: 12px 36px;
+            font-size: 16px;
+        }
+
+        .btn-activate:hover {
+            background: #388e3c;
+        }
+
+        .btn-cancel {
+            background: #e8e8e8;
+            color: #333;
+            padding: 12px 36px;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-cancel:hover {
+            background: #d5d5d5;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            margin-top: 8px;
+        }
+
+        /* ===== CHECKBOX ===== */
+        .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-top: 1rem;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 0.7rem 1rem;
-            border-radius: 2rem;
-            backdrop-filter: blur(4px);
+            gap: 10px;
+            padding: 10px 14px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e8e8e8;
+            margin-top: 10px;
         }
 
-        .checkbox input {
-            width: 1.3rem;
-            height: 1.3rem;
-            margin-top: 0;
-            accent-color: #ffcc44;
-            box-shadow: none;
-            border-radius: 0.3rem;
-        }
-
-        .checkbox label {
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
             margin: 0;
-            text-transform: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #ffeaC0;
+            flex-shrink: 0;
         }
 
+        .checkbox-group label {
+            margin: 0;
+            font-weight: 400;
+            font-size: 14px;
+            color: #444;
+            cursor: pointer;
+        }
+
+        /* ===== FORMAT OPTIONS ===== */
         .format-group {
             display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 4px;
         }
 
         .format-option {
-            flex: 1;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.6rem;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 1rem;
+            gap: 8px;
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             cursor: pointer;
-            border: 1px solid rgba(255, 200, 80, 0.3);
             transition: all 0.2s;
+            background: #fff;
+        }
+
+        .format-option:hover {
+            border-color: #888;
         }
 
         .format-option.selected {
-            background: rgba(255, 200, 80, 0.2);
-            border-color: #FFD966;
-            box-shadow: 0 0 8px rgba(255, 200, 80, 0.3);
+            border-color: #2196f3;
+            background: #e3f2fd;
         }
 
-        .format-option input {
+        .format-option input[type="radio"] {
             width: auto;
             margin: 0;
-            transform: scale(1.2);
-            accent-color: #ffcc44;
+            flex-shrink: 0;
         }
 
         .format-option label {
             margin: 0;
-            text-transform: none;
-            font-size: 0.85rem;
+            font-weight: 400;
+            font-size: 14px;
             cursor: pointer;
+            color: #333;
         }
 
-        .inline-hint {
-            font-size: 0.7rem;
-            color: #8f9bb3;
-            margin-top: 0.3rem;
-            text-align: center;
-        }
-
-        .icon-badge {
-            display: inline-block;
-            font-size: 1.1rem;
-            margin-right: 6px;
-        }
-
+        /* ===== FILE INPUT ===== */
         input[type="file"] {
-            padding: 0.7rem;
+            padding: 8px;
+            border: 1px dashed #ccc;
+            background: #fafafa;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.6);
-            color: #ffdfaa;
+        }
+
+        input[type="file"]:hover {
+            border-color: #888;
+            background: #f5f5f5;
         }
 
         input[type="file"]::file-selector-button {
-            background: #2a2f3f;
-            border: 1px solid #ffcc66;
-            border-radius: 30px;
-            padding: 6px 14px;
-            color: #FFF2CC;
-            margin-right: 12px;
+            padding: 6px 16px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: #e8e8e8;
             cursor: pointer;
+            margin-right: 12px;
             transition: 0.2s;
         }
 
         input[type="file"]::file-selector-button:hover {
-            background: #ffcc44;
-            color: #0f111c;
+            background: #d5d5d5;
         }
 
+        /* ===== HINT TEXT ===== */
+        .hint {
+            font-size: 13px;
+            color: #888;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* ===== TABLE PREVIEW ===== */
         .preview-table {
-            margin-top: 2rem;
             overflow-x: auto;
-            max-height: 500px;
+            max-height: 450px;
             overflow-y: auto;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
         }
 
         .preview-table table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
+            font-size: 14px;
         }
 
         .preview-table th {
-            background: rgba(255, 200, 80, 0.2);
-            padding: 0.8rem;
+            background: #f8f9fa;
+            padding: 10px 12px;
             text-align: left;
-            color: #FFE5A3;
-            border-bottom: 2px solid #ffcc66;
+            border-bottom: 2px solid #e8e8e8;
             position: sticky;
             top: 0;
-            backdrop-filter: blur(8px);
+            z-index: 10;
+            font-weight: 600;
+            color: #444;
         }
 
         .preview-table td {
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(255, 200, 80, 0.2);
-            color: #d4dcec;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #333;
         }
 
         .preview-table tr:hover {
-            background: rgba(255, 200, 80, 0.1);
+            background: #f8f9fa;
         }
 
         .active-badge {
             display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: bold;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .active-yes {
-            background: rgba(76, 175, 80, 0.3);
-            color: #81c784;
-            border: 1px solid #4caf50;
+            background: #e8f5e9;
+            color: #2e7d32;
         }
 
         .active-no {
-            background: rgba(244, 67, 54, 0.3);
-            color: #ef9a9a;
-            border: 1px solid #f44336;
+            background: #ffebee;
+            color: #c62828;
         }
 
-        .spark {
-            position: fixed;
-            width: 3px;
-            height: 3px;
-            background: #FFDD88;
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 999;
-            filter: blur(1px);
-            animation: sparkFloat 1.8s ease-out forwards;
-        }
-
-        @keyframes sparkFloat {
-            0% {
-                opacity: 0.8;
-                transform: translateY(0) scale(1);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateY(-80px) scale(0.5);
-            }
-        }
-
-        footer {
+        /* ===== ACTIVATION SCREEN ===== */
+        .activation-screen {
             text-align: center;
-            margin-top: 2rem;
-            color: #7f8c9a;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            opacity: 0.7;
+            padding: 40px 20px;
         }
 
+        .activation-screen p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .activation-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ===== BACK LINK ===== */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            color: #333;
+            text-decoration: underline;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #aaa;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             body {
-                padding: 1rem;
+                padding: 10px;
             }
 
             .container {
-                padding: 1.5rem;
+                padding: 16px;
             }
 
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .tab {
-                font-size: 0.9rem;
-                padding: 0.6rem 0;
-            }
-
-            .format-group {
-                flex-direction: column;
-                gap: 0.5rem;
+            .header h1 {
+                font-size: 20px;
             }
 
             .stats-bar {
                 flex-direction: column;
+                gap: 10px;
+            }
+
+            .format-group {
+                flex-direction: column;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                gap: 0;
+            }
+
+            .tab {
+                padding: 8px 16px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            .activation-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .activation-buttons button,
+            .activation-buttons .btn-cancel {
+                width: 100%;
+                max-width: 300px;
             }
         }
     </style>
@@ -1037,152 +965,174 @@ if ($tableExists) {
 
 <body>
 
-    <div class="lightning-streak"></div>
-    <div class="lightning-streak" style="transform: rotate(10deg); opacity:0.2;"></div>
-
     <div class="container">
-        <h2>🌍 CTRX TRANSLATION HUB</h2>
-        <h2 style="font-size: 1rem; margin-top: -15px; margin-bottom: 20px;">MULTILINGUAL DICTIONARY MANAGER</h2>
 
-        <?php if (!empty($message) && $tableExists): ?>
-            <div class="msg">
-                <span class="icon-badge">⚡</span>
-                <?= htmlspecialchars($message) ?>
-            </div>
+        <!-- HEADER -->
+        <div class="header">
+            <h1>
+                📋 Translation Manager
+                <small>Multilingual dictionary management</small>
+            </h1>
+        </div>
+
+        <!-- MESSAGES -->
+        <?php if (!empty($message)): ?>
+            <?php if ($tableExists): ?>
+                <div class="message message-success">
+                    <?= htmlspecialchars($message) ?>
+                </div>
+            <?php else: ?>
+                <div class="message message-error">
+                    <?= htmlspecialchars($message) ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
+        <!-- ACTIVATION SCREEN -->
         <?php if (!$tableExists): ?>
             <div class="activation-screen">
                 <p>⚡ The translation table is not yet activated. Click Activate to create the required database structure.</p>
                 <div class="activation-buttons">
                     <a href="<?= $backpage ?? '/' ?>">
-                        <button type="button" class="btn-cancel" style="text-decoration: none;">← Back / Cancel</button>
+                        <span class="btn-cancel">← Back / Cancel</span>
                     </a>
                     <button type="button" class="btn-activate" id="activateTableBtn">⚡ Activate Translation System</button>
                 </div>
             </div>
+
         <?php else: ?>
+
+            <!-- STATS -->
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="label">📚 Total Translations</div>
+                    <div class="label">Total Translations</div>
                     <div class="value"><?= $totalRecords ?></div>
                 </div>
                 <div class="stat-card">
-                    <div class="label">🌐 Languages</div>
+                    <div class="label">Languages</div>
                     <div class="value"><?= count($availableLanguages) ?></div>
                 </div>
                 <div class="stat-card">
-                    <div class="label">🎯 Active Languages</div>
+                    <div class="label">Active Languages</div>
                     <div class="value">
                         <?php foreach ($availableLanguages as $lang): ?>
-                            <span class="language-badge"><?= htmlspecialchars($lang['lang']) ?> - <?= htmlspecialchars($lang['name']) ?></span>
+                            <span class="lang-badge"><?= htmlspecialchars($lang['lang']) ?></span>
                         <?php endforeach; ?>
                         <?php if (empty($availableLanguages)) echo "—"; ?>
                     </div>
                 </div>
             </div>
 
+            <!-- TABS -->
             <div class="tabs">
-                <div class="tab active" data-tab="0">📤 EXPORT</div>
-                <div class="tab" data-tab="1">📥 IMPORT</div>
-                <div class="tab" data-tab="2">👁️ PREVIEW</div>
+                <div class="tab active" data-tab="0">📤 Export</div>
+                <div class="tab" data-tab="1">📥 Import</div>
+                <div class="tab" data-tab="2">👁️ Preview</div>
             </div>
 
+            <!-- EXPORT SECTION -->
             <div class="section active" id="exportSection">
-                <form method="POST" id="exportForm">
-                    <label>🌐 SELECT LANGUAGE TO EXPORT</label>
-                    <select name="selected_lang" required>
-                        <option value="" disabled selected>— Select a language —</option>
-                        <option value="all">🌍 ALL LANGUAGES (JSON only)</option>
-                        <?php foreach ($availableLanguages as $lang): ?>
-                            <option value="<?= htmlspecialchars($lang['lang']) ?>">
-                                <?= htmlspecialchars($lang['lang']) ?> - <?= htmlspecialchars($lang['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                        <?php if (empty($availableLanguages)): ?>
-                            <option disabled>— No languages found —</option>
-                        <?php endif; ?>
-                    </select>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="selected_lang">🌐 Select Language to Export</label>
+                        <select name="selected_lang" id="selected_lang" required>
+                            <option value="" disabled selected>— Select a language —</option>
+                            <option value="all">🌍 ALL LANGUAGES (JSON only)</option>
+                            <?php foreach ($availableLanguages as $lang): ?>
+                                <option value="<?= htmlspecialchars($lang['lang']) ?>">
+                                    <?= htmlspecialchars($lang['lang']) ?> - <?= htmlspecialchars($lang['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                            <?php if (empty($availableLanguages)): ?>
+                                <option disabled>— No languages found —</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
 
-                    <label>📁 EXPORT FORMAT</label>
-                    <div class="format-group" id="exportFormatGroup">
-                        <div class="format-option" data-format="json">
-                            <input type="radio" name="export_format" value="json" id="export_json" checked>
-                            <label for="export_json">JSON</label>
-                        </div>
-                        <div class="format-option" data-format="csv">
-                            <input type="radio" name="export_format" value="csv" id="export_csv">
-                            <label for="export_csv">CSV</label>
-                        </div>
-                        <div class="format-option" data-format="excel">
-                            <input type="radio" name="export_format" value="excel" id="export_excel">
-                            <label for="export_excel">Excel (XLSX)</label>
+                    <div class="form-group">
+                        <label>📁 Export Format</label>
+                        <div class="format-group" id="exportFormatGroup">
+                            <div class="format-option selected" data-format="json">
+                                <input type="radio" name="export_format" value="json" id="export_json" checked>
+                                <label for="export_json">JSON</label>
+                            </div>
+                            <div class="format-option" data-format="csv">
+                                <input type="radio" name="export_format" value="csv" id="export_csv">
+                                <label for="export_csv">CSV</label>
+                            </div>
+                            <div class="format-option" data-format="excel">
+                                <input type="radio" name="export_format" value="excel" id="export_excel">
+                                <label for="export_excel">Excel (XLSX)</label>
+                            </div>
                         </div>
                     </div>
 
-                    <button name="export_table" type="submit">
-                        <span>⚡ EXPORT TRANSLATIONS</span>
+                    <button type="submit" name="export_table" class="btn-success btn-block">
+                        ⚡ EXPORT TRANSLATIONS
                     </button>
                 </form>
-                <div class="inline-hint">
-                    📋 CSV/Excel format: Row1: language code, language name | Row2: id, en, str, active | Then data rows<br>
-                    📋 JSON: Structured format with all fields
+                <div class="hint">
+                    📋 CSV/Excel: Row1: language code, language name | Row2: id, en, str, active | Then data rows
                 </div>
             </div>
 
+            <!-- IMPORT SECTION -->
             <div class="section" id="importSection">
-                <form method="POST" enctype="multipart/form-data" id="importForm">
-                    <label>📂 FILE TYPE</label>
-                    <div class="format-group" id="importTypeGroup">
-                        <div class="format-option" data-format="json">
-                            <input type="radio" name="file_type" value="json" id="import_json" checked>
-                            <label for="import_json">JSON</label>
-                        </div>
-                        <div class="format-option" data-format="csv">
-                            <input type="radio" name="file_type" value="csv" id="import_csv">
-                            <label for="import_csv">CSV</label>
-                        </div>
-                        <div class="format-option" data-format="excel">
-                            <input type="radio" name="file_type" value="excel" id="import_excel">
-                            <label for="import_excel">Excel (XLSX)</label>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>📂 File Type</label>
+                        <div class="format-group" id="importTypeGroup">
+                            <div class="format-option selected" data-format="json">
+                                <input type="radio" name="file_type" value="json" id="import_json" checked>
+                                <label for="import_json">JSON</label>
+                            </div>
+                            <div class="format-option" data-format="csv">
+                                <input type="radio" name="file_type" value="csv" id="import_csv">
+                                <label for="import_csv">CSV</label>
+                            </div>
+                            <div class="format-option" data-format="excel">
+                                <input type="radio" name="file_type" value="excel" id="import_excel">
+                                <label for="import_excel">Excel (XLSX)</label>
+                            </div>
                         </div>
                     </div>
 
-                    <label>📂 SELECT FILE</label>
-                    <input type="file" name="import_file" accept=".json,.csv,.xlsx" required>
+                    <div class="form-group">
+                        <label>📂 Select File</label>
+                        <input type="file" name="import_file" accept=".json,.csv,.xlsx" required>
+                    </div>
 
-                    <div class="checkbox">
+                    <div class="checkbox-group">
                         <input type="checkbox" name="replace_all" id="replace_all">
-                        <label for="replace_all">⚡ REPLACE MODE – Delete all existing data for this language before import (keeps existing IDs)</label>
+                        <label for="replace_all">⚡ REPLACE MODE – Delete existing data for this language before import</label>
                     </div>
 
-                    <button name="import_table" type="submit">
-                        <span>🔥 IMPORT TRANSLATIONS</span>
+                    <button type="submit" name="import_table" class="btn-warning btn-block">
+                        🔥 IMPORT TRANSLATIONS
                     </button>
                 </form>
-                <div class="inline-hint">
-                    💡 Import rules:<br>
-                    • If ID exists and matches a record → UPDATE that record, keeping the same ID<br>
-                    • If no ID but (lang + en) exists → UPDATE that record, keeping the same ID<br>
-                    • If no match → INSERT new record (auto-assign new ID)<br>
-                    • Replace mode: ONLY deletes records for the language being imported that are NOT in the import file (keeps IDs from import)
+                <div class="hint">
+                    💡 If ID exists → UPDATE | If (lang + en) exists → UPDATE | Otherwise → INSERT new record
                 </div>
             </div>
 
+            <!-- PREVIEW SECTION -->
             <div class="section" id="previewSection">
                 <div class="preview-table">
                     <?php if (empty($previewData)): ?>
-                        <div class="inline-hint">📭 No translations yet. Import some data to see preview.</div>
+                        <div style="padding: 30px; text-align: center; color: #888;">
+                            📭 No translations yet. Import some data to see preview.
+                        </div>
                     <?php else: ?>
                         <table>
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>🌐 Language Code</th>
-                                    <th>🏷️ Language Name</th>
-                                    <th>📖 English Word</th>
-                                    <th>🔄 Translation</th>
-                                    <th>⚡ Active</th>
+                                    <th>Language Code</th>
+                                    <th>Language Name</th>
+                                    <th>English Word</th>
+                                    <th>Translation</th>
+                                    <th>Active</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1203,17 +1153,26 @@ if ($tableExists) {
                             </tbody>
                         </table>
                         <?php if ($totalRecords > 100): ?>
-                            <div class="inline-hint">📊 Showing first 100 of <?= $totalRecords ?> records</div>
+                            <div style="padding: 8px 12px; background: #f8f9fa; font-size: 13px; color: #888;">
+                                📊 Showing first 100 of <?= $totalRecords ?> records
+                            </div>
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
+
         <?php endif; ?>
 
-        <div style="margin-top: 2rem; font-size:16px; text-align:center;">
-            <a style="text-decoration:none;color:#ccb27c;" href="<?= $backpage ?? '/' ?>">← Back to Dashboard</a>
+        <!-- BACK LINK -->
+        <div class="back-link">
+            <a href="<?= $backpage ?? '/' ?>">← Back to Dashboard</a>
         </div>
-        <footer>⚡ CTRX TRANSLATION ENGINE • MULTILINGUAL DATA FLOW</footer>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            Translation Manager • Multilingual Data Flow
+        </div>
+
     </div>
 
     <script>
@@ -1222,9 +1181,9 @@ if ($tableExists) {
                 const activateBtn = document.getElementById('activateTableBtn');
                 if (activateBtn) {
                     activateBtn.addEventListener('click', async function() {
-                        const originalText = activateBtn.innerHTML;
-                        activateBtn.innerHTML = '⏳ Activating...';
-                        activateBtn.disabled = true;
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '⏳ Activating...';
+                        this.disabled = true;
 
                         try {
                             const formData = new FormData();
@@ -1241,9 +1200,10 @@ if ($tableExists) {
                             const result = await response.json();
 
                             if (result.success) {
+                                // Show message and reload
                                 const msgDiv = document.createElement('div');
-                                msgDiv.className = 'msg';
-                                msgDiv.innerHTML = '<span class="icon-badge">⚡</span> ' + result.message;
+                                msgDiv.className = 'message message-success';
+                                msgDiv.textContent = result.message;
                                 const container = document.querySelector('.container');
                                 const activationScreen = document.querySelector('.activation-screen');
                                 if (activationScreen) {
@@ -1254,18 +1214,19 @@ if ($tableExists) {
                                     window.location.reload();
                                 }, 1500);
                             } else {
-                                activateBtn.innerHTML = originalText;
-                                activateBtn.disabled = false;
+                                this.innerHTML = originalText;
+                                this.disabled = false;
                                 alert('Error: ' + result.message);
                             }
                         } catch (error) {
-                            activateBtn.innerHTML = originalText;
-                            activateBtn.disabled = false;
+                            this.innerHTML = originalText;
+                            this.disabled = false;
                             alert('Request failed: ' + error.message);
                         }
                     });
                 }
             <?php else: ?>
+                // Tab switching
                 const tabs = document.querySelectorAll('.tab');
                 const sections = {
                     0: document.getElementById('exportSection'),
@@ -1275,190 +1236,81 @@ if ($tableExists) {
 
                 function switchTab(index) {
                     tabs.forEach((tab, i) => {
-                        if (i === index) {
-                            tab.classList.add('active');
-                        } else {
-                            tab.classList.remove('active');
-                        }
+                        tab.classList.toggle('active', i === index);
                     });
                     for (let i = 0; i <= 2; i++) {
-                        if (sections[i]) sections[i].classList.remove('active');
+                        if (sections[i]) sections[i].classList.toggle('active', i === index);
                     }
-                    if (sections[index]) sections[index].classList.add('active');
                 }
 
                 tabs.forEach((tab, idx) => {
-                    tab.addEventListener('click', () => {
-                        switchTab(idx);
-                    });
+                    tab.addEventListener('click', () => switchTab(idx));
                 });
 
-                const exportOptions = document.querySelectorAll('#exportFormatGroup .format-option');
-                exportOptions.forEach(opt => {
+                // Format option selection
+                document.querySelectorAll('.format-option').forEach(opt => {
                     const radio = opt.querySelector('input');
-                    radio.addEventListener('change', () => {
-                        exportOptions.forEach(o => o.classList.remove('selected'));
+                    if (radio) {
+                        radio.addEventListener('change', () => {
+                            const group = opt.closest('.format-group');
+                            group.querySelectorAll('.format-option').forEach(o => o.classList.remove(
+                            'selected'));
+                            if (radio.checked) opt.classList.add('selected');
+                        });
                         if (radio.checked) opt.classList.add('selected');
-                    });
-                    if (radio.checked) opt.classList.add('selected');
-                });
-
-                const importOptions = document.querySelectorAll('#importTypeGroup .format-option');
-                importOptions.forEach(opt => {
-                    const radio = opt.querySelector('input');
-                    radio.addEventListener('change', () => {
-                        importOptions.forEach(o => o.classList.remove('selected'));
-                        if (radio.checked) opt.classList.add('selected');
-                        const fileInput = document.querySelector('input[name="import_file"]');
-                        if (radio.value === 'json') fileInput.setAttribute('accept', '.json');
-                        else if (radio.value === 'csv') fileInput.setAttribute('accept', '.csv');
-                        else if (radio.value === 'excel') fileInput.setAttribute('accept', '.xlsx,.xls');
-                    });
-                    if (radio.checked) opt.classList.add('selected');
-                });
-
-                function createSpark(event, element) {
-                    const rect = element.getBoundingClientRect();
-                    const x = event.clientX || rect.left + rect.width / 2;
-                    const y = event.clientY || rect.top + rect.height / 2;
-                    for (let i = 0; i < 12; i++) {
-                        const spark = document.createElement('div');
-                        spark.classList.add('spark');
-                        const angle = Math.random() * Math.PI * 2;
-                        const vx = (Math.cos(angle) * (Math.random() * 40 + 10)) * (Math.random() > 0.5 ? 1 : -1);
-                        const vy = (Math.sin(angle) * (Math.random() * 30 + 15)) * -1 - 10;
-                        spark.style.left = x + 'px';
-                        spark.style.top = y + 'px';
-                        spark.style.transform = `translate(${vx}px, ${vy}px)`;
-                        spark.style.width = Math.random() * 6 + 2 + 'px';
-                        spark.style.height = spark.style.width;
-                        spark.style.background = `hsl(${50 + Math.random() * 20}, 100%, 65%)`;
-                        spark.style.boxShadow = '0 0 6px #ffcc44';
-                        document.body.appendChild(spark);
-                        setTimeout(() => {
-                            spark.remove();
-                        }, 800);
                     }
-                }
+                });
 
-                function attachSparkToButtons() {
-                    const btns = document.querySelectorAll('button');
-                    btns.forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            createSpark(e, btn);
+                // Language select - disable CSV/Excel for "all" option
+                const langSelect = document.querySelector('select[name="selected_lang"]');
+                if (langSelect) {
+                    langSelect.addEventListener('change', function() {
+                        const isAll = this.value === 'all';
+                        document.querySelectorAll('#exportFormatGroup .format-option').forEach(opt => {
+                            const radio = opt.querySelector('input');
+                            if (radio && (radio.value === 'csv' || radio.value === 'excel')) {
+                                opt.style.opacity = isAll ? '0.4' : '1';
+                                opt.style.pointerEvents = isAll ? 'none' : 'auto';
+                                if (isAll && radio.checked) {
+                                    document.getElementById('export_json').checked = true;
+                                    document.querySelector('#exportFormatGroup .format-option[data-format="json"]')
+                                        .classList.add('selected');
+                                }
+                            }
                         });
                     });
                 }
 
-                const forms = document.querySelectorAll('form');
-                forms.forEach(form => {
-                    form.addEventListener('submit', function(e) {
-                        const submitBtn = form.querySelector('button[type="submit"], button');
-                        if (submitBtn) {
-                            const fakeEvent = {
-                                clientX: submitBtn.getBoundingClientRect().left + submitBtn.offsetWidth / 2,
-                                clientY: submitBtn.getBoundingClientRect().top + submitBtn.offsetHeight / 2
-                            };
-                            for (let s = 0; s < 20; s++) createSpark(fakeEvent, submitBtn);
-                        }
-                        const flashDiv = document.createElement('div');
-                        flashDiv.style.position = 'fixed';
-                        flashDiv.style.top = '0';
-                        flashDiv.style.left = '0';
-                        flashDiv.style.width = '100%';
-                        flashDiv.style.height = '100%';
-                        flashDiv.style.backgroundColor = 'rgba(255, 215, 0, 0.25)';
-                        flashDiv.style.pointerEvents = 'none';
-                        flashDiv.style.zIndex = '9999';
-                        flashDiv.style.animation = 'fadeOutFlash 0.25s ease-out forwards';
-                        document.body.appendChild(flashDiv);
-                        setTimeout(() => flashDiv.remove(), 300);
-                    });
-                });
-
-                const styleSheet = document.createElement("style");
-                styleSheet.textContent = `
-            @keyframes fadeOutFlash {
-                0% { opacity: 0.7; background-color: rgba(255, 210, 70, 0.5);}
-                100% { opacity: 0; background-color: rgba(255, 210, 70, 0);}
-            }
-        `;
-                document.head.appendChild(styleSheet);
-
-                attachSparkToButtons();
-
-                let trailTimeout;
-                document.body.addEventListener('mousemove', (e) => {
-                    if (trailTimeout) return;
-                    trailTimeout = setTimeout(() => {
-                        const miniSpark = document.createElement('div');
-                        miniSpark.style.position = 'fixed';
-                        miniSpark.style.left = e.clientX - 2 + 'px';
-                        miniSpark.style.top = e.clientY - 2 + 'px';
-                        miniSpark.style.width = '4px';
-                        miniSpark.style.height = '4px';
-                        miniSpark.style.background = 'radial-gradient(circle, #ffcc55, #ffaa22)';
-                        miniSpark.style.borderRadius = '50%';
-                        miniSpark.style.pointerEvents = 'none';
-                        miniSpark.style.zIndex = '99999';
-                        miniSpark.style.filter = 'blur(1px)';
-                        miniSpark.style.opacity = '0.7';
-                        document.body.appendChild(miniSpark);
-                        setTimeout(() => miniSpark.remove(), 250);
-                        trailTimeout = null;
-                    }, 25);
-                });
-
+                // File input feedback
                 const fileInput = document.querySelector('input[type="file"]');
                 if (fileInput) {
-                    fileInput.addEventListener('change', (e) => {
-                        if (e.target.files.length) {
-                            const fileName = e.target.files[0].name;
-                            const oldMsg = fileInput.parentNode.querySelector('.file-feedback');
-                            if (oldMsg) oldMsg.remove();
+                    fileInput.addEventListener('change', function() {
+                        if (this.files.length) {
                             const span = document.createElement('div');
+                            span.style.cssText = 'font-size: 13px; margin-top: 6px; color: #666;';
+                            span.textContent = '📎 ' + this.files[0].name;
+                            const old = this.parentNode.querySelector('.file-feedback');
+                            if (old) old.remove();
                             span.className = 'file-feedback';
-                            span.innerText = `⚡ File ready: ${fileName}`;
-                            span.style.fontSize = '0.7rem';
-                            span.style.marginTop = '8px';
-                            span.style.color = '#ffe0a3';
-                            fileInput.insertAdjacentElement('afterend', span);
-                            setTimeout(() => span.remove(), 2000);
+                            this.insertAdjacentElement('afterend', span);
+                            setTimeout(() => span.remove(), 3000);
                         }
                     });
                 }
 
-                const langSelect = document.querySelector('select[name="selected_lang"]');
-                const exportFormatRadios = document.querySelectorAll('input[name="export_format"]');
-
-                function updateExportFormatOptions() {
-                    const selectedLang = langSelect ? langSelect.value : '';
-                    const isAllSelected = selectedLang === 'all';
-                    exportFormatRadios.forEach(radio => {
-                        const optionDiv = radio.closest('.format-option');
-                        if (radio.value === 'excel' || radio.value === 'csv') {
-                            if (isAllSelected && optionDiv) {
-                                optionDiv.style.opacity = '0.5';
-                                optionDiv.style.pointerEvents = 'none';
-                                if (radio.checked && radio.value !== 'json') {
-                                    document.getElementById('export_json').checked = true;
-                                    document.querySelector('#exportFormatGroup .format-option[data-format="json"]').classList.add('selected');
-                                }
-                            } else if (optionDiv) {
-                                optionDiv.style.opacity = '1';
-                                optionDiv.style.pointerEvents = 'auto';
-                            }
-                        }
+                // Update accept attribute based on file type selection
+                document.querySelectorAll('#importTypeGroup .format-option input').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        const fileInput = document.querySelector('input[name="import_file"]');
+                        if (this.value === 'json') fileInput.setAttribute('accept', '.json');
+                        else if (this.value === 'csv') fileInput.setAttribute('accept', '.csv');
+                        else if (this.value === 'excel') fileInput.setAttribute('accept', '.xlsx,.xls');
                     });
-                }
-
-                if (langSelect) {
-                    langSelect.addEventListener('change', updateExportFormatOptions);
-                    updateExportFormatOptions();
-                }
+                });
             <?php endif; ?>
         })();
     </script>
+
 </body>
 
 </html>

@@ -288,157 +288,56 @@ if (isset($_POST['import_table'])) {
 
         body {
             font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Poppins', sans-serif;
-            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
+            background: #f4f6f9;
             min-height: 100vh;
             padding: 2rem 1.5rem;
             position: relative;
             overflow-x: hidden;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(45deg,
-                    rgba(255, 215, 0, 0.02) 0px,
-                    rgba(255, 215, 0, 0.02) 2px,
-                    transparent 2px,
-                    transparent 8px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .lightning-streak {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.3;
-        }
-
-        .lightning-streak::after {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: 20%;
-            width: 4px;
-            height: 120%;
-            background: linear-gradient(180deg, transparent, #ffea80, #ffc107, #ffb347, transparent);
-            filter: blur(3px);
-            animation: lightningFlash 3s infinite ease-in-out;
-            box-shadow: 0 0 20px #ffd966;
-        }
-
-        .lightning-streak::before {
-            content: '';
-            position: absolute;
-            top: -5%;
-            right: 35%;
-            width: 2px;
-            height: 110%;
-            background: linear-gradient(180deg, transparent, #ffe69b, #ffaa33, transparent);
-            filter: blur(5px);
-            animation: lightningFlash 4.2s infinite ease-in-out 1s;
-        }
-
-        @keyframes lightningFlash {
-
-            0%,
-            90%,
-            100% {
-                opacity: 0;
-                transform: scaleY(0.8);
-            }
-
-            92% {
-                opacity: 1;
-                transform: scaleY(1);
-            }
-
-            94% {
-                opacity: 0.4;
-            }
-
-            96% {
-                opacity: 1;
-            }
-
-            98% {
-                opacity: 0;
-            }
+            color: #1e293b;
         }
 
         .container {
             max-width: 820px;
             margin: 0 auto;
-            background: rgba(12, 18, 28, 0.75);
-            backdrop-filter: blur(12px);
-            border-radius: 2rem;
+            background: #ffffff;
+            border-radius: 1.5rem;
             padding: 2rem 2rem 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 200, 50, 0.2), 0 0 0 5px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 200, 70, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9edf2;
             transition: all 0.3s ease;
             position: relative;
             z-index: 2;
         }
 
-        .container::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, #00ccff, #ffaa22, #4aadc5, #00ccff);
-            border-radius: 2rem;
-            z-index: -1;
-            opacity: 0.2;
-            filter: blur(18px);
-            animation: borderPulse 2.5s infinite alternate;
-        }
-
-        @keyframes borderPulse {
-            0% {
-                opacity: 0.2;
-                filter: blur(12px);
-            }
-
-            100% {
-                opacity: 0.6;
-                filter: blur(20px);
-            }
-        }
-
         h2 {
             font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFF3C9, #00ccff, #FDBB17);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            font-weight: 700;
+            color: #0f172a;
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             gap: 12px;
-            text-shadow: 0 0 8px rgba(255, 200, 0, 0.3);
-            margin-bottom: 1.2rem;
+        }
+
+        .maintitle{
+            margin-bottom: 10px;
+        }
+
+        h2 small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #475569;
+            margin-left: 8px;
         }
 
         .msg {
-            color: yellowgreen;
+            color: #0f172a;
             margin-bottom: 1.4rem;
             padding: 0.9rem 1.4rem;
-            border-radius: 60px;
+            border-radius: 0.75rem;
             font-weight: 500;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
-            border-left: 6px solid;
+            background: #f1f5f9;
+            border-left: 4px solid #94a3b8;
             font-size: 0.95rem;
             letter-spacing: 0.3px;
             display: flex;
@@ -450,9 +349,8 @@ if (isset($_POST['import_table'])) {
         @keyframes flickerMsg {
             0% {
                 opacity: 0;
-                transform: translateX(-12px);
+                transform: translateX(-8px);
             }
-
             100% {
                 opacity: 1;
                 transform: translateX(0);
@@ -462,47 +360,40 @@ if (isset($_POST['import_table'])) {
         .tabs {
             display: flex;
             margin-bottom: 2rem;
-            gap: 0.8rem;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 0.5rem;
-            border-radius: 80px;
-            backdrop-filter: blur(8px);
+            gap: 0.5rem;
+            background: #f1f5f9;
+            padding: 0.4rem;
+            border-radius: 0.75rem;
         }
 
         .tab {
             flex: 1;
             text-align: center;
-            padding: 0.8rem 0;
-            font-weight: 700;
-            font-size: 1.1rem;
+            padding: 0.7rem 0;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
-            border-radius: 60px;
-            transition: all 0.25s ease;
-            letter-spacing: 1px;
-            background: rgba(20, 28, 40, 0.7);
-            color: #b9c7d9;
-            border: 1px solid rgba(255, 200, 80, 0.2);
-            backdrop-filter: blur(4px);
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+            background: transparent;
+            color: #475569;
         }
 
         .tab.active {
-            background: linear-gradient(95deg, #FFD966, #FFB347);
-            color: #0a0a1a;
-            box-shadow: 0 0 12px #ffcc44, 0 4px 12px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
-            border-color: #FFE484;
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .tab:hover:not(.active) {
-            background: rgba(255, 205, 70, 0.25);
-            color: #ffe6aa;
-            border-color: #ffcc66;
-            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.5);
+            color: #0f172a;
         }
 
         .section {
             display: none;
-            animation: fadeSlide 0.4s ease;
+            animation: fadeSlide 0.3s ease;
         }
 
         .section.active {
@@ -512,9 +403,8 @@ if (isset($_POST['import_table'])) {
         @keyframes fadeSlide {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translateY(6px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -526,10 +416,10 @@ if (isset($_POST['import_table'])) {
             margin-top: 1.2rem;
             margin-bottom: 0.4rem;
             font-weight: 600;
-            color: #FFE5A3;
+            color: #334155;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
         }
 
         input,
@@ -537,12 +427,12 @@ if (isset($_POST['import_table'])) {
         button,
         .file-label {
             width: 100%;
-            padding: 0.85rem 1rem;
-            background: rgba(5, 10, 20, 0.7);
-            border: 1.5px solid rgba(255, 200, 80, 0.5);
-            border-radius: 1.2rem;
+            padding: 0.75rem 1rem;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 0.75rem;
             font-size: 0.95rem;
-            color: #F0F3FA;
+            color: #0f172a;
             transition: all 0.2s;
             outline: none;
             font-weight: 500;
@@ -551,47 +441,45 @@ if (isset($_POST['import_table'])) {
         select {
             cursor: pointer;
             appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23FFD966' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
             background-repeat: no-repeat;
             background-position: right 1rem center;
         }
 
         select option {
-            background: #0a0f1e;
-            color: #F0F3FA;
+            background: #ffffff;
+            color: #0f172a;
         }
 
         input:focus,
         select:focus {
-            border-color: #FFD966;
-            box-shadow: 0 0 15px rgba(255, 210, 70, 0.6);
-            background: rgba(8, 14, 24, 0.9);
+            border-color: #94a3b8;
+            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+            background: #ffffff;
         }
 
         input::placeholder {
-            color: #6c7a8e;
+            color: #94a3b8;
             font-weight: 400;
         }
 
         button {
-            background: linear-gradient(95deg, #2b2f3f, #1a1e2c);
-            border: 1px solid #ffcd7e;
+            background: #0f172a;
+            border: none;
             margin-top: 1.8rem;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 1rem;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            color: #FFE9B6;
+            color: #ffffff;
+            padding: 0.85rem 1rem;
         }
 
         button:hover {
-            background: linear-gradient(95deg, #FFC857, #FFA82E);
-            color: #0f0f1a;
-            border-color: #FFE484;
-            box-shadow: 0 0 18px #ffbb44, 0 4px 12px black;
-            transform: translateY(-2px);
+            background: #1e293b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
         }
 
         .checkbox {
@@ -599,19 +487,18 @@ if (isset($_POST['import_table'])) {
             align-items: center;
             gap: 12px;
             margin-top: 1rem;
-            background: rgba(0, 0, 0, 0.4);
+            background: #f8fafc;
             padding: 0.7rem 1rem;
-            border-radius: 2rem;
-            backdrop-filter: blur(4px);
+            border-radius: 0.75rem;
         }
 
         .checkbox input {
-            width: 1.3rem;
-            height: 1.3rem;
+            width: 1.1rem;
+            height: 1.1rem;
             margin-top: 0;
-            accent-color: #ffcc44;
+            accent-color: #0f172a;
             box-shadow: none;
-            border-radius: 0.3rem;
+            border-radius: 0.25rem;
         }
 
         .checkbox label {
@@ -619,12 +506,12 @@ if (isset($_POST['import_table'])) {
             text-transform: none;
             font-weight: 500;
             font-size: 0.9rem;
-            color: #ffeaC0;
+            color: #334155;
         }
 
         .format-group {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-top: 0.5rem;
         }
 
@@ -635,24 +522,23 @@ if (isset($_POST['import_table'])) {
             justify-content: center;
             gap: 0.5rem;
             padding: 0.6rem;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 1rem;
+            background: #f8fafc;
+            border-radius: 0.75rem;
             cursor: pointer;
-            border: 1px solid rgba(255, 200, 80, 0.3);
+            border: 1.5px solid #e2e8f0;
             transition: all 0.2s;
         }
 
         .format-option.selected {
-            background: rgba(255, 200, 80, 0.2);
-            border-color: #FFD966;
-            box-shadow: 0 0 8px rgba(255, 200, 80, 0.3);
+            background: #f1f5f9;
+            border-color: #94a3b8;
         }
 
         .format-option input {
             width: auto;
             margin: 0;
-            transform: scale(1.2);
-            accent-color: #ffcc44;
+            transform: scale(1.1);
+            accent-color: #0f172a;
         }
 
         .format-option label {
@@ -660,11 +546,13 @@ if (isset($_POST['import_table'])) {
             text-transform: none;
             font-size: 0.85rem;
             cursor: pointer;
+            color: #334155;
+            font-weight: 500;
         }
 
         hr {
             margin: 1.6rem 0 0.5rem;
-            border-color: rgba(255, 200, 100, 0.3);
+            border-color: #e2e8f0;
         }
 
         .icon-badge {
@@ -674,38 +562,38 @@ if (isset($_POST['import_table'])) {
         }
 
         input[type="file"] {
-            padding: 0.7rem;
+            padding: 0.6rem;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.6);
-            color: #ffdfaa;
+            background: #f8fafc;
+            color: #334155;
         }
 
         input[type="file"]::file-selector-button {
-            background: #2a2f3f;
-            border: 1px solid #ffcc66;
-            border-radius: 30px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
             padding: 6px 14px;
-            color: #FFF2CC;
+            color: #0f172a;
             margin-right: 12px;
             cursor: pointer;
             transition: 0.2s;
+            font-weight: 500;
         }
 
         input[type="file"]::file-selector-button:hover {
-            background: #ffcc44;
-            color: #0f111c;
+            background: #e2e8f0;
         }
 
         .inline-hint {
-            font-size: 0.7rem;
-            color: #8f9bb3;
-            margin-top: 0.3rem;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.5rem;
             text-align: center;
         }
 
         .table-count {
-            font-size: 0.7rem;
-            color: #ffdb8e;
+            font-size: 0.75rem;
+            color: #64748b;
             text-align: center;
             margin-top: 0.5rem;
         }
@@ -724,8 +612,8 @@ if (isset($_POST['import_table'])) {
             }
 
             .tab {
-                font-size: 0.9rem;
-                padding: 0.6rem 0;
+                font-size: 0.85rem;
+                padding: 0.5rem 0;
             }
 
             .format-group {
@@ -734,51 +622,36 @@ if (isset($_POST['import_table'])) {
             }
         }
 
-        .spark {
-            position: fixed;
-            width: 3px;
-            height: 3px;
-            background: #FFDD88;
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 999;
-            filter: blur(1px);
-            animation: sparkFloat 1.8s ease-out forwards;
-        }
-
-        @keyframes sparkFloat {
-            0% {
-                opacity: 0.8;
-                transform: translateY(0) scale(1);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateY(-80px) scale(0.5);
-            }
-        }
-
         footer {
             text-align: center;
             margin-top: 1.5rem;
-            color: #7f8c9a;
+            color: #94a3b8;
             font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        a {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            color: #0f172a;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="lightning-streak"></div>
-    <div class="lightning-streak" style="transform: rotate(10deg); opacity:0.2;"></div>
-
     <div class="container">
-        <h2>⚡ CTRX LIGHTNING CORE</h2>
-        <h2 style="font-size: 1.2rem; margin-top: -15px; margin-bottom: 20px;">DATABASE PULSE | IMPORT / EXPORT</h2>
+        <div class="maintitle">
+        <h2>
+            ⚡CTRX LIGHTNING CORE 
+        </h2>
+        <div><small>DATABASE PULSE | IMPORT / EXPORT</small></div>
+        </div>
 
         <?php if (!empty($message)): ?>
             <div class="msg">
@@ -802,7 +675,7 @@ if (isset($_POST['import_table'])) {
                     <?php endforeach; ?>
                 </select>
                 <?php if (empty($allTables)): ?>
-                    <div class="inline-hint" style="color: #ffaa66;">⚠️ No tables found in database</div>
+                    <div class="inline-hint" style="color: #b91c1c;">⚠️ No tables found in database</div>
                 <?php else: ?>
                     <div class="table-count">📊 <?= count($allTables) ?> table(s) available</div>
                 <?php endif; ?>
@@ -827,7 +700,7 @@ if (isset($_POST['import_table'])) {
                     <span>⚡ EXPORT DATA</span>
                 </button>
             </form>
-            <div class="inline-hint">➤ Lightning export • Select a table and download in your chosen format</div>
+            <div class="inline-hint">➤ Select a table and download in your chosen format</div>
         </div>
 
         <div class="section" id="importSection">
@@ -865,7 +738,11 @@ if (isset($_POST['import_table'])) {
             </form>
             <div class="inline-hint">CSV/Excel: Row1 ColA = table name, Row2 = headers, then data. JSON: requires 'table' and 'data' fields.</div>
         </div>
-        <div style="margin-top: 1rem; font-size:16; text-align:center;"><a style="text-decoration:none;color:#ccb27c;" href="<?= $backpage ?? '/' ?>">← I'm done</a></div>
+
+        <div style="margin-top: 1.5rem; font-size: 0.95rem; text-align: center;">
+            <a href="<?= $backpage ?? '/' ?>">← I'm done</a>
+        </div>
+
         <footer>⚡ CTRX THUNDER EDGE • DATABASE FLOW</footer>
     </div>
 
@@ -922,98 +799,6 @@ if (isset($_POST['import_table'])) {
                 if (radio.checked) opt.classList.add('selected');
             });
 
-            function createSpark(event, element) {
-                const rect = element.getBoundingClientRect();
-                const x = event.clientX || rect.left + rect.width / 2;
-                const y = event.clientY || rect.top + rect.height / 2;
-                for (let i = 0; i < 12; i++) {
-                    const spark = document.createElement('div');
-                    spark.classList.add('spark');
-                    const angle = Math.random() * Math.PI * 2;
-                    const vx = (Math.cos(angle) * (Math.random() * 40 + 10)) * (Math.random() > 0.5 ? 1 : -1);
-                    const vy = (Math.sin(angle) * (Math.random() * 30 + 15)) * -1 - 10;
-                    spark.style.left = x + 'px';
-                    spark.style.top = y + 'px';
-                    spark.style.transform = `translate(${vx}px, ${vy}px)`;
-                    spark.style.width = Math.random() * 6 + 2 + 'px';
-                    spark.style.height = spark.style.width;
-                    spark.style.background = `hsl(${50 + Math.random() * 20}, 100%, 65%)`;
-                    spark.style.boxShadow = '0 0 6px #ffcc44';
-                    document.body.appendChild(spark);
-                    setTimeout(() => {
-                        spark.remove();
-                    }, 800);
-                }
-            }
-
-            function attachSparkToButtons() {
-                const btns = document.querySelectorAll('button');
-                btns.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        createSpark(e, btn);
-                    });
-                });
-            }
-
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const submitBtn = form.querySelector('button[type="submit"], button');
-                    if (submitBtn) {
-                        const fakeEvent = {
-                            clientX: submitBtn.getBoundingClientRect().left + submitBtn.offsetWidth / 2,
-                            clientY: submitBtn.getBoundingClientRect().top + submitBtn.offsetHeight / 2
-                        };
-                        for (let s = 0; s < 20; s++) createSpark(fakeEvent, submitBtn);
-                    }
-                    const flashDiv = document.createElement('div');
-                    flashDiv.style.position = 'fixed';
-                    flashDiv.style.top = '0';
-                    flashDiv.style.left = '0';
-                    flashDiv.style.width = '100%';
-                    flashDiv.style.height = '100%';
-                    flashDiv.style.backgroundColor = 'rgba(255, 215, 0, 0.25)';
-                    flashDiv.style.pointerEvents = 'none';
-                    flashDiv.style.zIndex = '9999';
-                    flashDiv.style.animation = 'fadeOutFlash 0.25s ease-out forwards';
-                    document.body.appendChild(flashDiv);
-                    setTimeout(() => flashDiv.remove(), 300);
-                });
-            });
-
-            const styleSheet = document.createElement("style");
-            styleSheet.textContent = `
-            @keyframes fadeOutFlash {
-                0% { opacity: 0.7; background-color: rgba(255, 210, 70, 0.5);}
-                100% { opacity: 0; background-color: rgba(255, 210, 70, 0);}
-            }
-        `;
-            document.head.appendChild(styleSheet);
-
-            attachSparkToButtons();
-
-            let trailTimeout;
-            document.body.addEventListener('mousemove', (e) => {
-                if (trailTimeout) return;
-                trailTimeout = setTimeout(() => {
-                    const miniSpark = document.createElement('div');
-                    miniSpark.style.position = 'fixed';
-                    miniSpark.style.left = e.clientX - 2 + 'px';
-                    miniSpark.style.top = e.clientY - 2 + 'px';
-                    miniSpark.style.width = '4px';
-                    miniSpark.style.height = '4px';
-                    miniSpark.style.background = 'radial-gradient(circle, #ffcc55, #ffaa22)';
-                    miniSpark.style.borderRadius = '50%';
-                    miniSpark.style.pointerEvents = 'none';
-                    miniSpark.style.zIndex = '99999';
-                    miniSpark.style.filter = 'blur(1px)';
-                    miniSpark.style.opacity = '0.7';
-                    document.body.appendChild(miniSpark);
-                    setTimeout(() => miniSpark.remove(), 250);
-                    trailTimeout = null;
-                }, 25);
-            });
-
             const fileInput = document.querySelector('input[type="file"]');
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
@@ -1023,12 +808,12 @@ if (isset($_POST['import_table'])) {
                         if (oldMsg) oldMsg.remove();
                         const span = document.createElement('div');
                         span.className = 'file-feedback';
-                        span.innerText = `⚡ File ready: ${fileName}`;
-                        span.style.fontSize = '0.7rem';
-                        span.style.marginTop = '8px';
-                        span.style.color = '#ffe0a3';
+                        span.innerText = `📎 File ready: ${fileName}`;
+                        span.style.fontSize = '0.75rem';
+                        span.style.marginTop = '6px';
+                        span.style.color = '#475569';
                         fileInput.insertAdjacentElement('afterend', span);
-                        setTimeout(() => span.remove(), 2000);
+                        setTimeout(() => span.remove(), 3000);
                     }
                 });
             }
@@ -1036,10 +821,10 @@ if (isset($_POST['import_table'])) {
             const selectElement = document.querySelector('select[name="table"]');
             if (selectElement) {
                 selectElement.addEventListener('focus', () => {
-                    selectElement.style.boxShadow = '0 0 15px #ffaa33';
+                    selectElement.style.borderColor = '#94a3b8';
                 });
                 selectElement.addEventListener('blur', () => {
-                    selectElement.style.boxShadow = 'none';
+                    selectElement.style.borderColor = '#e2e8f0';
                 });
             }
         })();
