@@ -786,4 +786,17 @@ if (! function_exists("array_as_param")) {
     }
 }
 
+if(! function_exists("active_class")){
+    function active_class(string $route, $class = "active"){
+        $current = current_page();
+        $route = trim($route, "/");
+        $route = trim($route, "\\");
+        if($route == $current){
+            return "active";
+        }else{
+            return "";
+        }
+    }
+}
+
 define('page', page(""));
