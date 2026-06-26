@@ -28,6 +28,14 @@ class Page
         return new self($key);
     }
 
+    public function run(callable $function){
+        $key = $this->arr;
+        $current = current_page();
+        if(in_array($current, $key)){
+            $function();
+        }
+    }
+
     public function middleware(string ...$middleware)
     {
         foreach ($middleware as $k => $v) {
@@ -50,7 +58,7 @@ class Page
         return $this;
     }
 
-    static function group(array $routes)
+    static function group(string ...$routes)
     {
         foreach ($routes as $k => $v) {
             if ($v == "/*") {
@@ -58,6 +66,7 @@ class Page
                 $allfiles = ctrx_get_files("views/pages");
                 foreach ($allfiles as $keys => $val) {
                     if (str_contains($val, "/")) continue;
+                    $val = trim($val, "/");
                     self::checkRoutes($val);
                     $key = strtolower($keys);
                     $key = "ctrxfe_" . $val;
@@ -70,6 +79,7 @@ class Page
                 $parent = $explode[0];
                 $allfiles = ctrx_get_files("views/pages", $parent);
                 foreach ($allfiles as $keys => $val) {
+                    $val = trim($val, "/");
                     self::checkRoutes($val);
                     $key = strtolower($keys);
                     $key = "ctrxfe_" . $val;

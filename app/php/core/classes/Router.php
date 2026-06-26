@@ -33,6 +33,25 @@ class Router
         return new self($key);
     }
 
+    public function run(callable $function){
+        $key = $this->arr;
+        $current = current_be();
+        if($this->hasRoute($key, $current)){
+            $function();
+        }
+    }
+
+    private function hasRoute($routes, $r){
+        $exists = false;
+        foreach ($routes as $route) {
+            if (in_array($r, $route, true)) {
+                $exists = true;
+                break;
+            }
+        }
+        return $exists;
+    }
+
     public static function get(string $route)
     {
         $pref = self::getGlobalPrefix();

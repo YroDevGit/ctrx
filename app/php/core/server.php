@@ -126,15 +126,6 @@ if (str_starts_with($req, "api/")) {
         $_SESSION['ctrx_endpoint'] = "BE";
 
         $serve = "";
-        $beconfig = glob('app/config/*.php');
-
-        foreach ($beconfig as $k => $v) {
-            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
-            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
-            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
-            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
-            include $v;
-        }
 
         $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
@@ -146,6 +137,17 @@ if (str_starts_with($req, "api/")) {
 
         $_SESSION['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
+
+        $beconfig = glob('app/config/*.php');
+
+        foreach ($beconfig as $k => $v) {
+            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
+            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
+            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
+            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
+            include $v;
+        }
+        
         if (env("cross_origin_sharing") == "yes") {
             $allowAllOrigin = env("allow_all_origin");
             if ($allowAllOrigin == "yes") {
