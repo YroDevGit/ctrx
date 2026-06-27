@@ -238,6 +238,15 @@ class Ctrx
         \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
     }
 
+    public static function extend_user_data($duration){
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if($ctrxdata){
+            \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
+            return true;
+        }
+        return false;
+    }
+
     public static function get_user_data(string|int $key = "*"){
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
         if(! $ctrxdata) return null;
