@@ -2,6 +2,11 @@
 
 namespace Classes;
 
+use Error;
+use ErrorException;
+use PDOException;
+use Throwable;
+
 class DB
 {
     private static $lastQuery;
@@ -392,7 +397,8 @@ class DB
         return sizeof($find);
     }
 
-    public static function count_pages(string $table, array|null $where = null, array|int|null $extra = null, $size = 10){
+    public static function count_pages(string $table, array|null $where = null, array|int|null $extra = null, $size = 10)
+    {
         $count = self::count($table, $where, $extra);
         $pages = ceil($count / $size);
         return $pages;
@@ -433,5 +439,29 @@ class DB
     public static function lastData()
     {
         return self::$lastData ?? null;
+    }
+
+    /**
+     * Execute a callback within a database transaction.
+     *
+     * The bundle (Transaction) is automatically committed if the callback
+     * completes successfully, or rolled back if any Throwable
+     * is thrown.
+     *
+     * Do not manually call commit() or rollback() inside the callback.
+     *
+     * @throws Throwable
+     */
+    public static function bundle(callable $callback)
+    {
+        db_start();
+        try {
+            $result = $callback();
+            db_commit();
+            return $result ?? null;
+        } catch (Throwable $e) {
+            db_rollback();
+            throw $e;
+        }
     }
 }

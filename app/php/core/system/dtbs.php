@@ -1,6 +1,12 @@
 <?php
 include_once "app/php/core/partials/envloader.php";
 
+/**
+ * This is CTR-X database management page
+ * Where you can manage your entire database
+ * Made by CodeYro
+ * Modified date: July 1 2026
+ */
 $dbname = env("database");
 if (!$dbname) {
     die("❌ No Database found @ .env");
@@ -117,6 +123,14 @@ function addColumn($pdo, $table, $columnDef)
     return $result;
 }
 
+function removeColumn($pdo, $table, $columnName)
+{
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $columnName = preg_replace('/[^a-zA-Z0-9_]/', '', $columnName);
+    $result = executeQuery($pdo, "ALTER TABLE `$table` DROP COLUMN `$columnName`");
+    return $result;
+}
+
 function renameColumn($pdo, $table, $oldName, $newName)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -222,6 +236,81 @@ function truncateTable($pdo, $table)
     return $result;
 }
 
+// ========== EXPORT DATABASE AS SQL ==========
+function exportDatabaseSQL($pdo, $tablesWithData = [])
+{
+    $tablesResult = getTables($pdo);
+    if (!$tablesResult['success']) {
+        return ['success' => false, 'message' => 'Failed to get tables'];
+    }
+    
+    $allTables = $tablesResult['data'];
+    $sql = "-- ============================================\n";
+    $sql .= "-- Database Export By CTR-X\n";
+    $sql .= "-- Database: " . DB_NAME . "\n";
+    $sql .= "-- Export Date: " . date('Y-m-d H:i:s') . "\n";
+    $sql .= "-- CodeYro ". date("Y-m-d") ."\n";
+    $sql .= "-- ============================================\n\n";
+    $sql .= "-- CREATE DATABASE `".DB_NAME."`;\n";
+    $sql .= "-- USE `".DB_NAME."`;\n\n";
+    $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+    
+    foreach ($allTables as $table) {
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        
+        // Get table structure
+        $createResult = executeQuery($pdo, "SHOW CREATE TABLE `$table`");
+        if ($createResult['success']) {
+            $row = $createResult['data']->fetch();
+            $sql .= "-- Table structure for `$table`\n";
+            $sql .= "DROP TABLE IF EXISTS `$table`;\n";
+            $sql .= $row['Create Table'] . ";\n\n";
+        }
+        
+        // Check if this table should include data
+        $includeData = in_array($table, $tablesWithData);
+        
+        if ($includeData) {
+            // Get table data
+            $dataResult = executeQuery($pdo, "SELECT * FROM `$table`");
+            if ($dataResult['success']) {
+                $rows = $dataResult['data']->fetchAll();
+                if (count($rows) > 0) {
+                    // Get column names
+                    $columns = array_keys($rows[0]);
+                    $escapedColumns = array_map(function($col) {
+                        return "`" . str_replace('`', '``', $col) . "`";
+                    }, $columns);
+                    $columnList = implode(', ', $escapedColumns);
+                    
+                    $sql .= "-- Dumping data for table `$table`\n";
+                    $sql .= "INSERT INTO `$table` ($columnList) VALUES\n";
+                    
+                    $values = [];
+                    foreach ($rows as $row) {
+                        $escapedValues = array_map(function($value) use ($pdo) {
+                            if ($value === null) {
+                                return 'NULL';
+                            }
+                            return $pdo->quote($value);
+                        }, array_values($row));
+                        $values[] = "(" . implode(', ', $escapedValues) . ")";
+                    }
+                    $sql .= implode(",\n", $values) . ";\n\n";
+                } else {
+                    $sql .= "-- No data for table `$table`\n\n";
+                }
+            }
+        } else {
+            $sql .= "-- Skipping data for table `$table` (structure only)\n\n";
+        }
+    }
+    
+    $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    
+    return ['success' => true, 'sql' => $sql];
+}
+
 // ========== HANDLE AJAX REQUESTS ==========
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $pdo = getDBConnection();
@@ -250,6 +339,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 break;
             case 'addColumn':
                 $response = addColumn($pdo, $_POST['table'] ?? '', $_POST['columnDef'] ?? '');
+                break;
+            case 'removeColumn':
+                $response = removeColumn($pdo, $_POST['table'] ?? '', $_POST['columnName'] ?? '');
                 break;
             case 'renameColumn':
                 $response = renameColumn($pdo, $_POST['table'] ?? '', $_POST['oldName'] ?? '', $_POST['newName'] ?? '');
@@ -292,9 +384,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             case 'truncateTable':
                 $response = truncateTable($pdo, $_POST['table'] ?? '');
                 break;
+            case 'exportSQL':
+                $tablesWithData = isset($_POST['tables_with_data']) ? json_decode($_POST['tables_with_data'], true) : [];
+                $response = exportDatabaseSQL($pdo, $tablesWithData);
+                break;
         }
     } catch (Exception $e) {
         $response = ['success' => false, 'message' => $e->getMessage()];
+    }
+
+    // Handle SQL export download
+    if ($action === 'exportSQL' && $response['success']) {
+        header('Content-Type: application/sql');
+        header('Content-Disposition: attachment; filename="' . DB_NAME . '_backup_' . date('Y-m-d_H-i-s') . '.sql"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        echo $response['sql'];
+        exit;
     }
 
     echo json_encode($response);
@@ -307,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Manager - autoparts</title>
+    <title>Database Manager - <?=$dbname?></title>
     <style>
         /* ========== RESET & BASE ========== */
         * {
@@ -807,7 +913,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         .modal {
             background: white;
             border-radius: 8px;
-            max-width: 600px;
+            max-width: 700px;
             width: 95%;
             max-height: 90vh;
             overflow-y: auto;
@@ -824,6 +930,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
         }
 
         .modal-header h5 {
@@ -846,6 +956,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
         .modal-body {
             padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
         .modal-footer {
@@ -854,6 +966,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+            position: sticky;
+            bottom: 0;
+            background: white;
         }
 
         /* ========== FORMS ========== */
@@ -896,6 +1011,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
         .input-group .btn {
             flex-shrink: 0;
+        }
+
+        /* ========== CHECKBOX LIST ========== */
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin: 10px 0 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            background: #e9ecef;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #0d6efd;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+            margin: 0;
+            flex: 1;
+        }
+
+        .checkbox-item .table-count {
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .select-all-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .select-all-container input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #0d6efd;
+        }
+
+        .select-all-container label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            margin: 0;
+            color: #333;
+        }
+
+        .select-all-container .hint {
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: auto;
         }
 
         /* ========== SPINNER ========== */
@@ -947,6 +1141,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-right: 4px;
         }
 
+        /* ========== EXPORT SQL BUTTON ========== */
+        .export-sql-btn {
+            margin-left: 10px;
+        }
+
         /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
 
@@ -975,6 +1174,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             table td {
                 padding: 4px 6px;
             }
+
+            .export-sql-btn {
+                margin-left: 0;
+            }
+
+            .checkbox-list {
+                grid-template-columns: 1fr;
+                max-height: 200px;
+            }
         }
     </style>
 </head>
@@ -985,10 +1193,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         <!-- Header -->
         <div class="header">
             <div class="db-header">
-                <h2><span class="icon"></span>Database: <span class="text-primary">autoparts</span></h2>
+                <h2><span class="icon"></span>Database: <span class="text-primary"><?=$dbname?></span></h2>
                 <small>CTRX database management system</small>
             </div>
             <div>
+                <button class="btn btn-success btn-sm export-sql-btn" onclick="showExportModal()">
+                    <span class="icon">💾</span> Export SQL
+                </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="refreshAll()">
                     <span class="icon">🔄</span> Refresh
                 </button>
@@ -1044,6 +1255,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
     <!-- ========== MODALS ========== -->
 
+    <!-- Export SQL Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h5><span class="icon">💾</span>Export Database as SQL</h5>
+                <button class="btn-close" onclick="closeModal('exportModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                    Select which tables should include data in the export. 
+                    <strong>Unchecked tables will export structure only</strong> (no data).
+                </p>
+                
+                <div class="select-all-container">
+                    <input type="checkbox" id="selectAllTables" onchange="toggleAllTables()">
+                    <label for="selectAllTables">Select All Tables</label>
+                    <span class="hint">Include data for all tables</span>
+                </div>
+                
+                <div id="tableCheckboxList" class="checkbox-list">
+                    <!-- Dynamically populated -->
+                </div>
+                
+                <div style="margin-top: 10px; font-size: 13px; color: #6c757d;">
+                    <span id="selectedCount">0</span> tables selected to include data
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancel</button>
+                <button class="btn btn-success" onclick="exportSQL()">
+                    <span class="icon">💾</span> Export SQL
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Table Modal -->
     <div class="modal-overlay" id="createTableModal">
         <div class="modal modal-lg">
@@ -1083,6 +1330,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('addColumnModal')">Cancel</button>
                 <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Column Modal -->
+    <div class="modal-overlay" id="removeColumnModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h5><span class="icon">🗑️</span>Remove Column</h5>
+                <button class="btn-close" onclick="closeModal('removeColumnModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                    Select a column to remove from table <strong id="removeColumnTableName"></strong>.
+                    <span style="color: #dc3545;">⚠️ This action cannot be undone!</span>
+                </p>
+                
+                <label class="form-label">Column Name</label>
+                <select id="removeColumnSelect" class="form-control">
+                    <option value="">— Select a column —</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('removeColumnModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="removeColumn()">
+                    <span class="icon">🗑️</span> Remove Column
+                </button>
             </div>
         </div>
     </div>
@@ -1226,6 +1500,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         let currentColumns = [];
         let currentKeys = [];
         let tableData = [];
+        let allTableNames = [];
 
         // ========== MODAL FUNCTIONS ==========
         function openModal(id) {
@@ -1280,6 +1555,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     method: 'POST',
                     body: formData
                 });
+                
+                // Check if response is a file download (for SQL export)
+                const contentType = response.headers.get('Content-Type');
+                if (contentType && contentType.includes('application/sql')) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '<?=$dbname?>_backup_' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '_') + '.sql';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    return { success: true, message: 'SQL export started' };
+                }
+                
                 const result = await response.json();
                 if (!result.success) {
                     showAlert(result.message || 'Operation failed', 'danger');
@@ -1294,6 +1585,142 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
+        // ========== EXPORT MODAL FUNCTIONS ==========
+        async function showExportModal() {
+            // Load tables if not already loaded
+            if (allTableNames.length === 0) {
+                const result = await apiRequest('getTables');
+                if (result.success && result.data) {
+                    allTableNames = result.data;
+                } else {
+                    showAlert('Failed to load tables', 'danger');
+                    return;
+                }
+            }
+            
+            // Populate checkbox list
+            const container = document.getElementById('tableCheckboxList');
+            if (allTableNames.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center">No tables found</div>';
+            } else {
+                container.innerHTML = allTableNames.map(table => `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="table_${table}" value="${table}" onchange="updateSelectedCount()">
+                        <label for="table_${table}">${table}</label>
+                    </div>
+                `).join('');
+            }
+            
+            // Update count
+            updateSelectedCount();
+            
+            // Open modal
+            openModal('exportModal');
+        }
+
+        function toggleAllTables() {
+            const checked = document.getElementById('selectAllTables').checked;
+            document.querySelectorAll('#tableCheckboxList input[type="checkbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('#tableCheckboxList input[type="checkbox"]:checked').length;
+            document.getElementById('selectedCount').textContent = checked;
+        }
+
+        // ========== SQL EXPORT ==========
+        async function exportSQL() {
+            // Get selected tables
+            const selectedTables = [];
+            document.querySelectorAll('#tableCheckboxList input[type="checkbox"]:checked').forEach(cb => {
+                selectedTables.push(cb.value);
+            });
+            
+            if (selectedTables.length === 0) {
+                showAlert('Please select at least one table to include data', 'warning');
+                return;
+            }
+            
+            closeModal('exportModal');
+            
+            const btn = document.querySelector('.export-sql-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Exporting...';
+            btn.disabled = true;
+            
+            try {
+                const result = await apiRequest('exportSQL', {
+                    tables_with_data: JSON.stringify(selectedTables)
+                });
+                if (result.success) {
+                    showAlert('Database exported successfully!', 'success');
+                }
+            } catch (error) {
+                showAlert('Export failed: ' + error.message, 'danger');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ========== REMOVE COLUMN ==========
+        function showRemoveColumnModal() {
+            if (!currentTable) {
+                showAlert('Please select a table first', 'warning');
+                return;
+            }
+            
+            if (!currentColumns.length) {
+                showAlert('No columns found in this table', 'warning');
+                return;
+            }
+            
+            // Set table name
+            document.getElementById('removeColumnTableName').textContent = currentTable;
+            
+            // Populate select dropdown
+            const select = document.getElementById('removeColumnSelect');
+            select.innerHTML = '<option value="">— Select a column —</option>';
+            
+            currentColumns.forEach(col => {
+                const option = document.createElement('option');
+                option.value = col.Field;
+                option.textContent = col.Field + ' (' + col.Type + ')';
+                select.appendChild(option);
+            });
+            
+            openModal('removeColumnModal');
+        }
+
+        async function removeColumn() {
+            const select = document.getElementById('removeColumnSelect');
+            const columnName = select.value.trim();
+            
+            if (!columnName) {
+                showAlert('Please select a column to remove', 'warning');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to remove column "${columnName}" from table "${currentTable}"? This cannot be undone!`)) {
+                return;
+            }
+            
+            const result = await apiRequest('removeColumn', {
+                table: currentTable,
+                columnName: columnName
+            });
+            
+            if (result.success) {
+                showAlert(`Column "${columnName}" removed successfully`, 'success');
+                closeModal('removeColumnModal');
+                await loadTableInfo();
+                await loadTableData();
+            }
+        }
+
         // ========== TABLE LIST ==========
         async function loadTables() {
             const container = document.getElementById('tableList');
@@ -1302,6 +1729,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             const result = await apiRequest('getTables');
             hideLoading(container);
             if (result.success && result.data) {
+                allTableNames = result.data;
                 if (result.data.length === 0) {
                     container.innerHTML = '<div class="text-muted text-center py-3">No tables found</div>';
                 } else {
@@ -1354,6 +1782,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="btn-group">
                 <button class="btn btn-outline-primary btn-sm" onclick="showAddColumnModal()">
                     <span class="icon">➕</span> Column
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="showRemoveColumnModal()">
+                    <span class="icon">🗑️</span> Remove
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="showRenameColumnModal()">
                     <span class="icon">✏️</span> Rename
