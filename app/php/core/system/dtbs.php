@@ -17,7 +17,6 @@ define('DB_USER', env('dbuser'));
 define('DB_PASS', env('dbpass'));
 define('DB_CHARSET', env('dbcharset'));
 
-// ========== DATABASE CONNECTION ==========
 function getDBConnection()
 {
     try {
@@ -33,7 +32,6 @@ function getDBConnection()
     }
 }
 
-// ========== DATABASE OPERATIONS ==========
 function executeQuery($pdo, $sql, $params = [])
 {
     try {
@@ -236,7 +234,6 @@ function truncateTable($pdo, $table)
     return $result;
 }
 
-// ========== EXPORT DATABASE AS SQL ==========
 function exportDatabaseSQL($pdo, $tablesWithData = [])
 {
     $tablesResult = getTables($pdo);
@@ -258,7 +255,6 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     foreach ($allTables as $table) {
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
         
-        // Get table structure
         $createResult = executeQuery($pdo, "SHOW CREATE TABLE `$table`");
         if ($createResult['success']) {
             $row = $createResult['data']->fetch();
@@ -267,16 +263,13 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
             $sql .= $row['Create Table'] . ";\n\n";
         }
         
-        // Check if this table should include data
         $includeData = in_array($table, $tablesWithData);
         
         if ($includeData) {
-            // Get table data
             $dataResult = executeQuery($pdo, "SELECT * FROM `$table`");
             if ($dataResult['success']) {
                 $rows = $dataResult['data']->fetchAll();
                 if (count($rows) > 0) {
-                    // Get column names
                     $columns = array_keys($rows[0]);
                     $escapedColumns = array_map(function($col) {
                         return "`" . str_replace('`', '``', $col) . "`";
@@ -311,7 +304,6 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     return ['success' => true, 'sql' => $sql];
 }
 
-// ========== HANDLE AJAX REQUESTS ==========
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $pdo = getDBConnection();
     $action = $_POST['action'];
@@ -393,7 +385,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $response = ['success' => false, 'message' => $e->getMessage()];
     }
 
-    // Handle SQL export download
     if ($action === 'exportSQL' && $response['success']) {
         header('Content-Type: application/sql');
         header('Content-Disposition: attachment; filename="' . DB_NAME . '_backup_' . date('Y-m-d_H-i-s') . '.sql"');
@@ -415,7 +406,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Manager - <?=$dbname?></title>
     <style>
-        /* ========== RESET & BASE ========== */
         * {
             margin: 0;
             padding: 0;
@@ -438,7 +428,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             text-decoration: underline;
         }
 
-        /* ========== LAYOUT ========== */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -460,7 +449,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             min-width: 300px;
         }
 
-        /* ========== HEADER ========== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -490,7 +478,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             color: #6c757d;
         }
 
-        /* ========== BUTTONS ========== */
         .btn {
             display: inline-block;
             padding: 6px 12px;
@@ -675,7 +662,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-right: 5px;
         }
 
-        /* ========== CARDS ========== */
         .card {
             background: white;
             border-radius: 8px;
@@ -706,7 +692,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             padding-bottom: 0;
         }
 
-        /* ========== TABLE LIST ========== */
         .table-list {
             list-style: none;
             padding: 0;
@@ -743,7 +728,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             background: rgba(255, 255, 255, 0.3);
         }
 
-        /* ========== TABLES ========== */
         .table-responsive {
             overflow-x: auto;
             max-height: 500px;
@@ -839,7 +823,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             display: block;
         }
 
-        /* ========== ALERTS ========== */
         .alert {
             padding: 12px 20px;
             border-radius: 4px;
@@ -892,7 +875,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             opacity: 1;
         }
 
-        /* ========== MODALS ========== */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -971,7 +953,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             background: white;
         }
 
-        /* ========== FORMS ========== */
         .form-label {
             display: block;
             margin-bottom: 5px;
@@ -1013,7 +994,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             flex-shrink: 0;
         }
 
-        /* ========== CHECKBOX LIST ========== */
         .checkbox-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -1092,7 +1072,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-left: auto;
         }
 
-        /* ========== SPINNER ========== */
         .spinner-border {
             display: inline-block;
             width: 16px;
@@ -1114,7 +1093,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             pointer-events: none;
         }
 
-        /* ========== BUTTON GROUP ========== */
         .btn-group {
             display: flex;
             flex-wrap: wrap;
@@ -1133,7 +1111,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             gap: 8px;
         }
 
-        /* ========== ICONS ========== */
         .icon {
             display: inline-block;
             width: 16px;
@@ -1141,12 +1118,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-right: 4px;
         }
 
-        /* ========== EXPORT SQL BUTTON ========== */
         .export-sql-btn {
             margin-left: 10px;
         }
 
-        /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
 
             .col-md-3,
@@ -1190,7 +1165,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 <body>
 
     <div class="container" id="app">
-        <!-- Header -->
         <div class="header">
             <div class="db-header">
                 <h2><span class="icon"></span>Database: <span class="text-primary"><?=$dbname?></span></h2>
@@ -1211,11 +1185,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             </div>
         </div>
 
-        <!-- Alerts -->
         <div id="alertContainer"></div>
 
         <div class="row">
-            <!-- Sidebar - Tables -->
             <div class="col-md-3">
                 <div class="card sidebar">
                     <div class="card-header">
@@ -1239,7 +1211,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="col-md-9">
                 <div class="card main-content">
                     <div id="tableContent">
@@ -1253,9 +1224,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- ========== MODALS ========== -->
-
-    <!-- Export SQL Modal -->
     <div class="modal-overlay" id="exportModal">
         <div class="modal">
             <div class="modal-header">
@@ -1275,7 +1243,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 </div>
                 
                 <div id="tableCheckboxList" class="checkbox-list">
-                    <!-- Dynamically populated -->
                 </div>
                 
                 <div style="margin-top: 10px; font-size: 13px; color: #6c757d;">
@@ -1291,7 +1258,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Create Table Modal -->
     <div class="modal-overlay" id="createTableModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1316,7 +1282,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Add Column Modal -->
     <div class="modal-overlay" id="addColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1334,7 +1299,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Remove Column Modal -->
     <div class="modal-overlay" id="removeColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1361,7 +1325,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Rename Column Modal -->
     <div class="modal-overlay" id="renameColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1385,7 +1348,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Modify Column Modal -->
     <div class="modal-overlay" id="modifyColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1409,7 +1371,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Keys Modal -->
     <div class="modal-overlay" id="keyModal">
         <div class="modal">
             <div class="modal-header">
@@ -1442,7 +1403,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Rename Table Modal -->
     <div class="modal-overlay" id="renameTableModal">
         <div class="modal">
             <div class="modal-header">
@@ -1460,7 +1420,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Insert Row Modal -->
     <div class="modal-overlay" id="insertRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1468,7 +1427,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <button class="btn-close" onclick="closeModal('insertRowModal')">×</button>
             </div>
             <div class="modal-body" id="insertRowFields">
-                <!-- Dynamically populated -->
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('insertRowModal')">Cancel</button>
@@ -1477,7 +1435,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Edit Row Modal -->
     <div class="modal-overlay" id="editRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1485,7 +1442,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <button class="btn-close" onclick="closeModal('editRowModal')">×</button>
             </div>
             <div class="modal-body" id="editRowFields">
-                <!-- Dynamically populated -->
+
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('editRowModal')">Cancel</button>
@@ -1495,14 +1452,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     </div>
 
     <script>
-        // ========== GLOBAL STATE ==========
         let currentTable = null;
         let currentColumns = [];
         let currentKeys = [];
         let tableData = [];
         let allTableNames = [];
 
-        // ========== MODAL FUNCTIONS ==========
         function openModal(id) {
             document.getElementById(id).classList.add('show');
         }
@@ -1511,14 +1466,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             document.getElementById(id).classList.remove('show');
         }
 
-        // Close modal on background click
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal-overlay')) {
                 e.target.classList.remove('show');
             }
         });
 
-        // ========== UTILITY FUNCTIONS ==========
         function showAlert(message, type = 'info') {
             const container = document.getElementById('alertContainer');
             const alert = document.createElement('div');
@@ -1555,8 +1508,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     method: 'POST',
                     body: formData
                 });
-                
-                // Check if response is a file download (for SQL export)
+
                 const contentType = response.headers.get('Content-Type');
                 if (contentType && contentType.includes('application/sql')) {
                     const blob = await response.blob();
@@ -1585,9 +1537,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== EXPORT MODAL FUNCTIONS ==========
         async function showExportModal() {
-            // Load tables if not already loaded
             if (allTableNames.length === 0) {
                 const result = await apiRequest('getTables');
                 if (result.success && result.data) {
@@ -1598,7 +1548,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             }
             
-            // Populate checkbox list
             const container = document.getElementById('tableCheckboxList');
             if (allTableNames.length === 0) {
                 container.innerHTML = '<div class="text-muted text-center">No tables found</div>';
@@ -1611,10 +1560,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 `).join('');
             }
             
-            // Update count
             updateSelectedCount();
             
-            // Open modal
             openModal('exportModal');
         }
 
@@ -1631,9 +1578,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             document.getElementById('selectedCount').textContent = checked;
         }
 
-        // ========== SQL EXPORT ==========
         async function exportSQL() {
-            // Get selected tables
             const selectedTables = [];
             document.querySelectorAll('#tableCheckboxList input[type="checkbox"]:checked').forEach(cb => {
                 selectedTables.push(cb.value);
@@ -1666,7 +1611,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== REMOVE COLUMN ==========
         function showRemoveColumnModal() {
             if (!currentTable) {
                 showAlert('Please select a table first', 'warning');
@@ -1678,10 +1622,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 return;
             }
             
-            // Set table name
             document.getElementById('removeColumnTableName').textContent = currentTable;
             
-            // Populate select dropdown
             const select = document.getElementById('removeColumnSelect');
             select.innerHTML = '<option value="">— Select a column —</option>';
             
@@ -1721,7 +1663,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== TABLE LIST ==========
         async function loadTables() {
             const container = document.getElementById('tableList');
             if (!container) return;
@@ -1745,7 +1686,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== SELECT TABLE ==========
         async function selectTable(table) {
             currentTable = table;
             await loadTables();
@@ -1753,7 +1693,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             await loadTableData();
         }
 
-        // ========== LOAD TABLE INFO ==========
         async function loadTableInfo() {
             if (!currentTable) return;
             const result = await apiRequest('getTableInfo', {
@@ -1848,7 +1787,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             container.innerHTML = html;
         }
 
-        // ========== LOAD TABLE DATA ==========
         async function loadTableData() {
             if (!currentTable) return;
             const container = document.getElementById('tableDataContainer');
@@ -1921,7 +1859,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             container.innerHTML = html;
         }
 
-        // ========== TABLE OPERATIONS ==========
         async function createTable() {
             const tableName = document.getElementById('newTableName').value.trim();
             const columns = document.getElementById('newTableColumns').value.trim();
@@ -2018,7 +1955,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== COLUMN OPERATIONS ==========
         function showAddColumnModal() {
             if (!currentTable) {
                 showAlert('Please select a table first', 'warning');
@@ -2109,7 +2045,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== KEY OPERATIONS ==========
         function showKeyModal() {
             if (!currentTable) {
                 showAlert('Please select a table first', 'warning');
@@ -2172,7 +2107,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== DATA OPERATIONS ==========
         function showInsertRowModal() {
             if (!currentTable || !currentColumns.length) {
                 showAlert('Please select a valid table', 'warning');
@@ -2297,7 +2231,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ========== REFRESH ==========
         async function refreshAll() {
             await loadTables();
             if (currentTable) {
@@ -2307,14 +2240,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             showAlert('Refreshed', 'info');
         }
 
-        // ========== MODAL HELPERS ==========
         function showCreateTableModal() {
             document.getElementById('newTableName').value = '';
             document.getElementById('newTableColumns').value = 'id INT PRIMARY KEY AUTO_INCREMENT,\nname VARCHAR(100) NOT NULL';
             openModal('createTableModal');
         }
 
-        // ========== INITIALIZE ==========
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 const result = await apiRequest('getTables');
