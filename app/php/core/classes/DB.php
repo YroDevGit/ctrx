@@ -2,9 +2,6 @@
 
 namespace Classes;
 
-use Error;
-use ErrorException;
-use PDOException;
 use Throwable;
 
 class DB
