@@ -36,6 +36,19 @@ class Page
         }
     }
 
+    public function except(string ...$string){
+        $key = $this->arr;
+        $newArr = [];
+        if($key){
+            foreach($key as $k=>$v){
+                if(in_array($v, $string)) continue;
+                $newArr[] = $v;
+            }
+        }
+        $this->arr = $newArr;
+        return $this;
+    }
+
     public function middleware(string ...$middleware)
     {
         foreach ($middleware as $k => $v) {
