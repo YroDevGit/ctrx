@@ -261,7 +261,47 @@ else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
     }
     echo "\n";
     exit;
-} else if ($route == "+model") {
+}else if($route == "+js"){
+    if ($filename == "") {
+        echo "\n❌ Please provide a view path for the js\n\n";
+        exit(1);
+    }  
+    include "app/php/core/partials/ctrxc.php";
+    $path = str_replace("\\", "/", $filename);
+    if(! str_starts_with($path,"views/pages/") && ! str_starts_with($path,"/views/pages/")){
+        echo "\n❌ Invalid filename: [filename should starts at: views/pages/]\n\n";
+        exit;
+    }
+    $result = preg_replace('#^views[/\\\\]pages[/\\\\]#', '', $path);
+    $file = trim($result);
+    $file = trim($result, "/");
+    $file = trim($result, "\\");
+    $file = rem_php($file);
+    $js = $file.".js";
+    $dir = dirname($js);
+    $jsFolder = "views/js/";
+    $dirName = $jsFolder.$dir;
+    if(!is_dir($dirName)){
+        @mkdir($dirName, 0777, true);
+    }
+    $newFile = $jsFolder.$js;
+    if(file_exists($newFile)){
+        echo "\n❌ File already exist: $newFile\n\n";
+        exit;
+    }
+
+    $phpContent = <<<EOT
+    //Js file for $file
+    EOT;
+
+    if (file_put_contents($newFile, $phpContent) !== false){
+        echo "\n✅ JS File created: $newFile\n\n";
+    }else{
+        echo "\n❌ Failed to create file: $newFile\n\n";
+    }
+
+    exit;
+}else if ($route == "+model") {
     if ($filename == "") {
         echo "❌ Please provide a filename for the model.\n";
         exit(1);
