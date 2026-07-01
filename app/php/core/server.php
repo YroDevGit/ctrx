@@ -90,7 +90,7 @@ if(str_starts_with($req, "ctrxtools/database")){
     extract([
         "backpage" => $_GET['backpage'] ?? previous_page()
     ]);
-    include "app/config/ctrdb.php";
+    include "app/config/ctr_db.php";
     exit;
 }
  /**
@@ -154,7 +154,7 @@ if (str_starts_with($req, "api/")) {
             if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
             if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
             if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
-            if($v == "app/config/ctrdb.php" || $v == "app\config\ctrdb.php") continue;
+            if($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
             include $v;
         }
         

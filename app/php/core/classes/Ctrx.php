@@ -291,7 +291,7 @@ class Ctrx
         if($exit) exit;
     }
 
-    public static function use_database_tools(string|null $backpage = null,$exit = true){
+    public static function use_database_management(string|null $backpage = null,$exit = true){
         $backRoute = $backpage ?? current_page();
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;

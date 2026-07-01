@@ -1,9 +1,7 @@
-<?php
-/** This is only tested only in MariaDB mysql database
- * This file blocks users to use db tools
- * make a logic to filter users that can access db tool
- * /ctrxtools/db
- * Ctrx::use_db_tools(); // use this to activate db tools
+<?php // ctrxtools/db
+/**
+ * For Database export/import table data
+ ** Ctrx::use_db_tools();
  */
 use Classes\Ctrx;
 
