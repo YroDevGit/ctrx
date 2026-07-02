@@ -103,10 +103,10 @@ const configure = {
         const global = tyrax.config || {};
         if(option?.loading){
             if (!option?.wait) {
-                option.wait = CtrLoading.wait();
+                option.wait = ()=>CtrLoading.wait();
             }
             if (!option?.done) {
-                option.done = CtrLoading.done();
+                option.done = ()=>CtrLoading.done();
             }
         }
         const merged = {
