@@ -15,10 +15,14 @@ class CtrNotify {
         if (typeof options === "string") {
             config = { title: "Notification", text: options };
         } else if (typeof options === "object") {
+            let ic = options.icon || "";
+            if(! ic.startsWith("/views/assets/")){
+                ic = "/views/assets/"+ic;
+            }
             config = {
                 title: options.title || "Notification",
                 text: options.text || "",
-                icon: options.icon || ""
+                icon: ic
             };
         }
 
