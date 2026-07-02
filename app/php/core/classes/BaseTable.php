@@ -148,7 +148,8 @@ class BaseTable
         return sizeof($find);
     }
 
-    public static function count_pages(array|null $where = null, array|int|null $extra = null, $size = 10){
+    public static function count_pages(array|null $where = null, array|int|null $extra = null, $size = 10)
+    {
         $count = self::count($where, $extra);
         $pages = ceil($count / $size);
         return $pages;
@@ -315,57 +316,95 @@ class BaseTable
     protected function buildWhere(array $where, string $glue = "AND", &$bindings = [], &$paramIndex = 0): array
     {
         $clauses = [];
+
         foreach ($where as $key => $val) {
+
             if (strtolower($key) === "or" || strtolower($key) === "and") {
-                $subClauses = [];
-                $subBindings = [];
-                foreach ($val as $cond) {
-                    [$clause, $bind] = $this->buildWhere($cond, strtoupper($key), $bindings, $paramIndex);
-                    if ($clause) $subClauses[] = $clause;
-                    $subBindings = array_merge($subBindings, $bind);
+                if (array_keys($val) !== range(0, count($val) - 1)) {
+                    $normalized = [];
+
+                    foreach ($val as $k => $v) {
+                        $normalized[] = [$k => $v];
+                    }
+
+                    $val = $normalized;
                 }
-                $clauses[] = "(" . implode(" " . strtoupper($key) . " ", $subClauses) . ")";
-                $bindings = array_merge($bindings, $subBindings);
+
+                $subClauses = [];
+
+                foreach ($val as $cond) {
+                    [$clause] = $this->buildWhere(
+                        $cond,
+                        strtoupper($key),
+                        $bindings,
+                        $paramIndex
+                    );
+
+                    if ($clause) {
+                        $subClauses[] = $clause;
+                    }
+                }
+
+                if ($subClauses) {
+                    $clauses[] = "(" . implode(" " . strtoupper($key) . " ", $subClauses) . ")";
+                }
             } elseif (strtolower($key) === "like") {
+
                 foreach ($val as $col => $v) {
                     $param = ":p" . (++$paramIndex);
                     $clauses[] = "`$col` LIKE $param";
                     $bindings[$param] = "%$v%";
                 }
             } elseif (is_array($val) && isset($val['between']) && is_array($val['between']) && count($val['between']) === 2) {
+
                 $param1 = ":p" . (++$paramIndex);
                 $param2 = ":p" . (++$paramIndex);
+
                 $clauses[] = "`$key` BETWEEN $param1 AND $param2";
+
                 $bindings[$param1] = $val['between'][0];
                 $bindings[$param2] = $val['between'][1];
             } elseif (is_array($val) && isset($val['not between']) && is_array($val['not between']) && count($val['not between']) === 2) {
+
                 $param1 = ":p" . (++$paramIndex);
                 $param2 = ":p" . (++$paramIndex);
+
                 $clauses[] = "`$key` NOT BETWEEN $param1 AND $param2";
+
                 $bindings[$param1] = $val['not between'][0];
                 $bindings[$param2] = $val['not between'][1];
             } else {
+
                 if (preg_match('/^([a-zA-Z0-9_]+)\s*(=|!=|>|<|>=|<=)$/', $key, $m)) {
+
                     $col = $m[1];
                     $op = $m[2];
+
                     $param = ":p" . (++$paramIndex);
+
                     $clauses[] = "`$col` $op $param";
                     $bindings[$param] = $val;
                 } elseif (is_array($val)) {
+
                     $placeholders = [];
+
                     foreach ($val as $v) {
                         $param = ":p" . (++$paramIndex);
                         $placeholders[] = $param;
                         $bindings[$param] = $v;
                     }
+
                     $clauses[] = "`$key` IN (" . implode(",", $placeholders) . ")";
                 } else {
+
                     $param = ":p" . (++$paramIndex);
+
                     $clauses[] = "`$key` = $param";
                     $bindings[$param] = $val;
                 }
             }
         }
+
         return [implode(" $glue ", $clauses), $bindings];
     }
 
@@ -554,10 +593,10 @@ class BaseTable
     public static function delete(array|string|int $whereCondition)
     {
         $where = [];
-        if(is_string($whereCondition) || is_string($whereCondition)){
-            $where = ["id"=> $whereCondition];
+        if (is_string($whereCondition) || is_string($whereCondition)) {
+            $where = ["id" => $whereCondition];
         }
-        if(is_array($whereCondition)){
+        if (is_array($whereCondition)) {
             $where = $whereCondition;
         }
         $self = static::instance();
