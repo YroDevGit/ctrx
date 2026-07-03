@@ -6,6 +6,9 @@ include_once "app/php/core/partials/envloader.php";
  * Where you can manage your entire database
  * Made by CodeYro
  * Modified date: July 1 2026
+ * 
+ * Added Import SQL feature (file upload + paste query)
+ * Updated Export to use INSERT IGNORE to skip errors on duplicate keys
  */
 $dbname = env("database");
 if (!$dbname) {
@@ -277,7 +280,7 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
                     $columnList = implode(', ', $escapedColumns);
 
                     $sql .= "-- Dumping data for table `$table`\n";
-                    $sql .= "INSERT INTO `$table` ($columnList) VALUES\n";
+                    $sql .= "INSERT IGNORE INTO `$table` ($columnList) VALUES\n";
 
                     $values = [];
                     foreach ($rows as $row) {
@@ -302,6 +305,96 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
 
     return ['success' => true, 'sql' => $sql];
+}
+
+/**
+ * Import SQL from file or raw query
+ * Uses multi-query to execute multiple statements
+ */
+function importSQL($pdo, $sql, $isFile = false)
+{
+    if ($isFile) {
+        if (!isset($_FILES['sql_file']) || $_FILES['sql_file']['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'message' => 'File upload failed'];
+        }
+        $sql = file_get_contents($_FILES['sql_file']['tmp_name']);
+        if ($sql === false) {
+            return ['success' => false, 'message' => 'Failed to read file content'];
+        }
+    }
+
+    $sql = trim($sql);
+    if (empty($sql)) {
+        return ['success' => false, 'message' => 'SQL is empty'];
+    }
+
+    $statements = [];
+    $current = '';
+    $inString = false;
+    $stringChar = '';
+    $len = strlen($sql);
+    for ($i = 0; $i < $len; $i++) {
+        $char = $sql[$i];
+        if ($inString) {
+            if ($char == '\\' && $i + 1 < $len) {
+                $current .= $char . $sql[++$i];
+                continue;
+            }
+            if ($char == $stringChar) {
+                $inString = false;
+                $stringChar = '';
+            }
+            $current .= $char;
+            continue;
+        }
+        if ($char == "'" || $char == '"') {
+            $inString = true;
+            $stringChar = $char;
+            $current .= $char;
+            continue;
+        }
+        if ($char == ';') {
+            $stmt = trim($current);
+            if (!empty($stmt)) {
+                $statements[] = $stmt;
+            }
+            $current = '';
+            continue;
+        }
+        $current .= $char;
+    }
+    $stmt = trim($current);
+    if (!empty($stmt)) {
+        $statements[] = $stmt;
+    }
+
+    if (empty($statements)) {
+        return ['success' => false, 'message' => 'No valid SQL statements found'];
+    }
+
+    $errors = [];
+    $successCount = 0;
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    foreach ($statements as $stmt) {
+        $stmt = trim($stmt);
+        if (empty($stmt)) continue;
+
+        try {
+            $pdo->exec($stmt);
+            $successCount++;
+        } catch (PDOException $e) {
+            $errors[] = "Error in statement: " . substr($stmt, 0, 100) . "..." . $e->getMessage();
+        }
+    }
+
+    if ($successCount > 0 && empty($errors)) {
+        return ['success' => true, 'message' => "Import completed successfully. $successCount statements executed."];
+    } elseif ($successCount > 0 && !empty($errors)) {
+        return ['success' => true, 'message' => "Import completed with some errors. $successCount statements executed successfully. Errors: " . implode('; ', $errors)];
+    } else {
+        return ['success' => false, 'message' => 'Import failed. Errors: ' . implode('; ', $errors)];
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
@@ -379,6 +472,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             case 'exportSQL':
                 $tablesWithData = isset($_POST['tables_with_data']) ? json_decode($_POST['tables_with_data'], true) : [];
                 $response = exportDatabaseSQL($pdo, $tablesWithData);
+                break;
+            case 'importSQL':
+                $isFile = isset($_POST['import_type']) && $_POST['import_type'] === 'file';
+                if ($isFile) {
+                    $response = importSQL($pdo, '', true);
+                } else {
+                    $sqlQuery = $_POST['sql_query'] ?? '';
+                    $response = importSQL($pdo, $sqlQuery, false);
+                }
                 break;
         }
     } catch (Exception $e) {
@@ -1163,6 +1265,90 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-right: 2px;
         }
 
+        /* Import styling */
+        .import-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .import-tab {
+            padding: 8px 20px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6c757d;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .import-tab:hover {
+            background: #f0f2f5;
+        }
+
+        .import-tab.active {
+            color: #0d6efd;
+            border-bottom: 3px solid #0d6efd;
+            background: transparent;
+        }
+
+        .import-panel {
+            display: none;
+        }
+
+        .import-panel.active {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.2s;
+            background: #fafbfc;
+        }
+
+        .file-upload-area:hover {
+            border-color: #0d6efd;
+            background: #f8f9fa;
+        }
+
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-area .file-label {
+            cursor: pointer;
+            color: #0d6efd;
+            font-weight: 500;
+        }
+
+        .file-upload-area .file-label:hover {
+            text-decoration: underline;
+        }
+
+        .file-upload-area .file-info {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .file-upload-area .file-selected {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .file-upload-area .file-selected.show {
+            display: block;
+        }
+
         @media (max-width: 768px) {
 
             .col-md-3,
@@ -1210,6 +1396,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 min-width: auto;
                 width: 100%;
             }
+
+            .import-tabs {
+                flex-wrap: wrap;
+            }
+
+            .import-tab {
+                flex: 1;
+                text-align: center;
+                font-size: 13px;
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
@@ -1225,6 +1422,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div>
                 <button class="btn btn-success btn-sm export-sql-btn" onclick="showExportModal()">
                     <span class="icon">💾</span> Export SQL
+                </button>
+                <button class="btn btn-info btn-sm" onclick="showImportModal()">
+                    <span class="icon">📥</span> Import SQL
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="refreshAll()">
                     <span class="icon">🔄</span> Refresh
@@ -1276,6 +1476,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Export Modal -->
     <div class="modal-overlay" id="exportModal">
         <div class="modal">
             <div class="modal-header">
@@ -1310,6 +1511,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h5><span class="icon">📥</span>Import SQL</h5>
+                <button class="btn-close" onclick="closeModal('importModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-tabs">
+                    <div class="import-tab active" data-tab="file" onclick="switchImportTab('file')">📁 Upload SQL File</div>
+                    <div class="import-tab" data-tab="paste" onclick="switchImportTab('paste')">📝 Paste Query</div>
+                </div>
+
+                <!-- File Upload Panel -->
+                <div class="import-panel active" id="importPanelFile">
+                    <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                        Upload a <strong>.sql</strong> file to import. The file can contain multiple statements separated by semicolons.
+                    </p>
+                    <div class="file-upload-area" id="fileDropArea">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📄</div>
+                        <p>
+                            <span class="file-label" onclick="document.getElementById('sqlFileInput').click()">
+                                Click to select a SQL file
+                            </span>
+                            or drag and drop here
+                        </p>
+                        <input type="file" id="sqlFileInput" accept=".sql,.txt" onchange="handleFileSelect(event)">
+                        <div class="file-info">Supported: .sql files</div>
+                        <div class="file-selected" id="fileSelectedInfo">
+                            📎 Selected: <span id="selectedFileName"></span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 13px; color: #6c757d;">
+                        <span id="importFileStatus">No file selected</span>
+                    </div>
+                </div>
+
+                <!-- Paste Query Panel -->
+                <div class="import-panel" id="importPanelPaste">
+                    <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                        Paste your SQL query below. Multiple statements separated by semicolons are supported.
+                    </p>
+                    <textarea id="sqlPasteInput" class="form-control" rows="12" placeholder="-- Paste your SQL here
+            CREATE TABLE IF NOT EXISTS users (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(100)
+            );
+            INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="importSQL()">
+                    <span class="icon">▶️</span> Import
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Table Modal -->
     <div class="modal-overlay" id="createTableModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1334,6 +1595,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Add Column Modal -->
     <div class="modal-overlay" id="addColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1351,6 +1613,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Remove Column Modal -->
     <div class="modal-overlay" id="removeColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1377,6 +1640,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Rename Column Modal -->
     <div class="modal-overlay" id="renameColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1400,6 +1664,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Modify Column Modal -->
     <div class="modal-overlay" id="modifyColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1423,6 +1688,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Key Modal -->
     <div class="modal-overlay" id="keyModal">
         <div class="modal">
             <div class="modal-header">
@@ -1455,6 +1721,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Rename Table Modal -->
     <div class="modal-overlay" id="renameTableModal">
         <div class="modal">
             <div class="modal-header">
@@ -1472,6 +1739,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Insert Row Modal -->
     <div class="modal-overlay" id="insertRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1487,6 +1755,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- Edit Row Modal -->
     <div class="modal-overlay" id="editRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1509,6 +1778,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         let currentKeys = [];
         let tableData = [];
         let allTableNames = [];
+        let selectedFile = null;
 
         function openModal(id) {
             document.getElementById(id).classList.add('show');
@@ -1616,7 +1886,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
 
             updateSelectedCount();
-
             openModal('exportModal');
         }
 
@@ -1660,6 +1929,136 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             } catch (error) {
                 showAlert('Export failed: ' + error.message, 'danger');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showImportModal() {
+            document.getElementById('sqlFileInput').value = '';
+            document.getElementById('fileSelectedInfo').classList.remove('show');
+            document.getElementById('selectedFileName').textContent = '';
+            document.getElementById('importFileStatus').textContent = 'No file selected';
+            document.getElementById('sqlPasteInput').value = '';
+            selectedFile = null;
+            openModal('importModal');
+        }
+
+        function switchImportTab(tab) {
+            document.querySelectorAll('.import-tab').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.import-tab[data-tab="${tab}"]`).classList.add('active');
+            document.querySelectorAll('.import-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById(`importPanel${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('selectedFileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(1) +
+                    ' KB)';
+                document.getElementById('fileSelectedInfo').classList.add('show');
+                document.getElementById('importFileStatus').textContent = '✅ File selected: ' + file.name;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea = document.getElementById('fileDropArea');
+            if (dropArea) {
+                dropArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#0d6efd';
+                    this.style.background = '#e9ecef';
+                });
+                dropArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#ced4da';
+                    this.style.background = '#fafbfc';
+                });
+                dropArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#ced4da';
+                    this.style.background = '#fafbfc';
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.name.endsWith('.sql') || file.name.endsWith('.txt')) {
+                            selectedFile = file;
+                            document.getElementById('sqlFileInput').files = files;
+                            document.getElementById('selectedFileName').textContent = file.name + ' (' + (file
+                                .size / 1024).toFixed(1) + ' KB)';
+                            document.getElementById('fileSelectedInfo').classList.add('show');
+                            document.getElementById('importFileStatus').textContent = '✅ File selected: ' + file
+                                .name;
+                        } else {
+                            showAlert('Please select a .sql file', 'warning');
+                        }
+                    }
+                });
+            }
+        });
+
+        async function importSQL() {
+            const activeTab = document.querySelector('.import-tab.active');
+            const tabType = activeTab ? activeTab.dataset.tab : 'file';
+
+            const btn = document.querySelector('#importModal .modal-footer .btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Importing...';
+            btn.disabled = true;
+
+            try {
+                let result;
+
+                if (tabType === 'file') {
+                    if (!selectedFile) {
+                        showAlert('Please select a SQL file to import', 'warning');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('action', 'importSQL');
+                    formData.append('import_type', 'file');
+                    formData.append('sql_file', selectedFile);
+
+                    const response = await fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    result = await response.json();
+
+                } else {
+                    const query = document.getElementById('sqlPasteInput').value.trim();
+                    if (!query) {
+                        showAlert('Please paste a SQL query to import', 'warning');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+                    result = await apiRequest('importSQL', {
+                        import_type: 'paste',
+                        sql_query: query
+                    });
+                }
+
+                if (result.success) {
+                    showAlert(result.message || 'Import completed successfully!', 'success');
+                    closeModal('importModal');
+                    await loadTables();
+                    if (currentTable) {
+                        await loadTableInfo();
+                        await loadTableData();
+                    } else {
+                        await loadTables();
+                    }
+                } else {
+                    showAlert(result.message || 'Import failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Import error: ' + error.message, 'danger');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -1861,25 +2260,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // --- Search / Filter logic ---
         let filteredData = [];
 
         function renderTableData(newColumn = null, newValue = null) {
             const container = document.getElementById('tableDataContainer');
             if (!container) return;
 
-            // Use filteredData if available, otherwise use tableData
             const dataToShow = filteredData.length ? filteredData : tableData;
 
             if (!dataToShow.length) {
-                container.innerHTML = `<div class="text-center text-muted py-3">${filteredData.length ? 'No matching rows found' : 'No rows found'}</div>`;
+                container.innerHTML =
+                `<div class="text-center text-muted py-3">${filteredData.length ? 'No matching rows found' : 'No rows found'}</div>`;
                 return;
             }
 
             const columns = Object.keys(dataToShow[0]);
             const primaryKey = currentColumns.find(c => c.Key === 'PRI')?.Field || columns[0];
 
-            // Build column options for filter (including "All Columns")
             const columnOptions = ['all', ...columns].map(col =>
                 `<option value="${col}">${col === 'all' ? 'All Columns' : col}</option>`
             ).join('');
@@ -1887,7 +2284,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             let html = `
         <h6 style="margin-bottom: 10px;"><span class="icon">📊</span>Data (${dataToShow.length} rows)</h6>
         
-        <!-- Search / Filter Bar -->
         <div class="filter-bar">
             <span class="filter-label">🔍 Search:</span>
             <select id="filterColumnSelect" class="form-control" style="width:auto;display:inline-block;">
@@ -1957,7 +2353,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
 
             if (column === 'all') {
-                // Search all columns
                 filteredData = tableData.filter(row => {
                     for (let key in row) {
                         if (row[key] !== null && String(row[key]).toLowerCase().includes(value.toLowerCase())) {
@@ -1980,7 +2375,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             filteredData = [];
             renderTableData();
         }
-        // --- end search / filter ---
 
         async function createTable() {
             const tableName = document.getElementById('newTableName').value.trim();
