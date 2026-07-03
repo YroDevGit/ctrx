@@ -77,6 +77,7 @@ include "app/php/core/system/loader.php";
  * Ctrx DB tools for import export
  */
 if(str_starts_with($req, "ctrxtools/db")){
+    \Classes\Ctrx::include_all_autoFiles();
     extract([
         "backpage" => $_GET['backpage'] ?? previous_page()
     ]);
@@ -87,6 +88,7 @@ if(str_starts_with($req, "ctrxtools/db")){
  * Ctrx DB tools for database management
  */
 if(str_starts_with($req, "ctrxtools/database")){
+    \Classes\Ctrx::include_all_autoFiles();
     extract([
         "backpage" => $_GET['backpage'] ?? previous_page()
     ]);
@@ -97,6 +99,7 @@ if(str_starts_with($req, "ctrxtools/database")){
  * Ctrx Translation tools for import export
  */
 if(str_starts_with($req, "ctrxtools/translations")){
+    \Classes\Ctrx::include_all_autoFiles();
     extract([
         "backpage" => $_GET['backpage'] ?? previous_page()
     ]);
@@ -108,6 +111,7 @@ if(str_starts_with($req, "ctrxtools/translations")){
  * Ctrx Game for devs
  */
 if(str_starts_with($req, "ctrxtools/game")){
+    \Classes\Ctrx::include_all_autoFiles();
     extract([
         "backpage" => $_GET['backpage'] ?? previous_page()
     ]);
@@ -147,16 +151,7 @@ if (str_starts_with($req, "api/")) {
         $_SESSION['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
 
-        $beconfig = glob('app/config/*.php');
-
-        foreach ($beconfig as $k => $v) {
-            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
-            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
-            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
-            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
-            if($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
-            include_once $v;
-        }
+        \Classes\Ctrx::include_all_autoFiles();
         
         if (env("cross_origin_sharing") == "yes") {
             $allowAllOrigin = env("allow_all_origin");

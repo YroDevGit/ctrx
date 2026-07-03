@@ -316,4 +316,16 @@ class Ctrx
         include "views/core/errors/forbidden.php";
         if($exit) exit;
     }
+
+    public static function include_all_autoFiles(){
+        $beconfig = glob('app/config/*.php');
+        foreach ($beconfig as $k => $v) {
+            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
+            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
+            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
+            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
+            if($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
+            include_once $v;
+        }
+    }
 }
