@@ -452,7 +452,7 @@ class CtrClass {
     }
 
     storage_get(name) {
-        localStorage.getItem(name);
+        return localStorage.getItem(name);
     }
 
     storage_clear() {
@@ -482,6 +482,14 @@ class CtrClass {
             console.warn(`value: '${selector}' has an issue`, err);
             return null;
         }
+    }
+
+    log(...message){
+        console.log(...message);
+    }
+
+    err(...message){
+        console.error(...message);
     }
 
     child(selector) {
