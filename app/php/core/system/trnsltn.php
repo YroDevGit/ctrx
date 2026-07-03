@@ -309,43 +309,30 @@ if ($tableExists) {
                     throw new Exception("No data found in file.");
                 }
 
-                $replaceAll = isset($_POST['replace_all']);
+                $importMode = $_POST['import_mode'] ?? 'replace_all';
 
-                if ($replaceAll && $langCode && $langCode !== 'all') {
-                    $existingIdsStmt = $pdo->prepare("SELECT id, en FROM `$tableName` WHERE `lang` = ?");
-                    $existingIdsStmt->execute([$langCode]);
-                    $existingRecords = $existingIdsStmt->fetchAll(PDO::FETCH_ASSOC);
-                    $existingMap = [];
-                    foreach ($existingRecords as $rec) {
-                        $existingMap[$rec['en']] = $rec['id'];
-                    }
-
-                    $idsToKeep = [];
+                if ($importMode === 'replace_all') {
+                    $hasMixedLanguages = false;
+                    $languagesInFile = [];
                     foreach ($importedData as $row) {
-                        if (!empty($row['id']) && is_numeric($row['id'])) {
-                            $idsToKeep[] = $row['id'];
-                        } elseif (isset($existingMap[$row['en']])) {
-                            $idsToKeep[] = $existingMap[$row['en']];
-                            $row['id'] = $existingMap[$row['en']];
+                        $lang = $row['lang'] ?? $langCode;
+                        if ($lang) {
+                            $languagesInFile[$lang] = true;
                         }
                     }
-
-                    if (!empty($idsToKeep)) {
-                        $placeholders = implode(',', array_fill(0, count($idsToKeep), '?'));
-                        $deleteStmt = $pdo->prepare("DELETE FROM `$tableName` WHERE `lang` = ? AND id NOT IN ($placeholders)");
-                        $params = array_merge([$langCode], $idsToKeep);
-                        $deleteStmt->execute($params);
-                    } else {
+                    
+                    if ($langCode && count($languagesInFile) <= 1) {
                         $pdo->prepare("DELETE FROM `$tableName` WHERE `lang` = ?")->execute([$langCode]);
+                        $message = "🗑️ Existing data for language '{$langCode}' cleared. ";
+                    } else {
+                        $pdo->exec("TRUNCATE TABLE `$tableName`");
+                        $message = "🗑️ All existing data cleared. ";
                     }
-                    $message = "🗑️ Existing data for language '{$langCode}' cleared (keeping IDs from import). ";
-                } elseif ($replaceAll) {
-                    $pdo->exec("TRUNCATE TABLE `$tableName`");
-                    $message = "🗑️ All existing data cleared. ";
                 }
 
                 $inserted = 0;
                 $updated = 0;
+                $skipped = 0;
                 $errors = [];
 
                 foreach ($importedData as $rowIndex => $row) {
@@ -359,36 +346,70 @@ if ($tableExists) {
 
                     $active = isset($row['active']) ? (int)$row['active'] : 1;
 
-                    if (!empty($row['id']) && is_numeric($row['id'])) {
-                        $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
-                        $checkStmt->execute([$row['id']]);
+                    if ($importMode === 'skip') {
+                        if (!empty($row['id']) && is_numeric($row['id'])) {
+                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
+                            $checkStmt->execute([$row['id']]);
+                            if ($checkStmt->fetch()) {
+                                $skipped++;
+                                continue;
+                            }
+                        }
+                        $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
+                        $checkStmt->execute([$currentLang, $row['en']]);
                         if ($checkStmt->fetch()) {
-                            $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ?, `active` = ? WHERE `id` = ?");
-                            $updateStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active, $row['id']]);
-                            $updated++;
+                            $skipped++;
                             continue;
                         }
                     }
 
-                    $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
-                    $checkStmt->execute([$currentLang, $row['en']]);
-                    $existing = $checkStmt->fetch();
-
-                    if ($existing) {
-                        $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `name` = ?, `str` = ?, `active` = ? WHERE `lang` = ? AND `en` = ?");
-                        $updateStmt->execute([$currentLangName, $row['str'], $active, $currentLang, $row['en']]);
-                        $updated++;
-                    } else {
-                        $insertStmt = $pdo->prepare("INSERT INTO `$tableName` (`lang`, `name`, `en`, `str`, `active`) VALUES (?, ?, ?, ?, ?)");
-                        $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
-                        $inserted++;
+                    if ($importMode === 'update') {
+                        $updatedRecord = false;
+                        
+                        if (!empty($row['id']) && is_numeric($row['id'])) {
+                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
+                            $checkStmt->execute([$row['id']]);
+                            if ($checkStmt->fetch()) {
+                                $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ?, `active` = ? WHERE `id` = ?");
+                                $updateStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active, $row['id']]);
+                                $updated++;
+                                $updatedRecord = true;
+                            }
+                        }
+                        
+                        if (!$updatedRecord) {
+                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
+                            $checkStmt->execute([$currentLang, $row['en']]);
+                            $existing = $checkStmt->fetch();
+                            if ($existing) {
+                                $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `name` = ?, `str` = ?, `active` = ? WHERE `lang` = ? AND `en` = ?");
+                                $updateStmt->execute([$currentLangName, $row['str'], $active, $currentLang, $row['en']]);
+                                $updated++;
+                                $updatedRecord = true;
+                            }
+                        }
+                        
+                        if ($updatedRecord) {
+                            continue;
+                        }
                     }
+
+                    $insertStmt = $pdo->prepare("INSERT INTO `$tableName` (`lang`, `name`, `en`, `str`, `active`) VALUES (?, ?, ?, ?, ?)");
+                    $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
+                    $inserted++;
                 }
 
                 if (!empty($errors)) {
                     $message .= "⚠️ " . implode(", ", $errors) . ". ";
                 }
-                $message .= "✅ {$inserted} new records inserted, {$updated} records updated successfully in '{$tableName}' table";
+                
+                $modeText = [
+                    'replace_all' => 'replaced all',
+                    'update' => 'updated (merge)',
+                    'skip' => 'skipped duplicates'
+                ][$importMode] ?? 'processed';
+                
+                $message .= "✅ {$inserted} inserted, {$updated} updated, {$skipped} skipped successfully in '{$tableName}' ({$modeText})";
 
                 $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
                 $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -398,11 +419,84 @@ if ($tableExists) {
         }
     }
 
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM `$tableName`");
-    $totalRecords = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    if (isset($_POST['delete_record'])) {
+        try {
+            $id = (int)$_POST['delete_id'];
+            if ($id > 0) {
+                $stmt = $pdo->prepare("DELETE FROM `$tableName` WHERE `id` = ?");
+                $stmt->execute([$id]);
+                $message = "✅ Record ID {$id} deleted successfully.";
+            }
+        } catch (Throwable $e) {
+            $message = "❌ Failed to delete: " . $e->getMessage();
+        }
+    }
 
-    $previewStmt = $pdo->query("SELECT `id`, `lang`, `name`, `en`, `str`, `active` FROM `$tableName` ORDER BY `lang`, `en` LIMIT 100");
+    if (isset($_POST['edit_record'])) {
+        try {
+            $id = (int)$_POST['edit_id'];
+            $en = $_POST['edit_en'];
+            $str = $_POST['edit_str'];
+            $lang = $_POST['edit_lang'];
+            $name = $_POST['edit_name'];
+            
+            if ($id > 0 && !empty($en) && !empty($str) && !empty($lang)) {
+                $stmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ? WHERE `id` = ?");
+                $stmt->execute([$lang, $name, $en, $str, $id]);
+                $message = "✅ Record ID {$id} updated successfully.";
+            } else {
+                $message = "❌ Please fill all required fields.";
+            }
+        } catch (Throwable $e) {
+            $message = "❌ Failed to update: " . $e->getMessage();
+        }
+    }
+
+    $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
+    $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $searchLang = isset($_POST['search_lang']) ? $_POST['search_lang'] : 'all';
+    $searchEn = isset($_POST['search_en']) ? trim($_POST['search_en']) : '';
+    $searchStr = isset($_POST['search_str']) ? trim($_POST['search_str']) : '';
+
+    $sql = "SELECT `id`, `lang`, `name`, `en`, `str`, `active` FROM `$tableName` WHERE 1=1";
+    $params = [];
+
+    if ($searchLang !== 'all' && !empty($searchLang)) {
+        $sql .= " AND `lang` = ?";
+        $params[] = $searchLang;
+    }
+
+    if (!empty($searchEn)) {
+        $sql .= " AND `en` LIKE ?";
+        $params[] = "%" . $searchEn . "%";
+    }
+
+    if (!empty($searchStr)) {
+        $sql .= " AND `str` LIKE ?";
+        $params[] = "%" . $searchStr . "%";
+    }
+
+    $sql .= " ORDER BY `lang`, `en` LIMIT 500";
+
+    $previewStmt = $pdo->prepare($sql);
+    $previewStmt->execute($params);
     $previewData = $previewStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $totalRecords = $pdo->query("SELECT COUNT(*) as total FROM `$tableName`")->fetch(PDO::FETCH_ASSOC)['total'];
+
+    $editRecord = null;
+    if (isset($_GET['edit'])) {
+        $editId = (int)$_GET['edit'];
+        if ($editId > 0) {
+            $stmt = $pdo->prepare("SELECT * FROM `$tableName` WHERE `id` = ?");
+            $stmt->execute([$editId]);
+            $editRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+    }
+
+    $activeTab = isset($_POST['active_tab']) ? (int)$_POST['active_tab'] : (isset($_GET['tab']) ? (int)$_GET['tab'] : 0);
+    if ($activeTab < 0 || $activeTab > 2) $activeTab = 0;
 }
 ?>
 
@@ -414,7 +508,6 @@ if ($tableExists) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Translation Manager</title>
     <style>
-        /* ===== RESET ===== */
         * {
             margin: 0;
             padding: 0;
@@ -429,7 +522,6 @@ if ($tableExists) {
             line-height: 1.6;
         }
 
-        /* ===== CONTAINER ===== */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -439,7 +531,6 @@ if ($tableExists) {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
-        /* ===== HEADER ===== */
         .header {
             border-bottom: 2px solid #e8e8e8;
             padding-bottom: 15px;
@@ -460,7 +551,6 @@ if ($tableExists) {
             margin-top: 4px;
         }
 
-        /* ===== MESSAGES ===== */
         .message {
             padding: 12px 18px;
             border-radius: 4px;
@@ -486,7 +576,6 @@ if ($tableExists) {
             color: #0d47a1;
         }
 
-        /* ===== STATS BAR ===== */
         .stats-bar {
             display: flex;
             gap: 20px;
@@ -525,7 +614,6 @@ if ($tableExists) {
             margin: 2px 4px 2px 0;
         }
 
-        /* ===== TABS ===== */
         .tabs {
             display: flex;
             gap: 4px;
@@ -552,7 +640,6 @@ if ($tableExists) {
             border-bottom-color: #2196f3;
         }
 
-        /* ===== SECTIONS ===== */
         .section {
             display: none;
             animation: fadeIn 0.3s ease;
@@ -573,7 +660,6 @@ if ($tableExists) {
             }
         }
 
-        /* ===== FORMS ===== */
         .form-group {
             margin-bottom: 18px;
         }
@@ -667,6 +753,15 @@ if ($tableExists) {
             background: #d32f2f;
         }
 
+        .btn-info {
+            background: #2196f3;
+            color: #fff;
+        }
+
+        .btn-info:hover {
+            background: #1976d2;
+        }
+
         .btn-default {
             background: #e8e8e8;
             color: #333;
@@ -707,7 +802,43 @@ if ($tableExists) {
             margin-top: 8px;
         }
 
-        /* ===== CHECKBOX ===== */
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e8e8e8;
+            margin-top: 4px;
+        }
+
+        .radio-group .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .radio-group .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .radio-group .radio-option label {
+            margin: 0;
+            font-weight: 400;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -734,7 +865,6 @@ if ($tableExists) {
             cursor: pointer;
         }
 
-        /* ===== FORMAT OPTIONS ===== */
         .format-group {
             display: flex;
             gap: 12px;
@@ -777,7 +907,6 @@ if ($tableExists) {
             color: #333;
         }
 
-        /* ===== FILE INPUT ===== */
         input[type="file"] {
             padding: 8px;
             border: 1px dashed #ccc;
@@ -804,7 +933,6 @@ if ($tableExists) {
             background: #d5d5d5;
         }
 
-        /* ===== HINT TEXT ===== */
         .hint {
             font-size: 13px;
             color: #888;
@@ -812,10 +940,9 @@ if ($tableExists) {
             line-height: 1.5;
         }
 
-        /* ===== TABLE PREVIEW ===== */
         .preview-table {
             overflow-x: auto;
-            max-height: 450px;
+            max-height: 550px;
             overflow-y: auto;
             border: 1px solid #e8e8e8;
             border-radius: 4px;
@@ -849,25 +976,124 @@ if ($tableExists) {
             background: #f8f9fa;
         }
 
-        .active-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 10px;
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+
+        .search-bar .form-group {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .search-bar .form-group label {
             font-size: 12px;
-            font-weight: 500;
+            margin-bottom: 3px;
         }
 
-        .active-yes {
-            background: #e8f5e9;
-            color: #2e7d32;
+        .search-bar .form-group input,
+        .search-bar .form-group select {
+            padding: 6px 10px;
+            font-size: 13px;
         }
 
-        .active-no {
-            background: #ffebee;
-            color: #c62828;
+        .search-bar .search-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-bottom: 2px;
         }
 
-        /* ===== ACTIVATION SCREEN ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e8e8e8;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: #1a1a1a;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #888;
+            padding: 0 8px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal .form-group {
+            margin-bottom: 14px;
+        }
+
+        .modal .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .modal .form-actions button {
+            flex: 1;
+        }
+
         .activation-screen {
             text-align: center;
             padding: 40px 20px;
@@ -886,7 +1112,6 @@ if ($tableExists) {
             flex-wrap: wrap;
         }
 
-        /* ===== BACK LINK ===== */
         .back-link {
             display: block;
             text-align: center;
@@ -906,7 +1131,6 @@ if ($tableExists) {
             text-decoration: underline;
         }
 
-        /* ===== FOOTER ===== */
         .footer {
             text-align: center;
             margin-top: 25px;
@@ -915,7 +1139,6 @@ if ($tableExists) {
             letter-spacing: 0.5px;
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -938,6 +1161,11 @@ if ($tableExists) {
                 flex-direction: column;
             }
 
+            .radio-group {
+                flex-direction: column;
+                gap: 6px;
+            }
+
             .tabs {
                 overflow-x: auto;
                 gap: 0;
@@ -947,6 +1175,15 @@ if ($tableExists) {
                 padding: 8px 16px;
                 font-size: 13px;
                 white-space: nowrap;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-bar .form-group {
+                min-width: 100%;
             }
 
             .activation-buttons {
@@ -959,6 +1196,11 @@ if ($tableExists) {
                 width: 100%;
                 max-width: 300px;
             }
+
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
         }
     </style>
 </head>
@@ -967,7 +1209,6 @@ if ($tableExists) {
 
     <div class="container">
 
-        <!-- HEADER -->
         <div class="header">
             <h1>
                 📋 Translation Manager
@@ -975,7 +1216,6 @@ if ($tableExists) {
             </h1>
         </div>
 
-        <!-- MESSAGES -->
         <?php if (!empty($message)): ?>
             <?php if ($tableExists): ?>
                 <div class="message message-success">
@@ -988,7 +1228,6 @@ if ($tableExists) {
             <?php endif; ?>
         <?php endif; ?>
 
-        <!-- ACTIVATION SCREEN -->
         <?php if (!$tableExists): ?>
             <div class="activation-screen">
                 <p>⚡ The translation table is not yet activated. Click Activate to create the required database structure.</p>
@@ -1002,7 +1241,6 @@ if ($tableExists) {
 
         <?php else: ?>
 
-            <!-- STATS -->
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="label">Total Translations</div>
@@ -1023,16 +1261,15 @@ if ($tableExists) {
                 </div>
             </div>
 
-            <!-- TABS -->
             <div class="tabs">
-                <div class="tab active" data-tab="0">📤 Export</div>
-                <div class="tab" data-tab="1">📥 Import</div>
-                <div class="tab" data-tab="2">👁️ Preview</div>
+                <div class="tab <?= $activeTab == 0 ? 'active' : '' ?>" data-tab="0">📤 Export</div>
+                <div class="tab <?= $activeTab == 1 ? 'active' : '' ?>" data-tab="1">📥 Import</div>
+                <div class="tab <?= $activeTab == 2 ? 'active' : '' ?>" data-tab="2">👁️ Preview</div>
             </div>
 
-            <!-- EXPORT SECTION -->
-            <div class="section active" id="exportSection">
+            <div class="section <?= $activeTab == 0 ? 'active' : '' ?>" id="exportSection">
                 <form method="POST">
+                    <input type="hidden" name="active_tab" value="0">
                     <div class="form-group">
                         <label for="selected_lang">🌐 Select Language to Export</label>
                         <select name="selected_lang" id="selected_lang" required>
@@ -1076,9 +1313,9 @@ if ($tableExists) {
                 </div>
             </div>
 
-            <!-- IMPORT SECTION -->
-            <div class="section" id="importSection">
+            <div class="section <?= $activeTab == 1 ? 'active' : '' ?>" id="importSection">
                 <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="active_tab" value="1">
                     <div class="form-group">
                         <label>📂 File Type</label>
                         <div class="format-group" id="importTypeGroup">
@@ -1102,9 +1339,22 @@ if ($tableExists) {
                         <input type="file" name="import_file" accept=".json,.csv,.xlsx" required>
                     </div>
 
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="replace_all" id="replace_all">
-                        <label for="replace_all">⚡ REPLACE MODE – Delete existing data for this language before import</label>
+                    <div class="form-group">
+                        <label>⚙️ IMPORT MODE</label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="import_mode" value="update" id="mode_update" checked>
+                                <label for="mode_update">UPDATE (merge existing)</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="import_mode" value="skip" id="mode_skip">
+                                <label for="mode_skip">SKIP duplicates</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="import_mode" value="replace_all" id="mode_replace_all">
+                                <label for="mode_replace_all">REPLACE ALL (clear existing + insert all)</label>
+                            </div>
+                        </div>
                     </div>
 
                     <button type="submit" name="import_table" class="btn-warning btn-block">
@@ -1112,27 +1362,55 @@ if ($tableExists) {
                     </button>
                 </form>
                 <div class="hint">
-                    💡 If ID exists → UPDATE | If (lang + en) exists → UPDATE | Otherwise → INSERT new record
+                    💡 REPLACE ALL: Clears existing data for the language(s) in the file, then inserts all records.<br>
+                    💡 UPDATE: Updates existing records (by ID or lang+en), inserts new ones.<br>
+                    💡 SKIP: Skips records that already exist (by ID or lang+en), inserts new ones.
                 </div>
             </div>
 
-            <!-- PREVIEW SECTION -->
-            <div class="section" id="previewSection">
+            <div class="section <?= $activeTab == 2 ? 'active' : '' ?>" id="previewSection">
+                <form method="POST" class="search-bar">
+                    <input type="hidden" name="active_tab" value="2">
+                    <div class="form-group">
+                        <label>🌐 Language</label>
+                        <select name="search_lang">
+                            <option value="all" <?= $searchLang === 'all' ? 'selected' : '' ?>>All Languages</option>
+                            <?php foreach ($availableLanguages as $lang): ?>
+                                <option value="<?= htmlspecialchars($lang['lang']) ?>" <?= $searchLang === $lang['lang'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($lang['lang']) ?> - <?= htmlspecialchars($lang['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🔍 Default</label>
+                        <input type="text" name="search_en" placeholder="Search Default..." value="<?= htmlspecialchars($searchEn) ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>🔍 Translation</label>
+                        <input type="text" name="search_str" placeholder="Search Translation..." value="<?= htmlspecialchars($searchStr) ?>">
+                    </div>
+                    <div class="search-actions">
+                        <button type="submit" class="btn-primary">🔍 Filter</button>
+                        <a href="?tab=2&clear=1" class="btn-default" style="padding: 9px 20px; text-decoration: none; display: inline-block;">Clear</a>
+                    </div>
+                </form>
+
                 <div class="preview-table">
                     <?php if (empty($previewData)): ?>
                         <div style="padding: 30px; text-align: center; color: #888;">
-                            📭 No translations yet. Import some data to see preview.
+                            📭 No translations found matching your criteria.
                         </div>
                     <?php else: ?>
                         <table>
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Language Code</th>
-                                    <th>Language Name</th>
-                                    <th>English Word</th>
+                                    <th style="width: 50px;">ID</th>
+                                    <th style="width: 80px;">Code</th>
+                                    <th>Language</th>
+                                    <th>Default</th>
                                     <th>Translation</th>
-                                    <th>Active</th>
+                                    <th style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1144,17 +1422,16 @@ if ($tableExists) {
                                         <td><?= htmlspecialchars($row['en']) ?></td>
                                         <td><?= htmlspecialchars($row['str']) ?></td>
                                         <td>
-                                            <span class="active-badge <?= $row['active'] == 1 ? 'active-yes' : 'active-no' ?>">
-                                                <?= $row['active'] == 1 ? 'ACTIVE' : 'INACTIVE' ?>
-                                            </span>
+                                            <a href="?tab=2&edit=<?= $row['id'] ?>" class="btn-info btn-sm" style="text-decoration: none; display: inline-block; color: #fff;">✏️</a>
+                                            <button type="button" class="btn-danger btn-sm" onclick="confirmDelete(<?= $row['id'] ?>, '<?= htmlspecialchars($row['en']) ?>')">🗑️</button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
-                        <?php if ($totalRecords > 100): ?>
+                        <?php if (count($previewData) >= 500): ?>
                             <div style="padding: 8px 12px; background: #f8f9fa; font-size: 13px; color: #888;">
-                                📊 Showing first 100 of <?= $totalRecords ?> records
+                                📊 Showing first 500 records. Refine your search for more specific results.
                             </div>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -1163,152 +1440,221 @@ if ($tableExists) {
 
         <?php endif; ?>
 
-        <!-- BACK LINK -->
         <div class="back-link">
             <a href="<?= $backpage ?? '/' ?>">← Back to Dashboard</a>
         </div>
 
-        <!-- FOOTER -->
         <div class="footer">
             Translation Manager • Multilingual Data Flow
         </div>
 
     </div>
 
+    <?php if ($editRecord): ?>
+    <div class="modal active" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Translation #<?= $editRecord['id'] ?></h3>
+                <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="2">
+                <input type="hidden" name="edit_id" value="<?= $editRecord['id'] ?>">
+                <div class="form-group">
+                    <label>Default</label>
+                    <input type="text" name="edit_en" value="<?= htmlspecialchars($editRecord['en']) ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Translation</label>
+                    <input type="text" name="edit_str" value="<?= htmlspecialchars($editRecord['str']) ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Language Code</label>
+                    <input type="text" name="edit_lang" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['lang']) ?>" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Language Name</label>
+                    <input type="text" name="edit_name" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['name']) ?>" readonly>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-default" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" name="edit_record" class="btn-success">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <form method="POST" id="deleteForm" style="display: none;">
+        <input type="hidden" name="active_tab" value="2">
+        <input type="hidden" name="delete_id" id="deleteId">
+        <input type="hidden" name="delete_record" value="1">
+    </form>
+
     <script>
-        (function() {
-            <?php if (!$tableExists): ?>
-                const activateBtn = document.getElementById('activateTableBtn');
-                if (activateBtn) {
-                    activateBtn.addEventListener('click', async function() {
-                        const originalText = this.innerHTML;
-                        this.innerHTML = '⏳ Activating...';
-                        this.disabled = true;
+        <?php if (!$tableExists): ?>
+            const activateBtn = document.getElementById('activateTableBtn');
+            if (activateBtn) {
+                activateBtn.addEventListener('click', async function() {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '⏳ Activating...';
+                    this.disabled = true;
 
-                        try {
-                            const formData = new FormData();
-                            formData.append('action', 'activate_table');
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'activate_table');
 
-                            const response = await fetch(window.location.href, {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                }
-                            });
-
-                            const result = await response.json();
-
-                            if (result.success) {
-                                // Show message and reload
-                                const msgDiv = document.createElement('div');
-                                msgDiv.className = 'message message-success';
-                                msgDiv.textContent = result.message;
-                                const container = document.querySelector('.container');
-                                const activationScreen = document.querySelector('.activation-screen');
-                                if (activationScreen) {
-                                    activationScreen.insertAdjacentElement('beforebegin', msgDiv);
-                                }
-
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 1500);
-                            } else {
-                                this.innerHTML = originalText;
-                                this.disabled = false;
-                                alert('Error: ' + result.message);
+                        const response = await fetch(window.location.href, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
                             }
-                        } catch (error) {
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            const msgDiv = document.createElement('div');
+                            msgDiv.className = 'message message-success';
+                            msgDiv.textContent = result.message;
+                            const container = document.querySelector('.container');
+                            const activationScreen = document.querySelector('.activation-screen');
+                            if (activationScreen) {
+                                activationScreen.insertAdjacentElement('beforebegin', msgDiv);
+                            }
+
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
                             this.innerHTML = originalText;
                             this.disabled = false;
-                            alert('Request failed: ' + error.message);
+                            alert('Error: ' + result.message);
                         }
-                    });
-                }
-            <?php else: ?>
-                // Tab switching
-                const tabs = document.querySelectorAll('.tab');
-                const sections = {
-                    0: document.getElementById('exportSection'),
-                    1: document.getElementById('importSection'),
-                    2: document.getElementById('previewSection')
-                };
-
-                function switchTab(index) {
-                    tabs.forEach((tab, i) => {
-                        tab.classList.toggle('active', i === index);
-                    });
-                    for (let i = 0; i <= 2; i++) {
-                        if (sections[i]) sections[i].classList.toggle('active', i === index);
-                    }
-                }
-
-                tabs.forEach((tab, idx) => {
-                    tab.addEventListener('click', () => switchTab(idx));
-                });
-
-                // Format option selection
-                document.querySelectorAll('.format-option').forEach(opt => {
-                    const radio = opt.querySelector('input');
-                    if (radio) {
-                        radio.addEventListener('change', () => {
-                            const group = opt.closest('.format-group');
-                            group.querySelectorAll('.format-option').forEach(o => o.classList.remove(
-                            'selected'));
-                            if (radio.checked) opt.classList.add('selected');
-                        });
-                        if (radio.checked) opt.classList.add('selected');
+                    } catch (error) {
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                        alert('Request failed: ' + error.message);
                     }
                 });
+            }
+        <?php else: ?>
+            const tabs = document.querySelectorAll('.tab');
+            const sections = {
+                0: document.getElementById('exportSection'),
+                1: document.getElementById('importSection'),
+                2: document.getElementById('previewSection')
+            };
 
-                // Language select - disable CSV/Excel for "all" option
-                const langSelect = document.querySelector('select[name="selected_lang"]');
-                if (langSelect) {
-                    langSelect.addEventListener('change', function() {
-                        const isAll = this.value === 'all';
-                        document.querySelectorAll('#exportFormatGroup .format-option').forEach(opt => {
-                            const radio = opt.querySelector('input');
-                            if (radio && (radio.value === 'csv' || radio.value === 'excel')) {
-                                opt.style.opacity = isAll ? '0.4' : '1';
-                                opt.style.pointerEvents = isAll ? 'none' : 'auto';
-                                if (isAll && radio.checked) {
-                                    document.getElementById('export_json').checked = true;
-                                    document.querySelector('#exportFormatGroup .format-option[data-format="json"]')
-                                        .classList.add('selected');
-                                }
-                            }
-                        });
-                    });
-                }
-
-                // File input feedback
-                const fileInput = document.querySelector('input[type="file"]');
-                if (fileInput) {
-                    fileInput.addEventListener('change', function() {
-                        if (this.files.length) {
-                            const span = document.createElement('div');
-                            span.style.cssText = 'font-size: 13px; margin-top: 6px; color: #666;';
-                            span.textContent = '📎 ' + this.files[0].name;
-                            const old = this.parentNode.querySelector('.file-feedback');
-                            if (old) old.remove();
-                            span.className = 'file-feedback';
-                            this.insertAdjacentElement('afterend', span);
-                            setTimeout(() => span.remove(), 3000);
-                        }
-                    });
-                }
-
-                // Update accept attribute based on file type selection
-                document.querySelectorAll('#importTypeGroup .format-option input').forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        const fileInput = document.querySelector('input[name="import_file"]');
-                        if (this.value === 'json') fileInput.setAttribute('accept', '.json');
-                        else if (this.value === 'csv') fileInput.setAttribute('accept', '.csv');
-                        else if (this.value === 'excel') fileInput.setAttribute('accept', '.xlsx,.xls');
-                    });
+            function switchTab(index) {
+                tabs.forEach((tab, i) => {
+                    tab.classList.toggle('active', i === index);
                 });
+                for (let i = 0; i <= 2; i++) {
+                    if (sections[i]) sections[i].classList.toggle('active', i === index);
+                }
+            }
+
+            tabs.forEach((tab, idx) => {
+                tab.addEventListener('click', () => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', idx);
+                    window.history.pushState({}, '', url);
+                    switchTab(idx);
+                });
+            });
+
+            <?php if ($activeTab == 2): ?>
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 2);
+            window.history.replaceState({}, '', url);
             <?php endif; ?>
-        })();
+
+            document.querySelectorAll('.format-option').forEach(opt => {
+                const radio = opt.querySelector('input');
+                if (radio) {
+                    radio.addEventListener('change', () => {
+                        const group = opt.closest('.format-group');
+                        group.querySelectorAll('.format-option').forEach(o => o.classList.remove('selected'));
+                        if (radio.checked) opt.classList.add('selected');
+                    });
+                    if (radio.checked) opt.classList.add('selected');
+                }
+            });
+
+            const langSelect = document.querySelector('select[name="selected_lang"]');
+            if (langSelect) {
+                langSelect.addEventListener('change', function() {
+                    const isAll = this.value === 'all';
+                    document.querySelectorAll('#exportFormatGroup .format-option').forEach(opt => {
+                        const radio = opt.querySelector('input');
+                        if (radio && (radio.value === 'csv' || radio.value === 'excel')) {
+                            opt.style.opacity = isAll ? '0.4' : '1';
+                            opt.style.pointerEvents = isAll ? 'none' : 'auto';
+                            if (isAll && radio.checked) {
+                                document.getElementById('export_json').checked = true;
+                                document.querySelector('#exportFormatGroup .format-option[data-format="json"]')
+                                    .classList.add('selected');
+                            }
+                        }
+                    });
+                });
+            }
+
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length) {
+                        const span = document.createElement('div');
+                        span.style.cssText = 'font-size: 13px; margin-top: 6px; color: #666;';
+                        span.textContent = '📎 ' + this.files[0].name;
+                        const old = this.parentNode.querySelector('.file-feedback');
+                        if (old) old.remove();
+                        span.className = 'file-feedback';
+                        this.insertAdjacentElement('afterend', span);
+                        setTimeout(() => span.remove(), 3000);
+                    }
+                });
+            }
+
+            document.querySelectorAll('#importTypeGroup .format-option input').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const fileInput = document.querySelector('input[name="import_file"]');
+                    if (this.value === 'json') fileInput.setAttribute('accept', '.json');
+                    else if (this.value === 'csv') fileInput.setAttribute('accept', '.csv');
+                    else if (this.value === 'excel') fileInput.setAttribute('accept', '.xlsx,.xls');
+                });
+            });
+
+            function confirmDelete(id, en) {
+                if (confirm('Are you sure you want to delete translation "' + en + '" (ID: ' + id + ')?')) {
+                    document.getElementById('deleteId').value = id;
+                    document.getElementById('deleteForm').submit();
+                }
+            }
+
+            function closeEditModal() {
+                const modal = document.getElementById('editModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('edit');
+                    window.history.pushState({}, '', url);
+                    setTimeout(() => {
+                        window.location.href = url.toString();
+                    }, 100);
+                }
+            }
+
+            <?php if ($editRecord): ?>
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeEditModal();
+                }
+            });
+            <?php endif; ?>
+        <?php endif; ?>
     </script>
 
 </body>

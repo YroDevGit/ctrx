@@ -799,4 +799,19 @@ if(! function_exists("active_class")){
     }
 }
 
+/**
+ * db - for db import/export
+ * database - general database management
+ * translations - language translations
+ */
+if(! function_exists("ctrx_tools")){
+    function ctrx_tools(string $tool){
+        if(str_starts_with($tool, "/")){
+            return "/ctrxtools".$tool;
+        }else{
+            return "/ctrxtools/".$tool;
+        }
+    }
+}
+
 define('page', page(""));

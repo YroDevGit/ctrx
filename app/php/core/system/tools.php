@@ -102,6 +102,9 @@ function readExcel($filePath)
     return ['table' => $table, 'data' => $data];
 }
 
+$activeTab = isset($_POST['active_tab']) ? (int)$_POST['active_tab'] : 0;
+if ($activeTab < 0 || $activeTab > 1) $activeTab = 0;
+
 if (isset($_POST['export_table'])) {
     try {
         $table = $_POST['table'] ?? "";
@@ -203,9 +206,12 @@ if (isset($_POST['import_table'])) {
             if (empty($table)) {
                 throw new Exception("Invalid table name.");
             }
-            $replaceAll = isset($_POST['replace_all']);
+
+            $importMode = $_POST['import_mode'] ?? 'replace_all';
+
             $stmt = $pdo->query("SHOW TABLES LIKE '$table'");
             $tableExists = $stmt->rowCount() > 0;
+
             if (!$tableExists) {
                 $firstRow = $importedData[0];
                 $columns = array_keys($firstRow);
@@ -217,41 +223,35 @@ if (isset($_POST['import_table'])) {
                 $sql = "CREATE TABLE `$table` (" . implode(", ", $columnDefs) . ")";
                 $pdo->exec($sql);
                 $message = "✅ Table '{$table}' created automatically. ";
+                $tableExists = true;
             }
-            if ($replaceAll && $tableExists) {
-                $pdo->exec("TRUNCATE TABLE `$table`");
-            }
+
             $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
             $dbColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
             $inserted = 0;
             $updated = 0;
+            $skipped = 0;
+
+            if ($importMode === 'replace_all' && $tableExists) {
+                $pdo->exec("TRUNCATE TABLE `$table`");
+            }
+
             foreach ($importedData as $row) {
-                if (isset($row['id']) && $row['id'] !== '' && $row['id'] !== null) {
-                    $setClauses = [];
-                    $params = ['id' => $row['id']];
+                $hasId = isset($row['id']) && $row['id'] !== '' && $row['id'] !== null;
+                $idValue = $hasId ? $row['id'] : null;
 
-                    foreach ($dbColumns as $col) {
-                        if ($col === 'id') continue;
-                        if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
-                            $setClauses[] = "`$col` = :$col";
-                            $params[$col] = $row[$col];
-                        }
-                    }
-
-                    if (!empty($setClauses)) {
-                        $sql = "UPDATE `$table` SET " . implode(", ", $setClauses) . " WHERE `id` = :id";
-                        $stmt = $pdo->prepare($sql);
-                        $stmt->execute($params);
-                        $updated++;
-                    }
-                } else {
+                if ($importMode === 'replace_all') {
                     $filteredRow = [];
                     foreach ($dbColumns as $col) {
-                        if ($col === 'id') continue;
-                        $kaw = $row[$col] == "" || $row[$col] == null ? null : $row[$col];
-                        if (! $kaw) continue;
-                        $filteredRow[$col] = $kaw;
+                        if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
+                            $filteredRow[$col] = $row[$col];
+                        }
                     }
+                    if ($hasId && in_array('id', $dbColumns)) {
+                        $filteredRow['id'] = $idValue;
+                    }
+
                     $columns = array_keys($filteredRow);
                     if (!empty($columns)) {
                         $placeholders = ":" . implode(", :", $columns);
@@ -261,10 +261,72 @@ if (isset($_POST['import_table'])) {
                         $stmt->execute($filteredRow);
                         $inserted++;
                     }
+                    continue;
+                }
+
+                if ($importMode === 'skip' && $hasId) {
+                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM `$table` WHERE `id` = :id");
+                    $checkStmt->execute(['id' => $idValue]);
+                    if ($checkStmt->fetchColumn() > 0) {
+                        $skipped++;
+                        continue;
+                    }
+                }
+
+                if ($importMode === 'update' && $hasId) {
+                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM `$table` WHERE `id` = :id");
+                    $checkStmt->execute(['id' => $idValue]);
+                    $exists = $checkStmt->fetchColumn() > 0;
+
+                    if ($exists) {
+                        $setClauses = [];
+                        $params = ['id' => $idValue];
+                        foreach ($dbColumns as $col) {
+                            if ($col === 'id') continue;
+                            if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
+                                $setClauses[] = "`$col` = :$col";
+                                $params[$col] = $row[$col];
+                            }
+                        }
+                        if (!empty($setClauses)) {
+                            $sql = "UPDATE `$table` SET " . implode(", ", $setClauses) . " WHERE `id` = :id";
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute($params);
+                            $updated++;
+                            continue;
+                        }
+                        continue;
+                    }
+                }
+
+                $filteredRow = [];
+                foreach ($dbColumns as $col) {
+                    if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
+                        $filteredRow[$col] = $row[$col];
+                    }
+                }
+                if ($hasId && in_array('id', $dbColumns)) {
+                    $filteredRow['id'] = $idValue;
+                }
+
+                $columns = array_keys($filteredRow);
+                if (!empty($columns)) {
+                    $placeholders = ":" . implode(", :", $columns);
+                    $sql = "INSERT INTO `$table` (`" . implode("`,`", $columns) . "`)
+                            VALUES ($placeholders)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($filteredRow);
+                    $inserted++;
                 }
             }
-            $action = $replaceAll ? "replaced" : "appended";
-            $message .= "✅ {$inserted} new records inserted, {$updated} records updated successfully in '{$table}'";
+
+            $modeText = [
+                'replace_all' => 'replaced all (truncated + inserted all)',
+                'update' => 'updated (merge)',
+                'skip' => 'skipped duplicates'
+            ][$importMode] ?? 'processed';
+
+            $message .= "✅ {$inserted} inserted, {$updated} updated, {$skipped} skipped successfully in '{$table}' ({$modeText})";
         }
     } catch (Throwable $e) {
         $message = "❌ " . $e->getMessage();
@@ -319,7 +381,7 @@ if (isset($_POST['import_table'])) {
             gap: 12px;
         }
 
-        .maintitle{
+        .maintitle {
             margin-bottom: 10px;
         }
 
@@ -351,6 +413,7 @@ if (isset($_POST['import_table'])) {
                 opacity: 0;
                 transform: translateX(-8px);
             }
+
             100% {
                 opacity: 1;
                 transform: translateX(0);
@@ -405,6 +468,7 @@ if (isset($_POST['import_table'])) {
                 opacity: 0;
                 transform: translateY(6px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -598,6 +662,38 @@ if (isset($_POST['import_table'])) {
             margin-top: 0.5rem;
         }
 
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.3rem;
+            background: #f8fafc;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.75rem;
+        }
+
+        .radio-group .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+        }
+
+        .radio-group .radio-option input {
+            width: auto;
+            margin: 0;
+            accent-color: #0f172a;
+        }
+
+        .radio-group .radio-option label {
+            margin: 0;
+            text-transform: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+        }
+
         @media (max-width: 550px) {
             body {
                 padding: 1rem;
@@ -619,6 +715,11 @@ if (isset($_POST['import_table'])) {
             .format-group {
                 flex-direction: column;
                 gap: 0.5rem;
+            }
+
+            .radio-group {
+                flex-direction: column;
+                gap: 0.4rem;
             }
         }
 
@@ -647,10 +748,10 @@ if (isset($_POST['import_table'])) {
 
     <div class="container">
         <div class="maintitle">
-        <h2>
-            ⚡CTRX LIGHTNING CORE 
-        </h2>
-        <div><small>DATABASE PULSE | IMPORT / EXPORT</small></div>
+            <h2>
+                ⚡CTRX LIGHTNING CORE
+            </h2>
+            <div><small>DATABASE PULSE | IMPORT / EXPORT</small></div>
         </div>
 
         <?php if (!empty($message)): ?>
@@ -661,12 +762,13 @@ if (isset($_POST['import_table'])) {
         <?php endif; ?>
 
         <div class="tabs">
-            <div class="tab active" data-tab="0">📤 EXPORT</div>
-            <div class="tab" data-tab="1">📥 IMPORT / SURGE</div>
+            <div class="tab <?= $activeTab == 0 ? 'active' : '' ?>" data-tab="0">📤 EXPORT</div>
+            <div class="tab <?= $activeTab == 1 ? 'active' : '' ?>" data-tab="1">📥 IMPORT / SURGE</div>
         </div>
 
-        <div class="section active" id="exportSection">
+        <div class="section <?= $activeTab == 0 ? 'active' : '' ?>" id="exportSection">
             <form method="POST" id="exportForm">
+                <input type="hidden" name="active_tab" value="0">
                 <label>🗄️ SELECT TABLE TO EXPORT</label>
                 <select name="table" required>
                     <option value="" disabled selected>— Select a table —</option>
@@ -703,8 +805,9 @@ if (isset($_POST['import_table'])) {
             <div class="inline-hint">➤ Select a table and download in your chosen format</div>
         </div>
 
-        <div class="section" id="importSection">
+        <div class="section <?= $activeTab == 1 ? 'active' : '' ?>" id="importSection">
             <form method="POST" enctype="multipart/form-data" id="importForm">
+                <input type="hidden" name="active_tab" value="1">
                 <label>📂 FILE TYPE</label>
                 <div class="format-group" id="importTypeGroup">
                     <div class="format-option" data-format="json">
@@ -727,9 +830,20 @@ if (isset($_POST['import_table'])) {
                 <label>🏷️ TABLE NAME (optional if file contains table name in row 1 column A)</label>
                 <input type="text" name="table_name" placeholder="Leave empty to auto-detect from file">
 
-                <div class="checkbox">
-                    <input type="checkbox" name="replace_all" id="replace_all">
-                    <label for="replace_all">⚡ REPLACE MODE – Truncate table before import</label>
+                <label>⚙️ IMPORT MODE</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="import_mode" value="update" id="mode_update" checked>
+                        <label for="mode_update">UPDATE (merge existing)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="import_mode" value="skip" id="mode_skip">
+                        <label for="mode_skip">SKIP duplicates</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="import_mode" value="replace_all" id="mode_replace_all">
+                        <label for="mode_replace_all">REPLACE ALL (truncate + insert all)</label>
+                    </div>
                 </div>
 
                 <button name="import_table" type="submit">
@@ -756,16 +870,11 @@ if (isset($_POST['import_table'])) {
 
             function switchTab(index) {
                 tabs.forEach((tab, i) => {
-                    if (i === index) {
-                        tab.classList.add('active');
-                    } else {
-                        tab.classList.remove('active');
-                    }
+                    tab.classList.toggle('active', i === index);
                 });
-                if (sections[0]) sections[0].classList.remove('active');
-                if (sections[1]) sections[1].classList.remove('active');
-                if (index === 0 && sections[0]) sections[0].classList.add('active');
-                if (index === 1 && sections[1]) sections[1].classList.add('active');
+                for (let i = 0; i <= 1; i++) {
+                    if (sections[i]) sections[i].classList.toggle('active', i === index);
+                }
             }
 
             tabs.forEach((tab, idx) => {
