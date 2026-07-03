@@ -292,11 +292,11 @@ const tyrax = { // tyrux default config :: CodeTazeR
                     return result?.data ?? [];
                 } else {
                     if (options.errorType == "console") {
-                        console.error(result);
+                        console.error(result.message ?? "CTRQL Server error", result);
                         return [];
                     } else {
-                        alert(result.message ?? "There is an error, please check console");
-                        console.error(result);
+                        alert(result.message ?? "CTRQL Server error");
+                        console.error(result.message ?? "CTRQL Server error", result);
                         return [];
                     }
                 }
