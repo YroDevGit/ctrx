@@ -240,21 +240,21 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     if (!$tablesResult['success']) {
         return ['success' => false, 'message' => 'Failed to get tables'];
     }
-    
+
     $allTables = $tablesResult['data'];
     $sql = "-- ============================================\n";
     $sql .= "-- Database Export By CTR-X\n";
     $sql .= "-- Database: " . DB_NAME . "\n";
     $sql .= "-- Export Date: " . date('Y-m-d H:i:s') . "\n";
-    $sql .= "-- CodeYro ". date("Y-m-d") ."\n";
+    $sql .= "-- CodeYro " . date("Y-m-d") . "\n";
     $sql .= "-- ============================================\n\n";
-    $sql .= "-- CREATE DATABASE `".DB_NAME."`;\n";
-    $sql .= "-- USE `".DB_NAME."`;\n\n";
+    $sql .= "-- CREATE DATABASE `" . DB_NAME . "`;\n";
+    $sql .= "-- USE `" . DB_NAME . "`;\n\n";
     $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
-    
+
     foreach ($allTables as $table) {
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-        
+
         $createResult = executeQuery($pdo, "SHOW CREATE TABLE `$table`");
         if ($createResult['success']) {
             $row = $createResult['data']->fetch();
@@ -262,26 +262,26 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
             $sql .= "DROP TABLE IF EXISTS `$table`;\n";
             $sql .= $row['Create Table'] . ";\n\n";
         }
-        
+
         $includeData = in_array($table, $tablesWithData);
-        
+
         if ($includeData) {
             $dataResult = executeQuery($pdo, "SELECT * FROM `$table`");
             if ($dataResult['success']) {
                 $rows = $dataResult['data']->fetchAll();
                 if (count($rows) > 0) {
                     $columns = array_keys($rows[0]);
-                    $escapedColumns = array_map(function($col) {
+                    $escapedColumns = array_map(function ($col) {
                         return "`" . str_replace('`', '``', $col) . "`";
                     }, $columns);
                     $columnList = implode(', ', $escapedColumns);
-                    
+
                     $sql .= "-- Dumping data for table `$table`\n";
                     $sql .= "INSERT INTO `$table` ($columnList) VALUES\n";
-                    
+
                     $values = [];
                     foreach ($rows as $row) {
-                        $escapedValues = array_map(function($value) use ($pdo) {
+                        $escapedValues = array_map(function ($value) use ($pdo) {
                             if ($value === null) {
                                 return 'NULL';
                             }
@@ -298,9 +298,9 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
             $sql .= "-- Skipping data for table `$table` (structure only)\n\n";
         }
     }
-    
+
     $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
-    
+
     return ['success' => true, 'sql' => $sql];
 }
 
@@ -405,7 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Manager - <?=$dbname?></title>
+    <title>Database Manager - <?= $dbname ?></title>
     <style>
         * {
             margin: 0;
@@ -1123,6 +1123,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-left: 10px;
         }
 
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 5px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+
+        .filter-bar select {
+            min-width: 140px;
+        }
+
+        .filter-bar input {
+            min-width: 180px;
+        }
+
+        .filter-bar .btn {
+            padding: 4px 14px;
+        }
+
+        .filter-bar .filter-label {
+            font-weight: 500;
+            font-size: 13px;
+            color: #495057;
+            margin-right: 2px;
+        }
+
         @media (max-width: 768px) {
 
             .col-md-3,
@@ -1159,6 +1199,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 grid-template-columns: 1fr;
                 max-height: 200px;
             }
+
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-bar select,
+            .filter-bar input {
+                min-width: auto;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -1168,7 +1219,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <div class="container" id="app">
         <div class="header">
             <div class="db-header">
-                <h2><span class="icon"></span>Database: <span class="text-primary"><?=$dbname?></span></h2>
+                <h2><span class="icon"></span>Database: <span class="text-primary"><?= $dbname ?></span></h2>
                 <small>CTRX database management system</small>
             </div>
             <div>
@@ -1178,7 +1229,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <button class="btn btn-outline-secondary btn-sm" onclick="refreshAll()">
                     <span class="icon">🔄</span> Refresh
                 </button>
-                <a href="<?=$backpage?>">
+                <a href="<?= $backpage ?>">
                     <button class="btn btn-outline-secondary btn-sm">
                         <span class="icon">🔙</span> Back
                     </button>
@@ -1233,19 +1284,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
-                    Select which tables should include data in the export. 
+                    Select which tables should include data in the export.
                     <strong>Unchecked tables will export structure only</strong> (no data).
                 </p>
-                
+
                 <div class="select-all-container">
                     <input type="checkbox" id="selectAllTables" onchange="toggleAllTables()">
                     <label for="selectAllTables">Select All Tables</label>
                     <span class="hint">Include data for all tables</span>
                 </div>
-                
+
                 <div id="tableCheckboxList" class="checkbox-list">
                 </div>
-                
+
                 <div style="margin-top: 10px; font-size: 13px; color: #6c757d;">
                     <span id="selectedCount">0</span> tables selected to include data
                 </div>
@@ -1311,7 +1362,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     Select a column to remove from table <strong id="removeColumnTableName"></strong>.
                     <span style="color: #dc3545;">⚠️ This action cannot be undone!</span>
                 </p>
-                
+
                 <label class="form-label">Column Name</label>
                 <select id="removeColumnSelect" class="form-control">
                     <option value="">— Select a column —</option>
@@ -1516,14 +1567,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = '<?=$dbname?>_backup_' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '_') + '.sql';
+                    a.download = '<?= $dbname ?>_backup_' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '_') + '.sql';
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
                     URL.revokeObjectURL(url);
-                    return { success: true, message: 'SQL export started' };
+                    return {
+                        success: true,
+                        message: 'SQL export started'
+                    };
                 }
-                
+
                 const result = await response.json();
                 if (!result.success) {
                     showAlert(result.message || 'Operation failed', 'danger');
@@ -1548,7 +1602,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     return;
                 }
             }
-            
+
             const container = document.getElementById('tableCheckboxList');
             if (allTableNames.length === 0) {
                 container.innerHTML = '<div class="text-muted text-center">No tables found</div>';
@@ -1560,9 +1614,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     </div>
                 `).join('');
             }
-            
+
             updateSelectedCount();
-            
+
             openModal('exportModal');
         }
 
@@ -1584,19 +1638,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             document.querySelectorAll('#tableCheckboxList input[type="checkbox"]:checked').forEach(cb => {
                 selectedTables.push(cb.value);
             });
-            
+
             if (selectedTables.length === 0) {
                 showAlert('Please select at least one table to include data', 'warning');
                 return;
             }
-            
+
             closeModal('exportModal');
-            
+
             const btn = document.querySelector('.export-sql-btn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Exporting...';
             btn.disabled = true;
-            
+
             try {
                 const result = await apiRequest('exportSQL', {
                     tables_with_data: JSON.stringify(selectedTables)
@@ -1617,45 +1671,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 showAlert('Please select a table first', 'warning');
                 return;
             }
-            
+
             if (!currentColumns.length) {
                 showAlert('No columns found in this table', 'warning');
                 return;
             }
-            
+
             document.getElementById('removeColumnTableName').textContent = currentTable;
-            
+
             const select = document.getElementById('removeColumnSelect');
             select.innerHTML = '<option value="">— Select a column —</option>';
-            
+
             currentColumns.forEach(col => {
                 const option = document.createElement('option');
                 option.value = col.Field;
                 option.textContent = col.Field + ' (' + col.Type + ')';
                 select.appendChild(option);
             });
-            
+
             openModal('removeColumnModal');
         }
 
         async function removeColumn() {
             const select = document.getElementById('removeColumnSelect');
             const columnName = select.value.trim();
-            
+
             if (!columnName) {
                 showAlert('Please select a column to remove', 'warning');
                 return;
             }
-            
+
             if (!confirm(`Are you sure you want to remove column "${columnName}" from table "${currentTable}"? This cannot be undone!`)) {
                 return;
             }
-            
+
             const result = await apiRequest('removeColumn', {
                 table: currentTable,
                 columnName: columnName
             });
-            
+
             if (result.success) {
                 showAlert(`Column "${columnName}" removed successfully`, 'success');
                 closeModal('removeColumnModal');
@@ -1807,20 +1861,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
 
-        function renderTableData() {
+        // --- Search / Filter logic ---
+        let filteredData = [];
+
+        function renderTableData(newColumn = null, newValue = null) {
             const container = document.getElementById('tableDataContainer');
             if (!container) return;
 
-            if (!tableData.length) {
-                container.innerHTML = '<div class="text-center text-muted py-3">No rows found</div>';
+            // Use filteredData if available, otherwise use tableData
+            const dataToShow = filteredData.length ? filteredData : tableData;
+
+            if (!dataToShow.length) {
+                container.innerHTML = `<div class="text-center text-muted py-3">${filteredData.length ? 'No matching rows found' : 'No rows found'}</div>`;
                 return;
             }
 
-            const columns = Object.keys(tableData[0]);
+            const columns = Object.keys(dataToShow[0]);
             const primaryKey = currentColumns.find(c => c.Key === 'PRI')?.Field || columns[0];
 
+            // Build column options for filter (including "All Columns")
+            const columnOptions = ['all', ...columns].map(col =>
+                `<option value="${col}">${col === 'all' ? 'All Columns' : col}</option>`
+            ).join('');
+
             let html = `
-        <h6 style="margin-bottom: 10px;"><span class="icon">📊</span>Data (${tableData.length} rows)</h6>
+        <h6 style="margin-bottom: 10px;"><span class="icon">📊</span>Data (${dataToShow.length} rows)</h6>
+        
+        <!-- Search / Filter Bar -->
+        <div class="filter-bar">
+            <span class="filter-label">🔍 Search:</span>
+            <select id="filterColumnSelect" class="form-control" style="width:auto;display:inline-block;">
+                ${columnOptions}
+            </select>
+            <input type="text" id="filterInputValue" class="form-control" placeholder="Enter value..." style="width:auto;display:inline-block;">
+            <button class="btn btn-primary btn-sm" onclick="applyFilter()">Submit</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilter()">Clear</button>
+        </div>
+
         <div class="table-responsive" style="max-height: 400px;">
             <table>
                 <thead>
@@ -1832,7 +1909,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <tbody>
     `;
 
-            tableData.forEach(row => {
+            dataToShow.forEach(row => {
                 html += '<tr>';
                 columns.forEach(col => {
                     html += `<td>${row[col] !== null ? row[col] : '<span class="text-muted">NULL</span>'}</td>`;
@@ -1857,8 +1934,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     `;
 
+            setTimeout(() => {
+                if (newColumn) {
+                    document.getElementById('filterColumnSelect').value = newColumn ?? "all"
+                }
+                if (newValue) {
+                    document.getElementById('filterInputValue').value = newValue ?? ""
+                }
+            }, 600);
+
             container.innerHTML = html;
         }
+
+        function applyFilter() {
+            const column = document.getElementById('filterColumnSelect').value;
+            const value = document.getElementById('filterInputValue').value.trim();
+
+            if (!value) {
+                filteredData = [];
+                renderTableData();
+                return;
+            }
+
+            if (column === 'all') {
+                // Search all columns
+                filteredData = tableData.filter(row => {
+                    for (let key in row) {
+                        if (row[key] !== null && String(row[key]).toLowerCase().includes(value.toLowerCase())) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            } else {
+                filteredData = tableData.filter(row => {
+                    if (row[column] === null) return false;
+                    return String(row[column]).toLowerCase().includes(value.toLowerCase());
+                });
+            }
+            renderTableData(column, value);
+        }
+
+        function clearFilter() {
+            document.getElementById('filterInputValue').value = '';
+            filteredData = [];
+            renderTableData();
+        }
+        // --- end search / filter ---
 
         async function createTable() {
             const tableName = document.getElementById('newTableName').value.trim();
