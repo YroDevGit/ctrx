@@ -102,7 +102,7 @@
     <h1>Access Forbidden</h1>
     <p>
         You don't have permission to access this resource.<br>
-        This area is protected by <strong>CodeTazer Security Layer</strong>.
+        This area is protected by <strong>CTR-X Security Layer</strong>.
     </p>
 
     <a href="<?=$backpage ?? '/'?>" class="btn">Return Home</a>

@@ -62,14 +62,13 @@ class FormValidator {
         // Remove error class from input
         const input = formElement.querySelector(`[name="${fieldName}"]`);
         if (input) {
-            input.classList.remove('error');
+            input.classList.remove('err-field');
         }
         
         // Clear error message
         const errorEl = formElement.querySelector(`#err_${fieldName}`);
         if (errorEl) {
             errorEl.textContent = '';
-            errorEl.classList.remove('show');
         }
     }
     
@@ -178,7 +177,7 @@ class FormValidator {
     static displayErrors(errors, form, autoReset = true) {
         const formElement = this._getFormElement(form);
         if (!formElement) {
-            console.warn('Form not found for displaying errors');
+            console.error('Form not found for displaying errors');
             return;
         }
 
@@ -193,14 +192,19 @@ class FormValidator {
             // Find input
             const input = formElement.querySelector(`[name="${fieldName}"]`);
             if (input) {
-                input.classList.add('error');
+                input.classList.add('err-field');
+            }else{
+                let fid = formElement.getAttribute("id");
+                console.error(`INPUT named: '${fieldName}' not found.! @${fid}`);
             }
             
             // Find error display
             const errorEl = formElement.querySelector(`#err_${fieldName}`);
             if (errorEl) {
                 errorEl.textContent = errorMsg;
-                errorEl.classList.add('show');
+            }else{
+                let fid = formElement.getAttribute("id");
+                console.error(`error_text: '${fieldName}' not found.! @${fid}`);
             }
         });
     }
