@@ -155,7 +155,7 @@ if (str_starts_with($req, "api/")) {
             if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
             if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
             if($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
-            include $v;
+            include_once $v;
         }
         
         if (env("cross_origin_sharing") == "yes") {
