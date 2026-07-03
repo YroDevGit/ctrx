@@ -18,6 +18,11 @@ import Validator from "./validator";
     //Proceed
  */
 
+    /**
+     Raw use:
+     FormValidator.displayErrors(errors, "#formId");
+     */
+
 class FormValidator {
     
     /**
@@ -154,7 +159,7 @@ class FormValidator {
             
             // If there are errors, display them
             if (failed) {
-                this.displayErrors(errors, form);
+                this.displayErrors(errors, form, false);
             }
         }
         
@@ -170,11 +175,15 @@ class FormValidator {
      * @param {Object} errors - Error object from validate()
      * @param {string|HTMLElement} form - Form element, ID, or selector
      */
-    static displayErrors(errors, form) {
+    static displayErrors(errors, form, autoReset = true) {
         const formElement = this._getFormElement(form);
         if (!formElement) {
             console.warn('Form not found for displaying errors');
             return;
+        }
+
+        if(autoReset){
+            this.clearErrors(form);
         }
         
         Object.keys(errors).forEach(fieldName => {
@@ -225,6 +234,10 @@ class FormValidator {
         const formElement = this._getFormElement(form);
         if (!formElement) return;
         this._clearFieldError(formElement, fieldName);
+    }
+
+    static reset(form){
+        this.clearErrors(form);
     }
     
     /**
