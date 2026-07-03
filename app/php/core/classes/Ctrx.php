@@ -306,7 +306,7 @@ class Ctrx
     }
 
     public static function forbidden_page(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage ?? current_page();
+        $backRoute = $backpage ?? previous_page();
         if($backRoute){
             $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
             extract([
