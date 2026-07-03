@@ -302,7 +302,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
                 }
             } else {
                 console.error(result);
-                return;
+                return [];
             }
         }
         return result;
