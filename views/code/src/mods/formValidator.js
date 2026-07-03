@@ -1,6 +1,23 @@
 // FormValidator.js
 import Validator from "./validator";
 
+/**
+ * Usage:
+ * 
+    // data is data from form
+    // #signupForm is the id of Form
+
+    let rules = {
+        fullname: {required:true, maxChars:10}
+    }
+    
+    let res = FormValidator.validate(data,rules, "#signupForm");
+    if(res.failed){
+        return;   
+    }
+    //Proceed
+ */
+
 class FormValidator {
     
     /**
@@ -30,6 +47,28 @@ class FormValidator {
     }
     
     /**
+     * Clear error for a specific field
+     * @param {HTMLElement} formElement - Form element
+     * @param {string} fieldName - Field name
+     */
+    static _clearFieldError(formElement, fieldName) {
+        if (!formElement) return;
+        
+        // Remove error class from input
+        const input = formElement.querySelector(`[name="${fieldName}"]`);
+        if (input) {
+            input.classList.remove('error');
+        }
+        
+        // Clear error message
+        const errorEl = formElement.querySelector(`#err_${fieldName}`);
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.classList.remove('show');
+        }
+    }
+    
+    /**
      * Validate form data against rules
      * @param {Object|FormData} data - Data to validate
      * @param {Object} rules - Validation rules
@@ -39,6 +78,9 @@ class FormValidator {
     static validate(data, rules, form = null) {
         // Reset validator
         Validator.reset();
+        
+        // Get form element if provided
+        const formElement = form ? this._getFormElement(form) : null;
         
         // Convert FormData to object if needed
         if (data instanceof FormData) {
@@ -51,6 +93,7 @@ class FormValidator {
         const errors = {};
         const validatedData = {};
         
+        // First pass: validate all fields
         Object.keys(rules).forEach(fieldName => {
             const rule = rules[fieldName];
             const label = rule.label || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
@@ -104,9 +147,15 @@ class FormValidator {
             }
         });
         
-        // If form is provided, display errors automatically
-        if (form && failed) {
-            this.displayErrors(errors, form);
+        // Handle form errors display
+        if (formElement) {
+            // Clear ALL errors first
+            this.clearErrors(form);
+            
+            // If there are errors, display them
+            if (failed) {
+                this.displayErrors(errors, form);
+            }
         }
         
         return {
@@ -122,9 +171,6 @@ class FormValidator {
      * @param {string|HTMLElement} form - Form element, ID, or selector
      */
     static displayErrors(errors, form) {
-        // Clear previous errors
-        this.clearErrors(form);
-        
         const formElement = this._getFormElement(form);
         if (!formElement) {
             console.warn('Form not found for displaying errors');
@@ -158,16 +204,27 @@ class FormValidator {
         const formElement = this._getFormElement(form);
         if (!formElement) return;
         
-        // Remove error class from inputs
+        // Remove error class from all inputs
         formElement.querySelectorAll('.tmodal-input.error, .tmodal-textarea.error, .tmodal-select.error, input.error, textarea.error, select.error')
             .forEach(el => el.classList.remove('error'));
         
-        // Clear error messages
+        // Clear all error messages
         formElement.querySelectorAll('.error_text')
             .forEach(el => {
                 el.textContent = '';
                 el.classList.remove('show');
             });
+    }
+    
+    /**
+     * Clear error for a specific field
+     * @param {string|HTMLElement} form - Form element, ID, or selector
+     * @param {string} fieldName - Field name
+     */
+    static clearFieldError(form, fieldName) {
+        const formElement = this._getFormElement(form);
+        if (!formElement) return;
+        this._clearFieldError(formElement, fieldName);
     }
     
     /**

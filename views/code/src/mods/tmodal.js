@@ -1,5 +1,22 @@
 import Validator from "./validator";
 
+/**
+ //Use:
+const modal = TModal.init({
+        title: "Register here",
+        id: "modex", 
+        form_id: "regForm",
+        form: {
+            email: {type: "text", label: "Enter email here:", validation:{email:true, maxChar: 50, label: "Email"}},
+            //add more fields
+        }
+    });
+
+modal.form_submit((data, array, form, instance)=>{
+
+});
+ */
+
 class TModal {
 
     static styleId = "tmodal-style";
@@ -763,8 +780,8 @@ class TModal {
             Validator.reset();
 
             const data = {};
-
-            new FormData(form).forEach((value, key) => {
+            let formData = new FormData(form);
+            formData.forEach((value, key) => {
                 data[key] = value;
             });
 
@@ -782,7 +799,7 @@ class TModal {
             }
 
             if (typeof instance._submitCallback === "function") {
-                instance._submitCallback(data, form, instance);
+                instance._submitCallback(formData, data, form, instance);
             }
         };
 
