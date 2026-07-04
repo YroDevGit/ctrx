@@ -55,7 +55,7 @@
   <div class="scanline"></div>
   <div class="text-center z-10 px-6">
     <h1 class="text-6xl font-bold mb-6 terminal-text">404</h1>
-    <p class="text-2xl mb-4">Oops... Page <?= htmlspecialchars(current_page()) ?> Not Found</p>
+    <p class="text-2xl mb-4">Oops... Page <?= htmlspecialchars(prev_page) ?> Not Found</p>
     <p class="text-lg text-green-400 mb-8">It seems you've stumbled into the void. Return before the system notices...</p>
     <a href="<?= prev_page ?>" class="border border-green-400 px-6 py-2 hover:bg-green-600 transition">Return to Mainframe</a>
   </div>
