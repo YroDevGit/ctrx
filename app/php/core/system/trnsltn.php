@@ -320,7 +320,7 @@ if ($tableExists) {
                             $languagesInFile[$lang] = true;
                         }
                     }
-                    
+
                     if ($langCode && count($languagesInFile) <= 1) {
                         $pdo->prepare("DELETE FROM `$tableName` WHERE `lang` = ?")->execute([$langCode]);
                         $message = "🗑️ Existing data for language '{$langCode}' cleared. ";
@@ -365,7 +365,7 @@ if ($tableExists) {
 
                     if ($importMode === 'update') {
                         $updatedRecord = false;
-                        
+
                         if (!empty($row['id']) && is_numeric($row['id'])) {
                             $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
                             $checkStmt->execute([$row['id']]);
@@ -376,7 +376,7 @@ if ($tableExists) {
                                 $updatedRecord = true;
                             }
                         }
-                        
+
                         if (!$updatedRecord) {
                             $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
                             $checkStmt->execute([$currentLang, $row['en']]);
@@ -388,7 +388,7 @@ if ($tableExists) {
                                 $updatedRecord = true;
                             }
                         }
-                        
+
                         if ($updatedRecord) {
                             continue;
                         }
@@ -402,13 +402,13 @@ if ($tableExists) {
                 if (!empty($errors)) {
                     $message .= "⚠️ " . implode(", ", $errors) . ". ";
                 }
-                
+
                 $modeText = [
                     'replace_all' => 'replaced all',
                     'update' => 'updated (merge)',
                     'skip' => 'skipped duplicates'
                 ][$importMode] ?? 'processed';
-                
+
                 $message .= "✅ {$inserted} inserted, {$updated} updated, {$skipped} skipped successfully in '{$tableName}' ({$modeText})";
 
                 $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
@@ -439,7 +439,7 @@ if ($tableExists) {
             $str = $_POST['edit_str'];
             $lang = $_POST['edit_lang'];
             $name = $_POST['edit_name'];
-            
+
             if ($id > 0 && !empty($en) && !empty($str) && !empty($lang)) {
                 $stmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ? WHERE `id` = ?");
                 $stmt->execute([$lang, $name, $en, $str, $id]);
@@ -654,6 +654,7 @@ if ($tableExists) {
                 opacity: 0;
                 transform: translateY(6px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1046,6 +1047,7 @@ if ($tableExists) {
                 transform: translateY(-30px);
                 opacity: 0;
             }
+
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -1441,7 +1443,7 @@ if ($tableExists) {
         <?php endif; ?>
 
         <div class="back-link">
-            <a href="<?= $backpage ?? '/' ?>">← Back to Dashboard</a>
+            <b><a href="<?= prev_page ?>">← Previous page</a></b>
         </div>
 
         <div class="footer">
@@ -1451,38 +1453,38 @@ if ($tableExists) {
     </div>
 
     <?php if ($editRecord): ?>
-    <div class="modal active" id="editModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>✏️ Edit Translation #<?= $editRecord['id'] ?></h3>
-                <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+        <div class="modal active" id="editModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>✏️ Edit Translation #<?= $editRecord['id'] ?></h3>
+                    <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="active_tab" value="2">
+                    <input type="hidden" name="edit_id" value="<?= $editRecord['id'] ?>">
+                    <div class="form-group">
+                        <label>Default</label>
+                        <input type="text" name="edit_en" value="<?= htmlspecialchars($editRecord['en']) ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Translation</label>
+                        <input type="text" name="edit_str" value="<?= htmlspecialchars($editRecord['str']) ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Language Code</label>
+                        <input type="text" name="edit_lang" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['lang']) ?>" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Language Name</label>
+                        <input type="text" name="edit_name" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['name']) ?>" readonly>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-default" onclick="closeEditModal()">Cancel</button>
+                        <button type="submit" name="edit_record" class="btn-success">💾 Save Changes</button>
+                    </div>
+                </form>
             </div>
-            <form method="POST">
-                <input type="hidden" name="active_tab" value="2">
-                <input type="hidden" name="edit_id" value="<?= $editRecord['id'] ?>">
-                <div class="form-group">
-                    <label>Default</label>
-                    <input type="text" name="edit_en" value="<?= htmlspecialchars($editRecord['en']) ?>" required>
-                </div>
-                <div class="form-group">
-                    <label>Translation</label>
-                    <input type="text" name="edit_str" value="<?= htmlspecialchars($editRecord['str']) ?>" required>
-                </div>
-                <div class="form-group">
-                    <label>Language Code</label>
-                    <input type="text" name="edit_lang" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['lang']) ?>" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Language Name</label>
-                    <input type="text" name="edit_name" style="background: #f7f7f7;" value="<?= htmlspecialchars($editRecord['name']) ?>" readonly>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-default" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" name="edit_record" class="btn-success">💾 Save Changes</button>
-                </div>
-            </form>
         </div>
-    </div>
     <?php endif; ?>
 
     <form method="POST" id="deleteForm" style="display: none;">
@@ -1566,9 +1568,9 @@ if ($tableExists) {
             });
 
             <?php if ($activeTab == 2): ?>
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 2);
-            window.history.replaceState({}, '', url);
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 2);
+                window.history.replaceState({}, '', url);
             <?php endif; ?>
 
             document.querySelectorAll('.format-option').forEach(opt => {
@@ -1648,11 +1650,11 @@ if ($tableExists) {
             }
 
             <?php if ($editRecord): ?>
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeEditModal();
-                }
-            });
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeEditModal();
+                    }
+                });
             <?php endif; ?>
         <?php endif; ?>
     </script>

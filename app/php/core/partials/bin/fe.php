@@ -251,9 +251,19 @@ if (! function_exists('back_end')) {
 }
 
 if (! function_exists("current_page")) {
-    function current_page(bool $php_exention = false): string
+    function current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
     {
         $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
+        if (! str_starts_with($filename, "/") && $startsWithSlash) {
+            $filename = "/" . $filename;
+        }
+        if (! $startsWithSlash && str_starts_with($filename, "/")) {
+            $filename = substr($filename, 1);
+        }
+        if (! $withParam) {
+            $expl = explode("?", $filename);
+            $filename = $expl[0] ?? "";
+        }
         if (! $php_exention) {
             $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;
             return $filename;
@@ -309,27 +319,46 @@ if (! function_exists('codepath')) {
     }
 }
 
+/**
+ * This is use for conditions
+ * this not return parameters as default (you can set true 1st param)
+ * this not starts with / as default (you can set true 2nd param)
+ */
 if (! function_exists("previous_page")) {
-    function previous_page()
+    function previous_page(bool $withParam = false, $startsWithSlash = false)
     {
-        if (isset($_SESSION['cTrx_pReviOus_paGee_basixs112100514'])) {
-            $val = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'];
-            return str_starts_with($val, "/") ? $val : "/" . $val;
+        $url = \Classes\Ctrx::ctrx_getPreviousPage();
+        $path = parse_url($url, PHP_URL_PATH);
+        if (! str_starts_with($path, "/") && $startsWithSlash) {
+            $path = "/" . $path;
         }
-        return "/";
+        if (! $startsWithSlash && str_starts_with($path, "/")) {
+            $path = substr($path, 1);
+        }
+        $query = parse_url($url, PHP_URL_QUERY);
+        if ($query) {
+            if ($withParam) {
+                return $path . "?" . $query;
+            } else {
+                return $path;
+            }
+        } else {
+            return $path;
+        }
     }
 }
 
-if (! function_exists("ctrx_save_pages")) {
-    function ctrx_save_previous_pages(string $previous_page)
+
+/**
+ * This is the standard use for <a href="?"
+ * or to any redirects
+ * it has return with parameters (as default)
+ * it has return with / at the first character
+ */
+if (! function_exists("prev_page")) {
+    function prev_page($withParam = true)
     {
-        $prevPath = $previous_page;
-        if (previous_page() == $prevPath) {
-            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100515'];
-        } else {
-            $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
-            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $prevPath;
-        }
+        return previous_page($withParam, true);
     }
 }
 
@@ -488,15 +517,15 @@ if (! function_exists("gval")) {
                 $dec = json_decode($diy);
                 if (json_last_error() === JSON_ERROR_NONE) {
                     return $dec ?? null;
-                }else{
+                } else {
                     return $diy ?? null;
                 }
             }
             return null;
         }
-        if(is_array($val)){
+        if (is_array($val)) {
             $_COOKIE[$ext . "_" . $key] = json_encode($val);
-        }else{
+        } else {
             $_COOKIE[$ext . "_" . $key] = $val;
         }
         return $val;
@@ -595,7 +624,7 @@ if (! function_exists("ctrx_endpoint")) {
     function ctrx_endpoint()
     {
         $param = ctrx_param;
-        if (str_starts_with($param, "api/")) {
+        if (str_starts_with($param, "api/") || str_starts_with($param, "ctrxtools/")) {
             return "BE";
         }
         return "FE";
@@ -786,14 +815,15 @@ if (! function_exists("array_as_param")) {
     }
 }
 
-if(! function_exists("active_class")){
-    function active_class(string $route, $class = "active"){
-        $current = current_page();
+if (! function_exists("active_class")) {
+    function active_class(string $route, $class = "active")
+    {
+        $current = current_page(false);
         $route = trim($route, "/");
         $route = trim($route, "\\");
-        if($route == $current){
+        if ($route == $current) {
             return "active";
-        }else{
+        } else {
             return "";
         }
     }
@@ -804,12 +834,13 @@ if(! function_exists("active_class")){
  * database - general database management
  * translations - language translations
  */
-if(! function_exists("ctrx_tools")){
-    function ctrx_tools(string $tool){
-        if(str_starts_with($tool, "/")){
-            return "/ctrxtools".$tool;
-        }else{
-            return "/ctrxtools/".$tool;
+if (! function_exists("ctrx_tools")) {
+    function ctrx_tools(string $tool)
+    {
+        if (str_starts_with($tool, "/")) {
+            return "/ctrxtools" . $tool;
+        } else {
+            return "/ctrxtools/" . $tool;
         }
     }
 }

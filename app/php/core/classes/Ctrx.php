@@ -100,7 +100,7 @@ class Ctrx
     {
         $ip = $_SERVER['REMOTE_ADDR'];
         $dir = "app/php/core/partials/dir";
-        if(! is_dir($dir)){
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
         $window = $seconds;
@@ -150,7 +150,7 @@ class Ctrx
     private static function ctrratedetails($route = "")
     {
         $dir = "app/php/core/partials/dir";
-        if(! is_dir($dir)){
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -174,157 +174,258 @@ class Ctrx
         return $data;
     }
 
-    public static function set_logged_in(bool $logged_in, int $duration = 60):void{
-        if(! $logged_in){
+    public static function set_logged_in(bool $logged_in, int $duration = 60): void
+    {
+        if (! $logged_in) {
             \Classes\Ccookie::delete("ctrx_logged_in");
-        }else{
+        } else {
             \Classes\Ccookie::add("ctrx_logged_in", $logged_in ? "Y" : "N", $duration);
-        } 
+        }
     }
 
-    public static function is_logged_in():bool{
+    public static function is_logged_in(): bool
+    {
         $logged_in = \Classes\Ccookie::get("ctrx_logged_in");
-        if(! $logged_in){
+        if (! $logged_in) {
             return false;
         }
         return true;
     }
 
-    public static function set_user_role(string|int $role, int $duration = 60):void{
+    public static function set_user_role(string|int $role, int $duration = 60): void
+    {
         \Classes\Ccookie::add("ctrx_user_role", $role, $duration);
     }
 
-    public static function get_user_role(string|int $role):null|int|string{
+    public static function get_user_role(string|int $role): null|int|string
+    {
         $role = \Classes\Ccookie::get("ctrx_user_role");
-        if(! $role){
+        if (! $role) {
             return null;
         }
         return $role;
     }
 
-    public static function delete_user_role():void{
+    public static function delete_user_role(): void
+    {
         \Classes\Ccookie::delete("ctrx_user_role");
     }
 
-    public static function delete_user_data():void{
+    public static function delete_user_data(): void
+    {
         \Classes\Ccookie::delete("ctrx_user_data");
     }
 
-    public static function reset_all_user_data():void{
+    public static function reset_all_user_data(): void
+    {
         self::delete_user_data();
         self::delete_user_role();
         self::set_logged_in(false);
     }
 
-    public static function validate_user_role(int|string|null $role){
+    public static function validate_user_role(int|string|null $role)
+    {
         $ctrxrole = \Classes\Ccookie::get("ctrx_user_role");
-        if(! $ctrxrole ){
+        if (! $ctrxrole) {
             return false;
         }
 
-        if($ctrxrole === $role){
+        if ($ctrxrole === $role) {
             return true;
         }
         return false;
     }
 
-    public static function set_user_data(array $data, int $duration = 60):void{
+    public static function set_user_data(array $data, int $duration = 60): void
+    {
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if($ctrxdata){
+        if ($ctrxdata) {
             $ctrxdata = [...$ctrxdata, ...$data];
-        }else{
+        } else {
             $ctrxdata = $data;
         }
         \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
     }
 
-    public static function extend_user_data($duration){
+    public static function extend_user_data($duration)
+    {
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if($ctrxdata){
+        if ($ctrxdata) {
             \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
             return true;
         }
         return false;
     }
 
-    public static function get_user_data(string|int $key = "*"){
+    public static function get_user_data(string|int $key = "*")
+    {
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if(! $ctrxdata) return null;
-        if($key == "*"){
+        if (! $ctrxdata) return null;
+        if ($key == "*") {
             return $ctrxdata;
         }
         return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
     }
 
-    public static function has_user_data():bool{
-        if(\Classes\Ccookie::get("ctrx_user_data")){
+    public static function has_user_data(): bool
+    {
+        if (\Classes\Ccookie::get("ctrx_user_data")) {
             return true;
         }
         return false;
     }
 
-    public static function use_db_tools(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage ?? current_page();
-        if($backRoute){
-            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
-            extract([
-                "backpage" => $backRoute
-            ]);
-            include "app/php/core/system/tools.php";
-        }else{
-            include "app/php/core/system/tools.php";
-        }
-        if($exit) exit;
-    }
-
-    public static function use_translate_tools(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage ?? current_page();
-        if($backRoute){
-            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
-            extract([
-                "backpage" => $backRoute
-            ]);
-            include "app/php/core/system/trnsltn.php";
-        }else{
-            include "app/php/core/system/trnsltn.php";
-        }
-        if($exit) exit;
-    }
-
-    public static function use_database_management(string|null $backpage = null,$exit = true){
-        $backRoute = $backpage ?? current_page();
-        if($backRoute){
-            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
-            extract([
-                "backpage" => $backRoute
-            ]);
-            include "app/php/core/system/dtbs.php";
-        }else{
-            include "app/php/core/system/dtbs.php";
-        }
-        if($exit) exit;
-    }
-
-    public static function forbidden_page(string|null $backpage = null,$exit = true){
+    public static function use_db_tools(string|null $backpage = null, $exit = true)
+    {
         $backRoute = $backpage ?? previous_page();
-        if($backRoute){
-            $backRoute = str_starts_with($backRoute,"/") ? $backRoute : "/". $backRoute;
+        if ($backRoute) {
+            include "app/php/core/system/tools.php";
+        } else {
+            include "app/php/core/system/tools.php";
+        }
+        if ($exit) exit;
+    }
+
+    public static function use_tool(string $file, $path)
+    {
+        self::include_all_autoFiles();
+        $_SESSION['basixs_current_fe_ctrx'] = $path;
+        $prev = self::get_prev_path_toSave();
+        if(! defined("prev_page")) define("prev_page", prev_page());
+        include $file;
+        \Classes\Ctrx::ctrx_save_previous_pages($prev);
+        return true;
+    }
+
+    public static function removeCharacter(string $character, int $index){
+        return substr($character, $index);
+    }
+
+    public static function ctrx_save_previous_pages(string $previous_page = null)
+    {
+        $curr = current_page(true);
+        if ($curr == self::box1()) {
+            //Tyrone Lee Emz
+        } else {
+            self::box2(self::box1());
+            self::box1($curr);
+        }
+    }
+
+    public static function ctrx_getPreviousPage()
+    {
+        $curr = current_page(true);
+        if ($curr == self::box1()) {
+            return self::box2();
+        } else {
+            return self::box1();
+        }
+    }
+
+    private static function box1($data = null)
+    {
+        if ($data) {
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $data;
+            return $data;
+        } else {
+            return $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
+        }
+    }
+
+    private static function box2($data = null)
+    {
+        if ($data) {
+            $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $data;
+            return $data;
+        } else {
+            return $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] ?? "/";
+        }
+    }
+
+    public static function use_translate_tools(string|null $backpage = null, $exit = true)
+    {
+        $backRoute = $backpage ?? previous_page();
+        if ($backRoute) {;
+            include "app/php/core/system/trnsltn.php";
+        } else {
+            include "app/php/core/system/trnsltn.php";
+        }
+        if ($exit) exit;
+    }
+
+    public static function use_database_management(string|null $backpage = null, $exit = true)
+    {
+        $backRoute = $backpage ?? previous_page();
+        if ($backRoute) {
+            include "app/php/core/system/dtbs.php";
+        } else {
+            include "app/php/core/system/dtbs.php";
+        }
+        if ($exit) exit;
+    }
+
+    public static function forbidden_page(string|null $backpage = null, $exit = true)
+    {
+        $backRoute = $backpage ?? previous_page();
+        if ($backRoute) {
+            $backRoute = str_starts_with($backRoute, "/") ? $backRoute : "/" . $backRoute;
             extract([
                 "backpage" => $backRoute
             ]);
         }
+        if(! defined("prev_page")) define("prev_page", prev_page());
         include "views/core/errors/forbidden.php";
-        if($exit) exit;
+        if ($exit) exit;
     }
 
-    public static function include_all_autoFiles(){
+    public static function ctrx_prvPage($withParam = false)
+    {
+        $url = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'];
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+        if ($query) {
+            if ($withParam) {
+                return $path . "?" . $query;
+            } else {
+                return $path;
+            }
+        } else {
+            return $path;
+        }
+    }
+
+    public static function page404($errorpage){
+        $errorpage = append_php($errorpage);
+        if(! defined("prev_page")) define("prev_page", prev_page());
+        include "views/core/errors/" . $errorpage;
+    }
+
+    public static function get_prev_path_toSave()
+    {
+        $prevPath = "/";
+
+        if ($_GET) {
+            $arr = [];
+            foreach ($_GET as $kk => $vv) {
+                $arr[] = $kk . "=" . $vv;
+            }
+            $prevPath = current_page() . "?" . implode("&", $arr);
+        } else {
+            $prevPath = current_page();
+        }
+        $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/" . $prevPath;
+        return $prevPath;
+    }
+
+    public static function include_all_autoFiles()
+    {
         $beconfig = glob('app/config/*.php');
         foreach ($beconfig as $k => $v) {
-            if($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
-            if($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
-            if($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
-            if($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
-            if($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
+            if ($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
+            if ($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
+            if ($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
+            if ($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
+            if ($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
             include_once $v;
         }
     }

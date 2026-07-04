@@ -1429,7 +1429,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <button class="btn btn-outline-secondary btn-sm" onclick="refreshAll()">
                     <span class="icon">🔄</span> Refresh
                 </button>
-                <a href="<?= $backpage ?>">
+                <a href="<?= prev_page ?>">
                     <button class="btn btn-outline-secondary btn-sm">
                         <span class="icon">🔙</span> Back
                     </button>

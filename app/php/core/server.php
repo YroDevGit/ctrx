@@ -28,7 +28,7 @@ $b_all = $basixserver . "/" . $req;
 $subdomain = env("subdomain") ?? null;
 $subdomain = trim($subdomain, "/");
 $trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
-if(isset($_GET['ctrx_translate'])){
+if (isset($_GET['ctrx_translate'])) {
     $_SESSION['ctrx_translate'] = $trnsltn;
 }
 if ($subdomain) {
@@ -73,49 +73,33 @@ if ($req == "api") {
 
 include "app/php/core/system/loader.php";
 
- /**
+/**
  * Ctrx DB tools for import export
  */
-if(str_starts_with($req, "ctrxtools/db")){
-    \Classes\Ctrx::include_all_autoFiles();
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/config/db_tools.php";
-    exit;
+if (str_starts_with($req, "ctrxtools/db")) {
+    \Classes\Ctrx::use_tool("app/config/db_tools.php", "ctrxtools/db");
+    return;
 }
- /**
+/**
  * Ctrx DB tools for database management
  */
-if(str_starts_with($req, "ctrxtools/database")){
-    \Classes\Ctrx::include_all_autoFiles();
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/config/ctr_db.php";
-    exit;
+if (str_starts_with($req, "ctrxtools/database")) {
+    \Classes\Ctrx::use_tool("app/config/ctr_db.php", "ctrxtools/database");
+    return;
 }
- /**
+/**
  * Ctrx Translation tools for import export
  */
-if(str_starts_with($req, "ctrxtools/translations")){
-    \Classes\Ctrx::include_all_autoFiles();
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/config/translations.php";
+if (str_starts_with($req, "ctrxtools/translations")) {
+    \Classes\Ctrx::use_tool("app/config/translations.php", "ctrxtools/translations");
     exit;
 }
 
- /**
+/**
  * Ctrx Game for devs
  */
-if(str_starts_with($req, "ctrxtools/game")){
-    \Classes\Ctrx::include_all_autoFiles();
-    extract([
-        "backpage" => $_GET['backpage'] ?? previous_page()
-    ]);
-    include "app/php/core/system/ctrxgame.php";
+if (str_starts_with($req, "ctrxtools/game")) {
+    \Classes\Ctrx::use_tool("app/php/core/system/ctrxgame.php", "ctrxtools/game");
     exit;
 }
 
@@ -152,7 +136,7 @@ if (str_starts_with($req, "api/")) {
         defined("route") || define("ROUTE", rem_php($newReq));
 
         \Classes\Ctrx::include_all_autoFiles();
-        
+
         if (env("cross_origin_sharing") == "yes") {
             $allowAllOrigin = env("allow_all_origin");
             if ($allowAllOrigin == "yes") {
@@ -251,8 +235,12 @@ if (str_starts_with($req, "api/")) {
         $mainpage = append_php($mainpage);
         $mainnophp = rem_php($mainpage);
         $req = $req ? $req : $mainnophp;
-        $_SESSION['basixs_current_fe_ctrx'] = $req;
-
+        if ($_GET) {
+            $phar = array_as_param($_GET);
+            $_SESSION['basixs_current_fe_ctrx'] = $req . $phar;
+        } else {
+            $_SESSION['basixs_current_fe_ctrx'] = $req;
+        }
         $feconfig = glob('views/app/config/*.php');
         foreach ($feconfig as $k => $v) {
             $vv = append_php($v);
@@ -279,27 +267,15 @@ if (str_starts_with($req, "api/")) {
 
         if (!file_exists($fullpath)) {
             $errorpage = $view_config["page_not_found"] ?? "404";
-            $errorpage = append_php($errorpage);
-            include "views/core/errors/" . $errorpage;
+            \Classes\Ctrx::page404($errorpage);
             exit;
         }
-        $prevPath = "/";
-
-        if($_GET){
-            $arr = [];
-            foreach($_GET as $kk=>$vv){
-                $arr[] = $kk."=".$vv;
-            }
-            $prevPath = current_page()."?". implode("&", $arr);
-        }else{
-            $prevPath = current_page();
-        }
-        $prevPath = str_starts_with($prevPath, "/") ? $prevPath : "/". $prevPath;
+        if(! defined("prev_page")) define("prev_page", prev_page());
         include $fullpath;
-        if(env('debugger') == "yes"){
+        if (env('debugger') == "yes") {
             include_once "views/core/partials/system/dev.php";
         }
-        ctrx_save_previous_pages($prevPath);
+        \Classes\Ctrx::ctrx_save_previous_pages();
     } catch (Throwable $e) {
         ob_clean();
         $reqid = ctr_get_current_request_id();

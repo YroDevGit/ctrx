@@ -854,7 +854,7 @@ if (isset($_POST['import_table'])) {
         </div>
 
         <div style="margin-top: 1.5rem; font-size: 0.95rem; text-align: center;">
-            <a href="<?= $backpage ?? '/' ?>">← I'm done</a>
+            <a href="<?= prev_page ?>">← Previous page</a>
         </div>
 
         <footer>⚡ CTRX THUNDER EDGE • DATABASE FLOW</footer>
