@@ -7,6 +7,11 @@
  */
 
 /**
+ * Setup PHP path: 
+ * curl -L -o "%USERPROFILE%\Downloads\install-php.bat" https://raw.githubusercontent.com/YroDevGit/important/refs/heads/main/php-varfile.bat
+ */
+
+/**
  * For deployment please attach or generate htaccess for routing
  * command: php ctrx generate:htaccess
  */
