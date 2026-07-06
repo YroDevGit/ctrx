@@ -271,7 +271,7 @@ class Popmodal {
             }
         }
 
-        if(element.classList && element.classList =="popmodal"){
+        if (element.classList && element.classList == "popmodal") {
             options.autoOpen = false;
         }
 
@@ -305,7 +305,18 @@ class Popmodal {
         closeBtn.innerHTML = "×";
         closeBtn.setAttribute("aria-label", "Close modal");
 
-        header.appendChild(title);
+        const titleContainer = document.createElement("div");
+
+        if (options.icon) {
+            const ic = document.createElement("span");
+            ic.className = options.icon;
+            ic.style.paddingRight = "5px";
+            titleContainer.appendChild(ic);
+        }
+
+        titleContainer.appendChild(title);
+
+        header.appendChild(titleContainer);
         header.appendChild(closeBtn);
 
         // Create body
