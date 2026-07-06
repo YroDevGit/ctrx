@@ -265,12 +265,18 @@ if (str_starts_with($req, "api/")) {
         $page = append_php($req);
         $fullpath = "views/pages/" . $page;
 
+        $maintnanc = env("system_maintenance") ?? "no";
+        if ($maintnanc != "no") {
+            \Classes\Ctrx::systemMaintenance();
+        }
+
         if (!file_exists($fullpath)) {
             $errorpage = $view_config["page_not_found"] ?? "404";
-            \Classes\Ctrx::page404($errorpage);
+            \Classes\Ctrx::page404($errorpage, false);
             exit;
         }
-        if(! defined("prev_page")) define("prev_page", prev_page());
+
+        if (! defined("prev_page")) define("prev_page", prev_page());
         include $fullpath;
         if (env('debugger') == "yes") {
             include_once "views/core/partials/system/dev.php";

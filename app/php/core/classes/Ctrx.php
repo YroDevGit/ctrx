@@ -291,13 +291,14 @@ class Ctrx
         self::include_all_autoFiles();
         $_SESSION['basixs_current_fe_ctrx'] = $path;
         $prev = self::get_prev_path_toSave();
-        if(! defined("prev_page")) define("prev_page", prev_page());
+        if (! defined("prev_page")) define("prev_page", prev_page());
         include $file;
         \Classes\Ctrx::ctrx_save_previous_pages($prev);
         return true;
     }
 
-    public static function removeCharacter(string $character, int $index){
+    public static function removeCharacter(string $character, int $index)
+    {
         return substr($character, $index);
     }
 
@@ -373,7 +374,7 @@ class Ctrx
                 "backpage" => $backRoute
             ]);
         }
-        if(! defined("prev_page")) define("prev_page", prev_page());
+        if (! defined("prev_page")) define("prev_page", prev_page());
         include "views/core/errors/forbidden.php";
         if ($exit) exit;
     }
@@ -394,10 +395,27 @@ class Ctrx
         }
     }
 
-    public static function page404($errorpage){
+    public static function page404($errorpage, $exit = true)
+    {
         $errorpage = append_php($errorpage);
-        if(! defined("prev_page")) define("prev_page", prev_page());
+        if (! defined("prev_page")) define("prev_page", prev_page());
         include "views/core/errors/" . $errorpage;
+        if ($exit) {
+            exit;
+        }
+    }
+
+    public static function systemMaintenance($variables = [], $page = "maintenance", $exit = true)
+    {
+        $errorpage = append_php($page);
+        if (! defined("prev_page")) define("prev_page", prev_page());
+        if ($variables) {
+            extract($variables);
+        }
+        include "views/core/main/" . $errorpage;
+        if ($exit) {
+            exit;
+        }
     }
 
     public static function get_prev_path_toSave()
