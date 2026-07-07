@@ -73,9 +73,7 @@ if (! function_exists('ctrx_response')) {
                 $e_file = $error->getFile();
                 $e_line = $error->getLine();
                 $e_trace = $error->getTrace();
-
                 $fandl = "@";
-
                 if (! str_contains($e_file, "\app\php\core")) {
                     $fandl = "@" . $e_file . " Line " . $e_line . " ";
                 }
@@ -107,6 +105,7 @@ if (! function_exists('ctrx_response')) {
                 unset($data['trace']);
             }
         }
+        \Classes\Ctrx::resetBackend();
         echo json_encode($data);
         exit;
     }

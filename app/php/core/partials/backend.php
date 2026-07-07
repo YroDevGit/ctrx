@@ -13,13 +13,15 @@ if (! function_exists("pdo")) {
                 $pass = $db['password'] ?? "";
                 $driver = $db['driver'] ?? "mysql";
                 $dbname = $db['database'];
+                $dbport = $db['port'] ?? "3306";
+                $charSet = $db['charset'] ?? env('dbcharset') ?? "utf8mb4";
                 if (! $dbname) {
                     add_sql_log("No database found. please check DB()", "be_errors");
                     error_response(["code" => "404", "status" => "notfound", "message" => "No database found. please check DB() "]);
                 }
 
                 if ($pdo == null) {
-                    $pdo = new PDO("$driver:host=$host;dbname=$dbname", "$user", "$pass", [
+                    $pdo = new PDO("$driver:host=$host;port=$dbport;dbname=$dbname;charset=$charSet;", "$user", "$pass", [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                         PDO::ATTR_EMULATE_PREPARES => false,
@@ -31,6 +33,8 @@ if (! function_exists("pdo")) {
             $host = env('dbhost');
             $user =  env('dbuser');
             $pass = env('dbpass');
+            $port = env('dbport');
+            $charSet = env('dbcharset') ?? "utf8mb4";
             $dbname = $db == null ? env('database') : $db;
             if ($dbname == "" || $dbname == null) {
                 add_sql_log("No database found. please check .env file", "be_errors");
@@ -42,7 +46,7 @@ if (! function_exists("pdo")) {
                 if ($no_database) {
                     $ddb = "";
                 }
-                $pdo = new PDO("$dbdriver:host=$host;$ddb", "$user", "$pass", [
+                $pdo = new PDO("$dbdriver:host=$host;port=$port;$ddb;charset=$charSet;", "$user", "$pass", [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,

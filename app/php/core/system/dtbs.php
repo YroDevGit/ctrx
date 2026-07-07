@@ -10,20 +10,23 @@ include_once "app/php/core/partials/envloader.php";
  * Added Import SQL feature (file upload + paste query)
  * Updated Export to use INSERT IGNORE to skip errors on duplicate keys
  */
+
 $dbname = env("database");
 if (!$dbname) {
     die("❌ No Database found @ .env");
 }
-define('DB_HOST', env('dbhost'));
+$host = env('dbhost');
 define('DB_NAME', $dbname);
 define('DB_USER', env('dbuser'));
 define('DB_PASS', env('dbpass'));
 define('DB_CHARSET', env('dbcharset'));
+$port = env('dbport') ?? "3306";
+$driver = env("dbdriver") == null ? "mysql" : env("dbdriver");
 
-function getDBConnection()
+function getDBConnection($driver, $host, $port, $dbname,$charSet) 
 {
     try {
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+        $dsn = "$driver:host=$host;port=$port;dbname=$dbname;charset=$charSet;";
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -307,10 +310,6 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     return ['success' => true, 'sql' => $sql];
 }
 
-/**
- * Import SQL from file or raw query
- * Uses multi-query to execute multiple statements
- */
 function importSQL($pdo, $sql, $isFile = false)
 {
     if ($isFile) {
@@ -398,7 +397,7 @@ function importSQL($pdo, $sql, $isFile = false)
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
-    $pdo = getDBConnection();
+    $pdo = getDBConnection($driver, $host, $port, $dbname, DB_CHARSET);
     $action = $_POST['action'];
     $response = ['success' => false, 'message' => 'Invalid action'];
 
@@ -445,20 +444,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 break;
             case 'insertRow':
                 $data = [];
+                $skipColumns = isset($_POST['skip_columns']) ? json_decode($_POST['skip_columns'], true) : [];
                 foreach ($_POST as $key => $value) {
                     if (strpos($key, 'col_') === 0) {
                         $colName = substr($key, 4);
-                        $data[$colName] = $value;
+                        if (!in_array($colName, $skipColumns)) {
+                            $data[$colName] = $value;
+                        }
                     }
                 }
                 $response = insertRow($pdo, $_POST['table'] ?? '', $data);
                 break;
             case 'updateRow':
                 $data = [];
+                $skipColumns = isset($_POST['skip_columns']) ? json_decode($_POST['skip_columns'], true) : [];
                 foreach ($_POST as $key => $value) {
                     if (strpos($key, 'col_') === 0) {
                         $colName = substr($key, 4);
-                        $data[$colName] = $value;
+                        if (!in_array($colName, $skipColumns)) {
+                            $data[$colName] = $value;
+                        }
                     }
                 }
                 $response = updateRow($pdo, $_POST['table'] ?? '', $data, $_POST['whereCol'] ?? '', $_POST['whereVal'] ?? '');
@@ -1265,7 +1270,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             margin-right: 2px;
         }
 
-        /* Import styling */
         .import-tabs {
             display: flex;
             gap: 8px;
@@ -1349,6 +1353,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             display: block;
         }
 
+        .field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .field-row .form-label {
+            margin-bottom: 0;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .field-row .form-control {
+            flex: 1;
+        }
+
+        .field-row .skip-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .field-row .skip-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #dc3545;
+            cursor: pointer;
+        }
+
+        .field-row .skip-checkbox label {
+            font-size: 12px;
+            color: #6c757d;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .skip-checkbox.checked label {
+            color: #dc3545;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
 
             .col-md-3,
@@ -1406,6 +1453,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 text-align: center;
                 font-size: 13px;
                 padding: 6px 10px;
+            }
+
+            .field-row {
+                flex-wrap: wrap;
+            }
+
+            .field-row .form-label {
+                min-width: 100%;
+            }
+
+            .field-row .skip-checkbox {
+                margin-left: auto;
             }
         }
     </style>
@@ -1476,7 +1535,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Export Modal -->
     <div class="modal-overlay" id="exportModal">
         <div class="modal">
             <div class="modal-header">
@@ -1511,7 +1569,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Import Modal -->
     <div class="modal-overlay" id="importModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1524,7 +1581,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     <div class="import-tab" data-tab="paste" onclick="switchImportTab('paste')">📝 Paste Query</div>
                 </div>
 
-                <!-- File Upload Panel -->
                 <div class="import-panel active" id="importPanelFile">
                     <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
                         Upload a <strong>.sql</strong> file to import. The file can contain multiple statements separated by semicolons.
@@ -1548,7 +1604,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     </div>
                 </div>
 
-                <!-- Paste Query Panel -->
                 <div class="import-panel" id="importPanelPaste">
                     <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
                         Paste your SQL query below. Multiple statements separated by semicolons are supported.
@@ -1570,7 +1625,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Create Table Modal -->
     <div class="modal-overlay" id="createTableModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1595,7 +1649,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Add Column Modal -->
     <div class="modal-overlay" id="addColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1613,7 +1666,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Remove Column Modal -->
     <div class="modal-overlay" id="removeColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1640,7 +1692,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Rename Column Modal -->
     <div class="modal-overlay" id="renameColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1664,7 +1715,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Modify Column Modal -->
     <div class="modal-overlay" id="modifyColumnModal">
         <div class="modal">
             <div class="modal-header">
@@ -1688,7 +1738,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Key Modal -->
     <div class="modal-overlay" id="keyModal">
         <div class="modal">
             <div class="modal-header">
@@ -1721,7 +1770,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Rename Table Modal -->
     <div class="modal-overlay" id="renameTableModal">
         <div class="modal">
             <div class="modal-header">
@@ -1739,7 +1787,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Insert Row Modal -->
     <div class="modal-overlay" id="insertRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -1755,7 +1802,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Edit Row Modal -->
     <div class="modal-overlay" id="editRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -2632,20 +2678,65 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
             const container = document.getElementById('insertRowFields');
             let html = `<input type="hidden" name="table" value="${currentTable}">`;
+            html += `<input type="hidden" id="insertSkipColumns" name="skip_columns" value="">`;
+
             currentColumns.forEach(col => {
                 if (col.Extra && col.Extra.includes('auto_increment')) {
-                    html += `<div class="mb-2 text-muted"><small>${col.Field} (auto-increment, will be generated)</small></div>`;
+                    html += `<div class="field-row text-muted" style="padding: 6px 0;">
+                        <span style="min-width: 120px;">${col.Field}</span>
+                        <span style="flex:1; font-size:13px;">(auto-increment, will be generated)</span>
+                    </div>`;
                 } else {
                     html += `
-                <div class="mb-2">
-                    <label class="form-label">${col.Field} <small class="text-muted">(${col.Type})</small></label>
-                    <input class="form-control" name="col_${col.Field}" placeholder="Enter value for ${col.Field}">
+                <label class="form-label">${col.Field} <small class="text-muted">(${col.Type})</small></label>
+                <div class="field-row">
+                    
+                    <input class="form-control" name="col_${col.Field}" placeholder="Enter value for ${col.Field}" id="input_${col.Field}">
+                    <div class="skip-checkbox" id="skip_${col.Field}">
+                        <input type="checkbox" id="skip_check_${col.Field}" onchange="toggleSkip('${col.Field}')">
+                        <label for="skip_check_${col.Field}">Skip</label>
+                    </div>
                 </div>
             `;
                 }
             });
             container.innerHTML = html;
             openModal('insertRowModal');
+        }
+
+        function toggleSkip(columnName) {
+            const checkbox = document.getElementById(`skip_check_${columnName}`);
+            const row = checkbox.closest('.field-row');
+            const skipDiv = row.querySelector('.skip-checkbox');
+            const input = document.getElementById(`input_${columnName}`);
+
+            if (checkbox.checked) {
+                skipDiv.classList.add('checked');
+                input.disabled = true;
+                input.style.opacity = '0.5';
+                input.style.background = '#f0f0f0';
+                input.value = '';
+            } else {
+                skipDiv.classList.remove('checked');
+                input.disabled = false;
+                input.style.opacity = '1';
+                input.style.background = '';
+            }
+
+            updateSkipColumnsList();
+        }
+
+        function updateSkipColumnsList() {
+            const skipInput = document.getElementById('insertSkipColumns');
+            const checkboxes = document.querySelectorAll('#insertRowFields .skip-checkbox input[type="checkbox"]');
+            const skipped = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const colName = cb.id.replace('skip_check_', '');
+                    skipped.push(colName);
+                }
+            });
+            skipInput.value = JSON.stringify(skipped);
         }
 
         async function insertRow() {
@@ -2659,6 +2750,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if (input.name.startsWith('col_')) {
                     const colName = input.name.substring(4);
                     data[`col_${colName}`] = input.value;
+                } else if (input.name === 'skip_columns') {
+                    data.skip_columns = input.value;
                 }
             });
 
@@ -2688,19 +2781,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         <input type="hidden" name="table" value="${currentTable}">
         <input type="hidden" name="whereCol" value="${primaryKey}">
         <input type="hidden" name="whereVal" value="${primaryKeyValue}">
+        <input type="hidden" id="editSkipColumns" name="skip_columns" value="">
     `;
 
             currentColumns.forEach(col => {
                 const value = row[col.Field] !== null ? row[col.Field] : '';
-                html += `
-            <div class="mb-2">
+                if (col.Extra && col.Extra.includes('auto_increment')) {
+                    html += `<div class="field-row text-muted" style="padding: 6px 0;">
+                        <span style="min-width: 120px;">${col.Field}</span>
+                        <span style="flex:1; font-size:13px;">(auto-increment, will be generated)</span>
+                        <span style="flex-shrink:0; font-size:13px;">value: ${value}</span>
+                    </div>`;
+                } else {
+                    html += `
                 <label class="form-label">${col.Field} <small class="text-muted">(${col.Type})</small></label>
-                <input class="form-control" name="col_${col.Field}" value="${value}">
-            </div>
-        `;
+                <div class="field-row">
+                    <input class="form-control" name="col_${col.Field}" value="${value}" id="edit_input_${col.Field}">
+                    <div class="skip-checkbox" id="edit_skip_${col.Field}">
+                        <input type="checkbox" id="edit_skip_check_${col.Field}" onchange="toggleEditSkip('${col.Field}')">
+                        <label for="edit_skip_check_${col.Field}">Skip</label>
+                    </div>
+                </div>
+            `;
+                }
             });
             container.innerHTML = html;
             openModal('editRowModal');
+        }
+
+        function toggleEditSkip(columnName) {
+            const checkbox = document.getElementById(`edit_skip_check_${columnName}`);
+            const row = checkbox.closest('.field-row');
+            const skipDiv = row.querySelector('.skip-checkbox');
+            const input = document.getElementById(`edit_input_${columnName}`);
+
+            if (checkbox.checked) {
+                skipDiv.classList.add('checked');
+                input.disabled = true;
+                input.style.opacity = '0.5';
+                input.style.background = '#f0f0f0';
+            } else {
+                skipDiv.classList.remove('checked');
+                input.disabled = false;
+                input.style.opacity = '1';
+                input.style.background = '';
+            }
+
+            updateEditSkipColumnsList();
+        }
+
+        function updateEditSkipColumnsList() {
+            const skipInput = document.getElementById('editSkipColumns');
+            const checkboxes = document.querySelectorAll('#editRowFields .skip-checkbox input[type="checkbox"]');
+            const skipped = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const colName = cb.id.replace('edit_skip_check_', '');
+                    skipped.push(colName);
+                }
+            });
+            skipInput.value = JSON.stringify(skipped);
         }
 
         async function updateRow() {
@@ -2718,6 +2858,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     data.whereCol = input.value;
                 } else if (input.name === 'whereVal') {
                     data.whereVal = input.value;
+                } else if (input.name === 'skip_columns') {
+                    data.skip_columns = input.value;
                 }
             });
 

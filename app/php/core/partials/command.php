@@ -268,15 +268,21 @@ else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
     }  
     include "app/php/core/partials/ctrxc.php";
     $path = str_replace("\\", "/", $filename);
-    if(! str_starts_with($path,"views/pages/") && ! str_starts_with($path,"/views/pages/")){
-        echo "\n❌ Invalid filename: [filename should starts at: views/pages/]\n\n";
-        exit;
+
+    if(! str_starts_with($path, "views/pages/")){
+        if(str_starts_with($path, "/")){
+            $path = "views/pages".$path;
+        }else{
+            $path = "views/pages/".$path;
+        }
     }
+    
     $result = preg_replace('#^views[/\\\\]pages[/\\\\]#', '', $path);
     $file = trim($result);
     $file = trim($result, "/");
     $file = trim($result, "\\");
     $file = rem_php($file);
+    
     $js = $file.".js";
     $dir = dirname($js);
     $jsFolder = "views/js/";
@@ -736,6 +742,7 @@ else if ($route == "download:table") {
         exit;
     }
     include "app/php/core/partials/be.php";
+    include "app/php/core/partials/backend.php";
     try {
         $pdo = pdo($dbname, true);
         $stmnt = $pdo->prepare("Create database `$dbname`;");

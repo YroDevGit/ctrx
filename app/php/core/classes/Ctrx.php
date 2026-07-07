@@ -288,12 +288,13 @@ class Ctrx
 
     public static function use_tool(string $file, $path)
     {
+        self::resetBackend();
         self::include_all_autoFiles();
         $_SESSION['basixs_current_fe_ctrx'] = $path;
         $prev = self::get_prev_path_toSave();
         if (! defined("prev_page")) define("prev_page", prev_page());
         include $file;
-        \Classes\Ctrx::ctrx_save_previous_pages($prev);
+        self::ctrx_save_previous_pages($prev);
         return true;
     }
 
@@ -345,6 +346,7 @@ class Ctrx
 
     public static function use_translate_tools(string|null $backpage = null, $exit = true)
     {
+        self::resetBackend();
         $backRoute = $backpage ?? previous_page();
         if ($backRoute) {;
             include "app/php/core/system/trnsltn.php";
@@ -356,6 +358,7 @@ class Ctrx
 
     public static function use_database_management(string|null $backpage = null, $exit = true)
     {
+        self::resetBackend();
         $backRoute = $backpage ?? previous_page();
         if ($backRoute) {
             include "app/php/core/system/dtbs.php";
@@ -377,6 +380,11 @@ class Ctrx
         if (! defined("prev_page")) define("prev_page", prev_page());
         include "views/core/errors/forbidden.php";
         if ($exit) exit;
+    }
+
+    public static function resetBackend()
+    {
+        unset($_SESSION['basixs_current_be_ctrx']);
     }
 
     public static function ctrx_prvPage($withParam = false)

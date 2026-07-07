@@ -37,7 +37,8 @@ class Migration
         return self::$lastQuery;
     }
 
-    public static function query($query){
+    public static function query($query)
+    {
         $db = env("database");
         if (empty($db)) {
             self::setLastQuery("No database found in (.env)");
@@ -51,10 +52,10 @@ class Migration
         $stmt = $pdo->prepare($query);
         $stmt->execute();
         $result = $stmt->rowCount() > 0;
-        if($result){
+        if ($result) {
             echo "✔️ Query has been executed.\n";
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -68,12 +69,12 @@ class Migration
             return false;
         }
 
-        if ($timestamp) { 
+        if ($timestamp) {
             $columns['created_at'] = "DATETIME DEFAULT CURRENT_TIMESTAMP";
             $columns['updated_at'] = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP";
         }
-        if($active){
-            $columns['active'] = ["int"=>1, "default"=>1];
+        if ($active) {
+            $columns['active'] = ["int" => 1, "default" => 1];
         }
 
         $pdo = pdo($db);
@@ -89,7 +90,7 @@ class Migration
 
             foreach ($columns as $colName => $definition) {
                 if ($definition == "@primary" || $definition == "@primarykey" || $definition == "@main" || $definition == "@pk") {
-                    $definition = ["int" => 20, "primary key", "auto_increment"];
+                    $definition = ["int" => 20, "primary key", "auto_increment", "NOT NULL"];
                 }
                 if (is_array($definition)) {
                     $newDefinition = [];
