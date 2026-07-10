@@ -222,6 +222,18 @@ class BaseTable
         return self::get($where, $extra);
     }
 
+
+    public static function fuzzy(array $where, $distance = 10, array|int|null $extra = null)
+    {
+        $self = static::instance();
+        return \Classes\DB::fuzzy($self->table, $where, $distance, $extra);
+    }
+
+    public static function soundsLike(array $where, $distance = 10, array|int|null $extra = null)
+    {
+        return self::fuzzy($where, $distance, $extra);
+    }
+
     public static function find(array $where, array|int|null $extra = null)
     {
         $self = static::instance();

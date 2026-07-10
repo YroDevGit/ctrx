@@ -267,6 +267,127 @@ class DB
         return $id ?: null;
     }
 
+    public static function fuzzy(string $table, array $where, $distance = 10, array|int|null $extra = null)
+    {
+        if (!is_array($where)) {
+            throw new \InvalidArgumentException("Where conditions must be an associative array.");
+        }
+
+        $select = "*";
+        if (is_array($extra) && isset($extra['select'])) {
+            $select = $extra['select'];
+        }
+
+        $bindings = [];
+        $clauses = [];
+
+        foreach ($where as $column => $value) {
+
+            $keywords = preg_split('/\s+/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+
+            $parts = [];
+
+            foreach ($keywords as $i => $keyword) {
+
+                $likeParam  = ":{$column}_like_$i";
+                $soundParam = ":{$column}_sound_$i";
+
+                $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(`$column`) = SOUNDEX($soundParam))";
+
+                $bindings[$likeParam]  = "%{$keyword}%";
+                $bindings[$soundParam] = $keyword;
+            }
+
+            if ($parts) {
+                $clauses[] = '(' . implode(' AND ', $parts) . ')';
+            }
+        }
+
+        $sql = "SELECT {$select} FROM `$table`";
+
+        if ($clauses) {
+            $sql .= " WHERE " . implode(" AND ", $clauses);
+        }
+
+        if (is_numeric($extra)) {
+            $sql .= " LIMIT " . (int) $extra;
+        } elseif (is_array($extra)) {
+
+            if (isset($extra['group by'])) {
+                $sql .= " GROUP BY " . $extra['group by'];
+            }
+
+            if (isset($extra['having'])) {
+                $sql .= " HAVING " . $extra['having'];
+            }
+
+            if (isset($extra['order by'])) {
+                $sql .= " ORDER BY " . $extra['order by'];
+            }
+
+            if (isset($extra['limit'])) {
+                $sql .= " LIMIT " . (int) $extra['limit'];
+            }
+
+            if (isset($extra['offset'])) {
+                $sql .= " OFFSET " . (int) $extra['offset'];
+            }
+        }
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $pdo = self::conn();
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($bindings);
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $stmt->closeCursor();
+
+        $filtered = [];
+
+        foreach ($rows as $row) {
+
+            $totalDistance = 0;
+
+            foreach ($where as $column => $search) {
+
+                $searchWords = preg_split('/\s+/', strtolower(trim($search)), -1, PREG_SPLIT_NO_EMPTY);
+                $valueWords  = preg_split('/\s+/', strtolower(trim($row[$column])), -1, PREG_SPLIT_NO_EMPTY);
+
+                foreach ($searchWords as $searchWord) {
+
+                    $best = PHP_INT_MAX;
+
+                    foreach ($valueWords as $valueWord) {
+
+                        $d = levenshtein($searchWord, $valueWord);
+
+                        if ($d < $best) {
+                            $best = $d;
+                        }
+                    }
+
+                    $totalDistance += $best;
+                }
+            }
+
+            if ($totalDistance <= $distance) {
+                $row['_distance'] = $totalDistance;
+                $filtered[] = $row;
+            }
+        }
+
+        usort($filtered, function ($a, $b) {
+            return $a['_distance'] <=> $b['_distance'];
+        });
+
+        self::$rowcount = count($filtered);
+
+        return $filtered;
+    }
+
     public static function delete(string $table, array $where)
     {
         $whereClause = implode(" AND ", array_map(fn($col) => "`$col` = ?", array_keys($where)));
