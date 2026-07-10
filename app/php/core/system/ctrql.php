@@ -220,11 +220,13 @@ if ($action == "create" || $action == "insert") {
     if (! Ctrql::checkAccess("C")) Response::code(unauthorized_code)->message("ctrql: User is not possible to use insert/create function.!")->send(unauthorized_code);
     $id = DB::insert($table, $param);
     Response::code(success_code)->message("OK")->var(["_id" => $id])->data($param)->send();
-} else if ($action == "read" || $action == "select" || $action == "find" || $action == "get" || $action == "findOne") {
+} else if ($action == "read" || $action == "select" || $action == "find" || $action == "get" || $action == "findOne" || $action == "fuzzy") {
     if (! Ctrql::checkAccess("R")) Response::code(unauthorized_code)->message("ctrql: User is not possible to use read/select function.!")->send(unauthorized_code);
     $result = [];
     if ($action == "findOne") {
         $result = DB::findOne($table, $param, $extra);
+    }else if($action == "fuzzy"){
+        $result = DB::fuzzy($table, 10, $extra);
     } else {
         $result = DB::find($table, $param, $extra);
     }
