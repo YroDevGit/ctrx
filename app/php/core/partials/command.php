@@ -35,6 +35,8 @@ function AddAllBaseTable($dbname)
         
         protected \$table = "$filename";
 
+        protected \$primaryKey = "id";
+
         protected \$fillable = [];
 
         protected \$guarded = [];

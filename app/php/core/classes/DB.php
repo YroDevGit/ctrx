@@ -18,6 +18,8 @@ class DB
     private static $totalPages;
     private static $currentPage;
 
+    private $primaryKey = "id";
+
     private static $allowedColumns = null;
     private static $hiddenColumns = null;
 
@@ -557,6 +559,292 @@ class DB
     public static function lastData()
     {
         return self::$lastData ?? null;
+    }
+
+    public static function upsert(
+        string $table,
+        array $data,
+        string|array $uniqueColumns,
+        string $condition = "and"
+    ) {
+        $uniqueColumns = (array) $uniqueColumns;
+
+        $condition = strtolower($condition);
+
+        if (!in_array($condition, ["and", "or"])) {
+            throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
+        }
+
+        $where = [];
+
+        foreach ($uniqueColumns as $column) {
+
+            if (!array_key_exists($column, $data)) {
+                throw new \InvalidArgumentException("Missing unique column '{$column}' in data.");
+            }
+
+            $where[$column] = $data[$column];
+        }
+
+        if ($condition === "or") {
+            $where = [
+                "or" => $where
+            ];
+        }
+
+        $exists = self::findOne($table, $where);
+
+        if ($exists) {
+
+            self::update($table, $data, $where);
+
+            return self::findOne($table, $where);
+        }
+
+        $id = self::insert($table, $data);
+
+        return self::findOne($table, [self::$primaryKey => $id]);
+    }
+
+    public static function primaryKey(string $pk = null)
+    {
+        if (! $pk) return self::$primaryKey;
+        self::$primaryKey = $pk;
+        self::$primaryKey;
+    }
+
+    public static function insertUnqique(
+        string $table,
+        array $data,
+        string|array $uniqueColumns,
+        string $condition = "and"
+    ) {
+        $uniqueColumns = (array) $uniqueColumns;
+
+        $condition = strtolower($condition);
+
+        if (!in_array($condition, ["and", "or"])) {
+            throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
+        }
+
+        $where = [];
+
+        foreach ($uniqueColumns as $column) {
+
+            if (!array_key_exists($column, $data)) {
+                throw new \InvalidArgumentException("Missing unique column '{$column}' in data.");
+            }
+
+            $where[$column] = $data[$column];
+        }
+
+        if ($condition === "or") {
+            $where = [
+                "or" => $where
+            ];
+        }
+
+        $exists = self::findOne($table, $where);
+
+        if ($exists) {
+            return 0;
+        }
+
+        $id = self::insert($table, $data);
+
+        return $id;
+    }
+
+    public static function insertMany(string $table, array $rows)
+    {
+        if (empty($rows)) {
+            return 0;
+        }
+
+        $columns = array_keys($rows[0]);
+
+        $columnSql = implode(", ", array_map(fn($c) => "`{$c}`", $columns));
+
+        $placeholder = "(" . implode(",", array_fill(0, count($columns), "?")) . ")";
+
+        $values = [];
+        $bindings = [];
+
+        foreach ($rows as $row) {
+
+            $values[] = $placeholder;
+
+            foreach ($columns as $column) {
+                $bindings[] = $row[$column] ?? null;
+            }
+        }
+
+        $sql = "INSERT INTO `{$table}` ({$columnSql}) VALUES " . implode(",", $values);
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+        self::$lastData = $rows;
+        self::$lastTable = $table;
+
+        $stmt = self::conn()->prepare($sql);
+
+        $stmt->execute($bindings);
+
+        self::$lastRowCount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$lastRowCount;
+    }
+
+    public static function chunk(
+        string $table,
+        int $size,
+        array $where = [],
+        callable $callback = null,
+        array|int|null $extra = null
+    ) {
+        if ($size <= 0) {
+            throw new \InvalidArgumentException("Chunk size must be greater than zero.");
+        }
+
+        if ($callback === null) {
+            throw new \InvalidArgumentException("Callback is required.");
+        }
+
+        $page = 1;
+
+        while (true) {
+
+            $options = is_array($extra) ? $extra : [];
+
+            $options["limit"] = $size;
+            $options["page"] = $page;
+
+            $rows = empty($where)
+                ? self::select($table, null, $options)
+                : self::find($table, $where, $options);
+
+            if (empty($rows)) {
+                break;
+            }
+
+            $result = $callback($rows, $page);
+
+            if ($result === false) {
+                break;
+            }
+
+            if (count($rows) < $size) {
+                break;
+            }
+
+            $page++;
+        }
+
+        return true;
+    }
+
+    public static function value(
+        string $table,
+        string $column,
+        array $where = [],
+        array|int|null $extra = null
+    ) {
+        if (empty($where)) {
+            $rows = self::select($table, $column, is_array($extra) ? $extra : []);
+        } else {
+            $rows = self::find(
+                $table,
+                $where,
+                array_merge(
+                    is_array($extra) ? $extra : [],
+                    ["select" => $column]
+                )
+            );
+        }
+
+        return $rows[0][$column] ?? null;
+    }
+
+    public static function pluck(
+        string $table,
+        string $column,
+        array $where = [],
+        array|int|null $extra = null
+    ): array {
+        if (empty($where)) {
+            $rows = self::select($table, $column, is_array($extra) ? $extra : []);
+        } else {
+            $rows = self::find(
+                $table,
+                $where,
+                array_merge(
+                    is_array($extra) ? $extra : [],
+                    ["select" => $column]
+                )
+            );
+        }
+
+        return array_column($rows, $column);
+    }
+
+    public static function increment(
+        string $table,
+        string $column,
+        int|float $value,
+        array $where
+    ): int {
+        [$whereClause, $bindings] = self::buildWhere($where);
+
+        $sql = "UPDATE `{$table}` SET `{$column}` = `{$column}` + :increment";
+
+        if ($whereClause) {
+            $sql .= " WHERE {$whereClause}";
+        }
+
+        $bindings[":increment"] = $value;
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = self::conn()->prepare($sql);
+        $stmt->execute($bindings);
+
+        self::$lastRowCount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$lastRowCount;
+    }
+
+    public static function decrement(
+        string $table,
+        string $column,
+        int|float $value,
+        array $where
+    ): int {
+        [$whereClause, $bindings] = self::buildWhere($where);
+
+        $sql = "UPDATE `{$table}` SET `{$column}` = `{$column}` - :decrement";
+
+        if ($whereClause) {
+            $sql .= " WHERE {$whereClause}";
+        }
+
+        $bindings[":decrement"] = $value;
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = self::conn()->prepare($sql);
+        $stmt->execute($bindings);
+
+        self::$lastRowCount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$lastRowCount;
     }
 
     /**

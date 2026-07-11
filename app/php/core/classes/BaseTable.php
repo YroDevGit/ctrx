@@ -13,6 +13,7 @@ class BaseTable
 {
     protected $pdo;
     protected $table;
+    protected $primaryKey = "id";
     protected $create_date;
     protected $update_date;
     protected $fillable = [];
@@ -226,7 +227,126 @@ class BaseTable
     public static function fuzzy(array $where, $distance = 10, array|int|null $extra = null)
     {
         $self = static::instance();
-        return \Classes\DB::fuzzy($self->table, $where, $distance, $extra);
+        $table = $self->table;
+
+        if (!is_array($where)) {
+            throw new \InvalidArgumentException("Where conditions must be an associative array.");
+        }
+
+        $select = "*";
+        if (is_array($extra) && isset($extra['select'])) {
+            $select = $extra['select'];
+        }
+
+        $bindings = [];
+        $clauses = [];
+
+        foreach ($where as $column => $value) {
+
+            $keywords = preg_split('/\s+/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+
+            $parts = [];
+
+            foreach ($keywords as $i => $keyword) {
+
+                $likeParam  = ":{$column}_like_$i";
+                $soundParam = ":{$column}_sound_$i";
+
+                $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(`$column`) = SOUNDEX($soundParam))";
+
+                $bindings[$likeParam]  = "%{$keyword}%";
+                $bindings[$soundParam] = $keyword;
+            }
+
+            if ($parts) {
+                $clauses[] = '(' . implode(' AND ', $parts) . ')';
+            }
+        }
+
+        $sql = "SELECT {$select} FROM `$table`";
+
+        if ($clauses) {
+            $sql .= " WHERE " . implode(" AND ", $clauses);
+        }
+
+        if (is_numeric($extra)) {
+            $sql .= " LIMIT " . (int) $extra;
+        } elseif (is_array($extra)) {
+
+            if (isset($extra['group by'])) {
+                $sql .= " GROUP BY " . $extra['group by'];
+            }
+
+            if (isset($extra['having'])) {
+                $sql .= " HAVING " . $extra['having'];
+            }
+
+            if (isset($extra['order by'])) {
+                $sql .= " ORDER BY " . $extra['order by'];
+            }
+
+            if (isset($extra['limit'])) {
+                $sql .= " LIMIT " . (int) $extra['limit'];
+            }
+
+            if (isset($extra['offset'])) {
+                $sql .= " OFFSET " . (int) $extra['offset'];
+            }
+        }
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = $self->pdo->prepare($sql);
+        $stmt->execute($bindings);
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $stmt->closeCursor();
+
+        $filtered = [];
+
+        foreach ($rows as $row) {
+
+            $totalDistance = 0;
+
+            foreach ($where as $column => $search) {
+
+                $searchWords = preg_split('/\s+/', strtolower(trim($search)), -1, PREG_SPLIT_NO_EMPTY);
+                $valueWords  = preg_split('/\s+/', strtolower(trim($row[$column])), -1, PREG_SPLIT_NO_EMPTY);
+
+                foreach ($searchWords as $searchWord) {
+
+                    $best = PHP_INT_MAX;
+
+                    foreach ($valueWords as $valueWord) {
+
+                        $d = levenshtein($searchWord, $valueWord);
+
+                        if ($d < $best) {
+                            $best = $d;
+                        }
+                    }
+
+                    $totalDistance += $best;
+                }
+            }
+
+            if ($totalDistance <= $distance) {
+                $row['_distance'] = $totalDistance;
+                $filtered[] = $row;
+            }
+        }
+
+        usort($filtered, function ($a, $b) {
+            return $a['_distance'] <=> $b['_distance'];
+        });
+
+        self::$rowcount = count($filtered);
+
+        return $filtered
+            ? array_map([$self, 'hydrate'], $filtered)
+            : [];
     }
 
     public static function soundsLike(array $where, $distance = 10, array|int|null $extra = null)
@@ -602,11 +722,18 @@ class BaseTable
         return $rwCount;
     }
 
+    public static function primaryKey(string $pk = null)
+    {
+        if (! $pk) return self::$primaryKey;
+        self::$primaryKey = $pk;
+        return self::$primaryKey;
+    }
+
     public static function delete(array|string|int $whereCondition)
     {
         $where = [];
         if (is_string($whereCondition) || is_string($whereCondition)) {
-            $where = ["id" => $whereCondition];
+            $where = [self::$primaryKey => $whereCondition];
         }
         if (is_array($whereCondition)) {
             $where = $whereCondition;
@@ -716,6 +843,339 @@ class BaseTable
         }
         if (is_array($key)) return array_diff_key($attributes, array_flip($key));
         return $attributes;
+    }
+
+    public static function upsert(
+        array $data,
+        string|array $uniqueColumns,
+        string $condition = "and"
+    ) {
+        $uniqueColumns = (array) $uniqueColumns;
+
+        $condition = strtolower($condition);
+
+        if (!in_array($condition, ['and', 'or'])) {
+            throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
+        }
+
+        $where = [];
+
+        foreach ($uniqueColumns as $column) {
+
+            if (!array_key_exists($column, $data)) {
+                throw new \InvalidArgumentException(
+                    "Missing unique column '{$column}' in data."
+                );
+            }
+
+            $where[$column] = $data[$column];
+        }
+
+        if ($condition === 'or') {
+            $where = [
+                'or' => $where
+            ];
+        }
+
+        $exists = self::findOne($where);
+
+        if (!empty($exists)) {
+
+            self::update($where, $data);
+
+            return self::findOne($where);
+        }
+
+        $model = self::create($data);
+
+        return self::findOne([
+            self::primaryKey() => $model->insertID()
+        ]);
+    }
+
+    public static function insertUnique(
+        array $data,
+        string|array $uniqueColumns,
+        string $condition = "and"
+    ) {
+        $uniqueColumns = (array) $uniqueColumns;
+
+        $condition = strtolower($condition);
+
+        if (!in_array($condition, ['and', 'or'])) {
+            throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
+        }
+
+        $where = [];
+
+        foreach ($uniqueColumns as $column) {
+
+            if (!array_key_exists($column, $data)) {
+                throw new \InvalidArgumentException(
+                    "Missing unique column '{$column}' in data."
+                );
+            }
+
+            $where[$column] = $data[$column];
+        }
+
+        if ($condition === 'or') {
+            $where = [
+                'or' => $where
+            ];
+        }
+
+        if (!empty(self::findOne($where))) {
+            return 0;
+        }
+
+        return self::create($data);
+    }
+
+    public static function insertMany(array $rows)
+    {
+        if (empty($rows)) {
+            return 0;
+        }
+
+        $self = static::instance();
+
+        $processed = [];
+
+        foreach ($rows as $row) {
+
+            $row = $self->filterFillable($row);
+
+            if ($self->timestamps) {
+
+                $now = date('Y-m-d H:i:s');
+
+                if (is_array($self->timestamps)) {
+
+                    $row[$self->timestamps['created'] ?? 'created_at'] = $now;
+                    $row[$self->timestamps['updated'] ?? 'updated_at'] = $now;
+                } elseif (is_bool($self->timestamps)) {
+
+                    $row['created_at'] = $now;
+                    $row['updated_at'] = $now;
+                } else {
+
+                    throw new Exception(
+                        "Base table timestamps should only boolean or array"
+                    );
+                }
+            }
+
+            $processed[] = $row;
+        }
+
+        $columns = array_keys($processed[0]);
+
+        $columnSql = implode(
+            ", ",
+            array_map(fn($c) => "`{$c}`", $columns)
+        );
+
+        $placeholder = "(" . implode(",", array_fill(0, count($columns), "?")) . ")";
+
+        $values = [];
+        $bindings = [];
+
+        foreach ($processed as $row) {
+
+            $values[] = $placeholder;
+
+            foreach ($columns as $column) {
+                $bindings[] = $row[$column] ?? null;
+            }
+        }
+
+        $sql = "INSERT INTO `{$self->table}` ({$columnSql}) VALUES " . implode(",", $values);
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = $self->pdo->prepare($sql);
+        $stmt->execute($bindings);
+
+        self::$rowcount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$rowcount;
+    }
+
+    public static function chunk(
+        int $size,
+        array $where = [],
+        callable $callback = null,
+        array|int|null $extra = null
+    ) {
+        if ($size <= 0) {
+            throw new \InvalidArgumentException(
+                "Chunk size must be greater than zero."
+            );
+        }
+
+        if ($callback === null) {
+            throw new \InvalidArgumentException(
+                "Callback is required."
+            );
+        }
+
+        $page = 1;
+
+        while (true) {
+
+            $options = is_array($extra) ? $extra : [];
+
+            $options['limit'] = $size;
+            $options['page'] = $page;
+
+            $rows = empty($where)
+                ? self::select(null, $options)
+                : self::find($where, $options);
+
+            if (empty($rows)) {
+                break;
+            }
+
+            $result = $callback($rows, $page);
+
+            if ($result === false) {
+                break;
+            }
+
+            if (count($rows) < $size) {
+                break;
+            }
+
+            $page++;
+        }
+
+        return true;
+    }
+
+    public static function value(
+        string $column,
+        array $where = [],
+        array|int|null $extra = null
+    ) {
+        if (empty($where)) {
+            $rows = self::select(
+                $column,
+                is_array($extra) ? $extra : []
+            );
+        } else {
+            $rows = self::find(
+                $where,
+                array_merge(
+                    is_array($extra) ? $extra : [],
+                    ['select' => $column]
+                )
+            );
+        }
+
+        return $rows[0][$column] ?? null;
+    }
+
+    public static function pluck(
+        string $column,
+        array $where = [],
+        array|int|null $extra = null
+    ): array {
+        if (empty($where)) {
+            $rows = self::select(
+                $column,
+                is_array($extra) ? $extra : []
+            );
+        } else {
+            $rows = self::find(
+                $where,
+                array_merge(
+                    is_array($extra) ? $extra : [],
+                    ['select' => $column]
+                )
+            );
+        }
+
+        return array_column($rows, $column);
+    }
+
+    public static function increment(
+        string $column,
+        int|float $value,
+        array $where = []
+    ): int {
+        $self = static::instance();
+
+        $bindings = [];
+        $paramIndex = 0;
+
+        [$whereClause, $bindings] = $self->buildWhere(
+            $where,
+            "AND",
+            $bindings,
+            $paramIndex
+        );
+
+        $sql = "UPDATE `{$self->table}` SET `{$column}` = `{$column}` + :increment";
+
+        if ($whereClause) {
+            $sql .= " WHERE {$whereClause}";
+        }
+
+        $bindings[':increment'] = $value;
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = $self->pdo->prepare($sql);
+        $stmt->execute($bindings);
+
+        self::$rowcount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$rowcount;
+    }
+
+    public static function decrement(
+        string $column,
+        int|float $value,
+        array $where = []
+    ): int {
+        $self = static::instance();
+
+        $bindings = [];
+        $paramIndex = 0;
+
+        [$whereClause, $bindings] = $self->buildWhere(
+            $where,
+            "AND",
+            $bindings,
+            $paramIndex
+        );
+
+        $sql = "UPDATE `{$self->table}` SET `{$column}` = `{$column}` - :decrement";
+
+        if ($whereClause) {
+            $sql .= " WHERE {$whereClause}";
+        }
+
+        $bindings[':decrement'] = $value;
+
+        self::$lastQuery = $sql;
+        self::$lastBindings = $bindings;
+
+        $stmt = $self->pdo->prepare($sql);
+        $stmt->execute($bindings);
+
+        self::$rowcount = $stmt->rowCount();
+
+        $stmt->closeCursor();
+
+        return self::$rowcount;
     }
 
     public function toJson()
