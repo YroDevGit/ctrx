@@ -76,6 +76,25 @@ class CtrClass {
         return `CTR${now}${uuid}`;
     }
 
+    numberFormat(number, decimal = true, defaultValue = "0") {
+        if (number) {
+            if (decimal) {
+                return Number(number).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            }
+            return number;
+        }
+        if (decimal) {
+            return Number("0").toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+        return defaultValue;
+    }
+
     backend($be = "", params = {}) {
         let url = this.backend + $be;
         if (typeof params === "object" && Object.keys(params).length > 0) {
@@ -107,7 +126,7 @@ class CtrClass {
         }
     }
 
-    get refresh(){
+    get refresh() {
         this.reload();
     }
 
@@ -413,31 +432,31 @@ class CtrClass {
         }
     }
 
-    empty_obect(object){
-        try{
+    empty_obect(object) {
+        try {
             return Object.keys(object).length > 0;
-        }catch(err){
+        } catch (err) {
             console.warn(`empty_object: '${object}' has an issue`, err);
             return true;
         }
     }
 
-    empty_array(array){
-        try{
+    empty_array(array) {
+        try {
             return array.length === 0;
-        }catch(err){
+        } catch (err) {
             console.warn(`empty_object: '${array}' has an issue`, err);
             return true;
         }
     }
 
-    is_empty(data){
+    is_empty(data) {
         if (Array.isArray(data)) {
-            return data.length === 0 ? true: false
+            return data.length === 0 ? true : false
         } else if (data && typeof data === "object") {
             return Object.keys(data).length === 0
-            ? true
-            : false
+                ? true
+                : false
         }
     }
 
@@ -484,11 +503,11 @@ class CtrClass {
         }
     }
 
-    log(...message){
+    log(...message) {
         console.log(...message);
     }
 
-    err(...message){
+    err(...message) {
         console.error(...message);
     }
 

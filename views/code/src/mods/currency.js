@@ -4,7 +4,7 @@ class CtrCurrency {
         EUR: "€",
         GBP: "£",
         JPY: "¥",
-        PHP: "₱", 
+        PHP: "₱",
         CNY: "¥",
         KRW: "₩",
         INR: "₹",
@@ -12,55 +12,72 @@ class CtrCurrency {
         CAD: "C$",
     };
 
-    format(code, amount = null) {
+    static formats = {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        numberFormat: true,
+    }
+
+    setFormat(format) {
+        formats = { ...formats, ...format };
+    }
+
+    format(code, amount = null, defaultValue = "") {
         const symbol = CtrCurrency.currencies[code] || "";
         if (amount === null) {
-            return symbol;
+            if (defaultValue && defaultValue != "") {
+                amount = defaultValue;
+            } else {
+                return symbol;
+            }
+        }
+        if (!CtrCurrency.formats.numberFormat) {
+            return symbol + Number(amount);
         }
         return symbol + Number(amount).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: CtrCurrency.formats.minimumFractionDigits,
+            maximumFractionDigits: CtrCurrency.formats.maximumFractionDigits,
         });
     }
 
-    usd(amount = null) {
-        return this.format("USD", amount);
+    usd(amount = null, defaultValue = "") {
+        return this.format("USD", amount, defaultValue);
     }
 
-    eur(amount = null) {
-        return this.format("EUR", amount);
+    eur(amount = null, defaultValue = "") {
+        return this.format("EUR", amount, defaultValue);
     }
 
-    gbp(amount = null) {
-        return this.format("GBP", amount);
+    gbp(amount = null, defaultValue = "") {
+        return this.format("GBP", amount, defaultValue);
     }
 
-    yen(amount = null) {
-        return this.format("JPY", amount);
+    yen(amount = null, defaultValue = "") {
+        return this.format("JPY", amount, defaultValue);
     }
 
-    peso(amount = null) {
-        return this.format("PHP", amount);
+    peso(amount = null, defaultValue = "") {
+        return this.format("PHP", amount, defaultValue);
     }
 
-    cny(amount = null) {
-        return this.format("CNY", amount);
+    cny(amount = null, defaultValue = "") {
+        return this.format("CNY", amount, defaultValue);
     }
 
-    krw(amount = null) {
-        return this.format("KRW", amount);
+    krw(amount = null, defaultValue = "") {
+        return this.format("KRW", amount, defaultValue);
     }
 
-    inr(amount = null) {
-        return this.format("INR", amount);
+    inr(amount = null, defaultValue = "") {
+        return this.format("INR", amount, defaultValue);
     }
 
-    aud(amount = null) {
-        return this.format("AUD", amount);
+    aud(amount = null, defaultValue = "") {
+        return this.format("AUD", amount, defaultValue);
     }
 
-    cad(amount = null) {
-        return this.format("CAD", amount);
+    cad(amount = null, defaultValue = "") {
+        return this.format("CAD", amount, defaultValue);
     }
 }
 
