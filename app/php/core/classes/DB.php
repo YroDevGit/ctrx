@@ -390,6 +390,11 @@ class DB
         return $filtered;
     }
 
+    public static function soundsLike(string $table, array $where, $distance = 10, array|int|null $extra = null)
+    {
+        return self::fuzzy($table, $where, $distance, $extra);
+    }
+
     public static function delete(string $table, array $where)
     {
         $whereClause = implode(" AND ", array_map(fn($col) => "`$col` = ?", array_keys($where)));
