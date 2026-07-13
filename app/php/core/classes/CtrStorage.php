@@ -23,38 +23,39 @@ class CtrStorage
         return realpath(__DIR__ . "/../../../../");
     }
 
-    protected static function dir(){
+    protected static function dir()
+    {
         return self::dirfile();
     }
     protected static function storagepath($full = true)
     {
-        if($full){
+        if ($full) {
             return self::dirfile() . "\\" . self::relativepath();
         }
         return self::relativepath();
     }
 
-    public static function create_storage(){
-        
-    }
+    public static function create_storage() {}
 
     public static function storage_path($fullpath = true)
     {
         return self::storagepath($fullpath);
     }
 
-    public static function path($filepath=""){
-        if(is_null($filepath) || $filepath == ""){
+    public static function path($filepath = "")
+    {
+        if (is_null($filepath) || $filepath == "") {
             return str_replace("\\", "/", self::relativepath());
         }
-        return str_replace("\\","/", self::relativepath().$filepath);
+        return str_replace("\\", "/", self::relativepath() . $filepath);
     }
 
-    public static function fpath($filepath=""){
-        if(is_null($filepath) || $filepath == ""){
+    public static function fpath($filepath = "")
+    {
+        if (is_null($filepath) || $filepath == "") {
             return str_replace("\\", "/", self::storagepath());
         }
-        return  str_replace("\\", "/", self::relativepath().$filepath);
+        return  str_replace("\\", "/", self::relativepath() . $filepath);
     }
 
     protected static function relativepath()
@@ -62,8 +63,9 @@ class CtrStorage
         return "views\\core\\partials\\storage\\";
     }
 
-    public static function get_last_uploaded($single = true){
-        if($single){
+    public static function get_last_uploaded($single = true)
+    {
+        if ($single) {
             return self::$last_uploaded_files[0] ?? null;
         }
         return self::$last_uploaded_files;
@@ -76,7 +78,7 @@ class CtrStorage
         if (! $file) {
             return null;
         }
-        if(is_string(($storagePath))){
+        if (is_string(($storagePath))) {
             $path = $storagePath;
         }
         $pathname = self::storagepath();
@@ -95,18 +97,18 @@ class CtrStorage
             $file = Request::file($file);
         }
 
-        if($storagePath){
+        if ($storagePath) {
             $data = self::upd($file, $pathname, $path);
             self::$last_uploaded_files[] = [
                 "filename" => $data["filename"] ?? null,
                 "file" => $data["storage"] ?? null
             ];
-            if(is_string($storagePath)){
+            if (is_string($storagePath)) {
                 $storagePath = trim($storagePath, "/");
                 $storagePath = trim($storagePath, "\\");
-                return isset($data['file']) ? "/ctrstorage/".$storagePath."/".$data['file'] : null;
+                return isset($data['file']) ? "/ctrstorage/" . $storagePath . "/" . $data['file'] : null;
             }
-            return isset($data['file']) ? "/ctrstorage/".$data['file'] : null;
+            return isset($data['file']) ? "/ctrstorage/" . $data['file'] : null;
         }
         $data = self::upd($file, $pathname, $path);
         self::$last_uploaded_files[] = [
@@ -116,14 +118,15 @@ class CtrStorage
         return $data;
     }
 
-    public static function rollback(){
+    public static function rollback()
+    {
         $lastUploaded = self::get_last_uploaded();
-        if($lastUploaded){
-            foreach($lastUploaded as $k=>$v){
+        if ($lastUploaded) {
+            foreach ($lastUploaded as $k => $v) {
                 $file = $v["file"] ?? null;
-                if(! $file) continue;
+                if (! $file) continue;
 
-                if(file_exists($file)){
+                if (\Classes\Ctrx::file_exists_strict($file)) {
                     unlink($file);
                 }
             }

@@ -17,7 +17,7 @@ class Mail
         $email_template = $template;
         $email_template = substr($email_template, -4) == ".php" ? $email_template : $email_template . ".php";
         $template = "app/php/templates/" . $email_template;
-        if (file_exists($template)) {
+        if (\Classes\Ctrx::file_exists_strict($template)) {
             if (!empty($content)) {
                 extract($content);
             }
@@ -30,8 +30,9 @@ class Mail
         }
     }
 
-    public static function send(array $mail){
-        if(empty($mail)){
+    public static function send(array $mail)
+    {
+        if (empty($mail)) {
             throw new Exception("Please add Email details");
         }
         return self::send_email(
@@ -65,11 +66,11 @@ class Mail
         $e_sendemail = $sender_email ?? env("sender_email") ?? "codetazer@test.com";
 
         $mail->setFrom($e_sendemail, $e_sender);
-        if(is_string($to)){
+        if (is_string($to)) {
             $mail->addAddress($to);
         }
-        if(is_array($to)){
-            foreach($to as $t){
+        if (is_array($to)) {
+            foreach ($to as $t) {
                 $mail->addAddress($t);
             }
         }

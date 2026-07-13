@@ -76,7 +76,7 @@ if (str_starts_with($uri, "/ctrstorage/")) {
     $ctrstorage = substr($uri, strlen('/ctrstorage/'));
     $filePath = 'views/core/partials/storage/' . $ctrstorage;
 
-    if (!file_exists($filePath)) {
+    if (!\Classes\Ctrx::file_exists_strict($filePath)) {
         http_response_code(404);
         exit('File not found');
     }
@@ -127,7 +127,7 @@ foreach ($blocked as $path) {
 
         $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
 
-        if (file_exists($forbidden)) {
+        if (\Classes\Ctrx::file_exists_strict($forbidden)) {
             include $forbidden;
         } else {
             echo "403 Forbidden";
@@ -186,7 +186,7 @@ if (
 
         $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
 
-        if (file_exists($forbidden)) {
+        if (\Classes\Ctrx::file_exists_strict($forbidden)) {
             include $forbidden;
         } else {
             echo "403 Forbidden";

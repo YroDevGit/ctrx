@@ -12,7 +12,7 @@ class CTRFileReader
 
     public static function read($path)
     {
-        if (!file_exists($path)) {
+        if (!\Classes\Ctrx::file_exists_strict($path)) {
             throw new \Exception("File not found: {$path}");
         }
         return file_get_contents($path);
@@ -21,7 +21,7 @@ class CTRFileReader
 
     public static function readLines($path)
     {
-        if (!file_exists($path)) {
+        if (!\Classes\Ctrx::file_exists_strict($path)) {
             throw new \Exception("File not found: {$path}");
         }
         return file($path, FILE_IGNORE_NEW_LINES);
@@ -36,7 +36,7 @@ class CTRFileReader
 
     public static function readCsv($path, $delimiter = ",")
     {
-        if (!file_exists($path)) {
+        if (!\Classes\Ctrx::file_exists_strict($path)) {
             throw new \Exception("File not found: {$path}");
         }
 
@@ -53,7 +53,7 @@ class CTRFileReader
 
     public static function readDocx($path)
     {
-        if (!file_exists($path)) {
+        if (!\Classes\Ctrx::file_exists_strict($path)) {
             throw new \Exception("File not found: {$path}");
         }
 
@@ -74,7 +74,7 @@ class CTRFileReader
 
     public static function readExcel($path)
     {
-        if (!file_exists($path)) {
+        if (!\Classes\Ctrx::file_exists_strict($path)) {
             throw new \Exception("File not found: {$path}");
         }
 

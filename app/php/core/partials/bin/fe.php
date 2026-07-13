@@ -481,7 +481,7 @@ if (! function_exists("view_page")) {
     function view_page(string $page, array $variables = [])
     {
         $page = substr($page, -4) == ".php" ? $page : $page . ".php";
-        if (file_exists("_frontend/pages/$page")) {
+        if (\Classes\Ctrx::file_exists_strict("_frontend/pages/$page")) {
             if (!empty($variables)) {
                 extract($variables);
             }
@@ -496,7 +496,7 @@ if (! function_exists("include_page")) {
     function include_page(string $page, array $variables = [])
     {
         $page = substr($page, -4) == ".php" ? $page : $page . ".php";
-        if (file_exists("views/includes/$page")) {
+        if (\Classes\Ctrx::file_exists_strict("views/includes/$page")) {
             if (!empty($variables)) {
                 extract($variables);
             }
@@ -639,7 +639,7 @@ if (! function_exists("use_middleware")) {
         $gfile = "";
         if ($ep == "FE") $gfile = "views/app/middleware/";
         else $gfile = "app/middleware/";
-        if (! file_exists($gfile . $model)) {
+        if (! \Classes\Ctrx::file_exists_strict($gfile . $model)) {
             throw new Exception("Middleware '$middleware' not exist.!");
         }
         include $gfile . $model;

@@ -38,9 +38,9 @@ $unique = Request::ql("unique");
 $function = Request::ql("function");
 $realtime = Request::ql("realtime");
 
-if($realtime){
-    if(is_array($realtime)){
-        foreach($realtime as $f=>$v){
+if ($realtime) {
+    if (is_array($realtime)) {
+        foreach ($realtime as $f => $v) {
             $param[$v] = now();
         }
     }
@@ -55,10 +55,10 @@ include "app/config/ql.php";
  * Check if ctrql is active
  */
 
- $activated = Ctrql::isActive();
- if(! $activated){
+$activated = Ctrql::isActive();
+if (! $activated) {
     Response::code(env('ctrql_auth_failed') ?? 707)->message("Sorry. ctrql is currently disabled or user access is expired.!")->send(unauthorized_code);
- }
+}
 
 /**
  * Access filtering
@@ -117,21 +117,21 @@ if ($action == "disable") {
     Response::code(success_code)->message("Yes.! ctrql disabled.")->send();
 }
 
-if($action == "userdata"){
-    $data =Ctrx::get_user_data();
-    if(! $data){
-        Response::code(error_code)->message("No userdata found")->data([])->var(['empty'=>true])->send(error_code);
+if ($action == "userdata") {
+    $data = Ctrx::get_user_data();
+    if (! $data) {
+        Response::code(error_code)->message("No userdata found")->data([])->var(['empty' => true])->send(error_code);
     }
-    Response::code(success_code)->message("OK")->data($data)->var(['empty'=>false])->send();
+    Response::code(success_code)->message("OK")->data($data)->var(['empty' => false])->send();
 }
 
-if($action == "setUserData"){
+if ($action == "setUserData") {
     $data = $param;
     Ctrx::set_user_data($data);
     Response::code(success_code)->message("OK")->data($data)->send();
 }
 
-if($action == "removeUserData"){
+if ($action == "removeUserData") {
     Ctrx::delete_user_data();
     Response::code(success_code)->message("OK")->send();
 }
@@ -157,7 +157,7 @@ if ($action == "model") {
     $method = $exp[1] ?? "";
     $function = ucfirst($function);
     $file = "_backend/model/$function.php";
-    if (! file_exists($file)) Response::code(badrequest_code)->message("ctrql: model '$function' not found.!")->send(badrequest_code);
+    if (! \Classes\Ctrx::file_exists_strict($file)) Response::code(badrequest_code)->message("ctrql: model '$function' not found.!")->send(badrequest_code);
     include_once $file;
     $class = "Models\\$function";
     if (! class_exists($class)) Response::code(badrequest_code)->message("ctrql: model class '$class' not found.!")->send(badrequest_code);
@@ -225,7 +225,7 @@ if ($action == "create" || $action == "insert") {
     $result = [];
     if ($action == "findOne") {
         $result = DB::findOne($table, $param, $extra);
-    }else if($action == "fuzzy"){
+    } else if ($action == "fuzzy") {
         $result = DB::fuzzy($table, 10, $extra);
     } else {
         $result = DB::find($table, $param, $extra);

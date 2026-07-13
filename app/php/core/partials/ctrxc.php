@@ -84,8 +84,8 @@ if (! function_exists('ctrx_response')) {
                     if (! $file) {
                         continue;
                     }
-                    if(str_contains($file,"/app/_controller/") || str_contains($file,"\\app\\_controller\\")){
-                        $data['message'] = $data['message']." @ ".current_be()." ". $e_line;
+                    if (str_contains($file, "/app/_controller/") || str_contains($file, "\\app\\_controller\\")) {
+                        $data['message'] = $data['message'] . " @ " . current_be() . " " . $e_line;
                     }
                     if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
                         continue;
@@ -93,7 +93,7 @@ if (! function_exists('ctrx_response')) {
                     $all[] = $v;
                 }
                 $e_error = json_encode($all);
-                $data['trace'] =$all;
+                $data['trace'] = $all;
                 if (env("error_logs") == "yes") {
                     ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
                 }
@@ -144,21 +144,22 @@ if (! function_exists("fe_config")) {
         $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
 
-        if($key == "*"){
+        if ($key == "*") {
             return $view_config;
         }
 
-        if(! $key) return null;
+        if (! $key) return null;
 
         return isset($view_config[$key]) ? $view_config[$key] : null;
     }
 }
 
-if(! function_exists("error_text")){
-    function error_text(string $for, string $tag = "div", string $color = "red", $class = null , $defaultText = ""){
-        if($class){
+if (! function_exists("error_text")) {
+    function error_text(string $for, string $tag = "div", string $color = "red", $class = null, $defaultText = "")
+    {
+        if ($class) {
             return "<$tag id='err_$for' class = 'error_text $class' style='color:$color;'>$defaultText</$tag>";
-        }else{
+        } else {
             return "<$tag id='err_$for' class = 'error_text' style='color:$color;'>$defaultText</$tag>";
         }
     }
@@ -181,7 +182,7 @@ function ctrx_log(string $message, string $parent, string $id = null, string $fi
 
     $logEntry = "\$log['$time'][$id] = " . var_export($message, true) . ";\n";
 
-    if (!file_exists($filePath)) {
+    if (!\Classes\Ctrx::file_exists_strict($filePath)) {
         $content = $protection . $logEntry;
         file_put_contents($filePath, $content, LOCK_EX);
     } else {
@@ -251,8 +252,8 @@ if (! function_exists("ctrx_get_files")) {
     {
         $baseDir = $baseDirectory;
 
-        if($parent){
-            $baseDir = $baseDir."/". $parent;
+        if ($parent) {
+            $baseDir = $baseDir . "/" . $parent;
         }
 
         $arrs = [];
@@ -275,9 +276,9 @@ if (! function_exists("ctrx_get_files")) {
                 if ($phpfile) {
                     $arrs[] = $relativePath;
                 } else {
-                    if($parent){
+                    if ($parent) {
                         $arrs[] = $parent . "/" . rem_php($relativePath);
-                    }else{
+                    } else {
                         $arrs[] = rem_php($relativePath);
                     }
                 }
@@ -334,16 +335,18 @@ if (! function_exists("ctrx_get_filepaths")) {
     }
 }
 
-if(! function_exists("ctrxc_ccookie_single_thread")){
-    function ctrxc_ccookie_single_thread(){
+if (! function_exists("ctrxc_ccookie_single_thread")) {
+    function ctrxc_ccookie_single_thread()
+    {
         return "ctrxc_ccookie_single_thread_yroez";
     }
 }
 
-if(! function_exists("remove_single_thread")){
-    function remove_single_thread(){
-        if(isset($_COOKIE[ctrxc_ccookie_single_thread()])){
+if (! function_exists("remove_single_thread")) {
+    function remove_single_thread()
+    {
+        if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
             unset($_COOKIE[ctrxc_ccookie_single_thread()]);
-        } 
+        }
     }
 }

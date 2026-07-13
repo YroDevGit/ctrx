@@ -2,6 +2,8 @@
 
 namespace Classes;
 
+use Error;
+
 class Ctrx
 {
     private static string|null $xrateMessage = null;
@@ -107,7 +109,7 @@ class Ctrx
         $org = $route;
         $route = ! $route ? current_be() : "ctzr_" . $route;
         $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
-        if (file_exists($file)) {
+        if (\Classes\Ctrx::file_exists_strict($file)) {
             $data = json_decode(file_get_contents($file), true);
             if (time() - $data['start'] > $window) {
                 $data = ['count' => 0, 'start' => time()];
@@ -147,6 +149,19 @@ class Ctrx
         return file_put_contents($file, json_encode($data));
     }
 
+    public static function file_exists_strict(string $path): bool
+    {
+        if (!file_exists($path)) {
+            return false;
+        }
+
+        $dir = dirname($path);
+        $file = basename($path);
+
+
+        return in_array($file, scandir($dir), true);
+    }
+
     private static function ctrratedetails($route = "")
     {
         $dir = "app/php/core/partials/dir";
@@ -158,7 +173,7 @@ class Ctrx
         $limit = 100;
         $route = ! $route ? current_be() : "ctzr_" . $route;
         $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
-        if (file_exists($file)) {
+        if (\Classes\Ctrx::file_exists_strict($file)) {
             $data = json_decode(file_get_contents($file), true);
             $window = $data['seconds'] ?? $window;
             $limit = $data['limit'] ?? $limit;
@@ -454,5 +469,66 @@ class Ctrx
             if ($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
             include_once $v;
         }
+    }
+
+    public static function getPastDueCronJobs()
+    {
+        $tbl = 'ctrx_cron';
+        $now = date('Y-m-d H:i:s');
+        $sql = "SELECT * FROM `" . $tbl . "` 
+                WHERE status = 'active' 
+                AND next_run IS NOT NULL 
+                AND next_run <= ? 
+                ORDER BY next_run ASC";
+
+        return \Classes\DB::query($sql, [$now]);
+    }
+
+    public static function selfCurl($url, $headers = [], $data = [])
+    {
+        $head = [
+            'Content-Type: application/json',
+            ...$headers
+        ];
+
+        $root = env('rootpath');
+        $ch = curl_init("$root/$url");
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => $head,
+            CURLOPT_POSTFIELDS => json_encode($data ?? []),
+        ]);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            die(curl_error($ch));
+        }
+
+        curl_close($ch);
+
+        return $response;
+    }
+
+    public static function getCronResponse(string $controller, $data = [])
+    {
+        $controller = trim($controller, "/");
+        if (! str_ends_with($controller, ".php")) {
+            $controller = $controller . ".php";
+        }
+        $file = "app/_controller/" . $controller;
+        if (! is_file($file)) {
+            throw new Error("$file not found");
+        }
+
+        if ($data) {
+            extract($data);
+        }
+        include $file;
+        $content = file_get_contents($file);
+
+        return $content;
     }
 }

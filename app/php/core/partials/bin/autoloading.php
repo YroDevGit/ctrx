@@ -38,7 +38,7 @@ if (! function_exists("include_error_page")) {
     {
         $error_page = substr($error_page, -4) == ".php" ? $error_page : $error_page . ".php";
         $path = "_frontend/app/errors/$error_page";
-        if (! file_exists($path)) {
+        if (! \Classes\Ctrx::file_exists_strict($path)) {
             die("Error page '$error_page' not found.!");
         }
         if (!empty($variables)) {
@@ -81,7 +81,7 @@ if (! function_exists("include_template_page")) {
         $error_page = $template_page;
         $error_page = substr($error_page, -4) == ".php" ? $error_page : $error_page . ".php";
         $path = "_frontend/app/php/core/template/$error_page";
-        if (! file_exists($path)) {
+        if (! \Classes\Ctrx::file_exists_strict($path)) {
             die("Template page '$error_page' not found.!");
         }
         if (!empty($variables)) {

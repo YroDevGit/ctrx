@@ -170,13 +170,15 @@ if (str_starts_with($req, "api/")) {
         if (! $is_in) {
             if (env("auto_routes") == "yes") {
                 $newReqPHP = append_php($newReq);
-                if (! file_exists("app/_controller/$newReqPHP")) {
+                if (! \Classes\Ctrx::file_exists_strict("app/_controller/$newReqPHP")) {
                     ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$newReq' not found.!"], 500);
                 }
             } else {
                 $upperReqMethod = strtoupper($reqmeth);
-                ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found"], 500);
+                ctrx_response(["code" => env('notfound_code'), "message" => "Controller: ($upperReqMethod) '$newReq' not found"], 500);
             }
+            echo \Classes\Ctrx::file_exists_strict("app/_controller/$newReqPHP");
+            exit;
             include "app/_controller/$newReqPHP";
             throw new Exception("Controller endpoint not reached");
         }
@@ -186,7 +188,11 @@ if (str_starts_with($req, "api/")) {
                 $mw = append_php($v);
                 include "app/middleware/$mw";
             }
-            if (! file_exists("app/_controller/$route")) {
+            if (! \Classes\Ctrx::file_exists_strict("app/_controller/$route")) {
+                ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$route' not found.!"], 500);
+            }
+        } else {
+            if (! \Classes\Ctrx::file_exists_strict("app/_controller/$route")) {
                 ctrx_response(["code" => env('notfound_code'), "message" => "Controller '$route' not found.!"], 500);
             }
         }
@@ -254,7 +260,7 @@ if (str_starts_with($req, "api/")) {
                 foreach ($mw as $k => $v) {
                     $phpfile = append_php($v);
                     $mdfile = "views/app/middleware/" . $phpfile;
-                    if (! file_exists($mdfile)) {
+                    if (! \Classes\Ctrx::file_exists_strict($mdfile)) {
                         throw new Exception("Middleware $v not found.!");
                     }
                     include $mdfile;
@@ -270,7 +276,7 @@ if (str_starts_with($req, "api/")) {
             \Classes\Ctrx::systemMaintenance();
         }
 
-        if (!file_exists($fullpath)) {
+        if (!\Classes\Ctrx::file_exists_strict($fullpath)) {
             $errorpage = $view_config["page_not_found"] ?? "404";
             \Classes\Ctrx::page404($errorpage, false);
             exit;

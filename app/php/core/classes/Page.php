@@ -28,20 +28,22 @@ class Page
         return new self($key);
     }
 
-    public function run(callable $function){
+    public function run(callable $function)
+    {
         $key = $this->arr;
         $current = current_page();
-        if(in_array($current, $key)){
+        if (in_array($current, $key)) {
             $function();
         }
     }
 
-    public function except(string ...$string){
+    public function except(string ...$string)
+    {
         $key = $this->arr;
         $newArr = [];
-        if($key){
-            foreach($key as $k=>$v){
-                if(in_array($v, $string)) continue;
+        if ($key) {
+            foreach ($key as $k => $v) {
+                if (in_array($v, $string)) continue;
                 $newArr[] = $v;
             }
         }
@@ -53,7 +55,7 @@ class Page
     {
         foreach ($middleware as $k => $v) {
             $file = append_php($v);
-            if (! file_exists("views/app/middleware/$file")) {
+            if (! \Classes\Ctrx::file_exists_strict("views/app/middleware/$file")) {
                 throw new Exception("Client: Middleware '$file' not found.!");
             }
         }
@@ -113,7 +115,7 @@ class Page
     private static function checkRoutes(string $route)
     {
         $route = append_php($route);
-        if (! file_exists("views/pages/" . $route)) {
+        if (! \Classes\Ctrx::file_exists_strict("views/pages/" . $route)) {
             throw new Exception("Client: Page '$route' not a found or not a file.!");
         }
     }

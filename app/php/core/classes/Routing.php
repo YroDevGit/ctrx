@@ -18,21 +18,21 @@ class Routing
         }
     }
 
-    public static function use_middleware(string|null $middleware, array|string $routes){
-        if(!is_string($middleware)){
+    public static function use_middleware(string|null $middleware, array|string $routes)
+    {
+        if (!is_string($middleware)) {
             throw new Exception("middleware should be a string");
         }
-        if(! $middleware){
+        if (! $middleware) {
             return false;
         }
         $ep = ctr_endpoint();
-        if($ep == "FE"){
-            self::group_page($routes, fn()=>use_middleware($middleware));
-        }else{
-            if(is_string($routes)){
-                self::in_route($routes, fn()=>use_middleware($middleware));
-            }
-            else if(is_array($routes)){
+        if ($ep == "FE") {
+            self::group_page($routes, fn() => use_middleware($middleware));
+        } else {
+            if (is_string($routes)) {
+                self::in_route($routes, fn() => use_middleware($middleware));
+            } else if (is_array($routes)) {
                 self::route_middleware($routes, $middleware);
             }
         }
@@ -40,7 +40,7 @@ class Routing
 
     public static function route_middleware(array $routes, string $midleware, $included = true)
     {
-        self::route_filtering($routes, fn()=>use_middleware($midleware), $included);
+        self::route_filtering($routes, fn() => use_middleware($midleware), $included);
     }
 
 
@@ -72,7 +72,7 @@ class Routing
                 continue;
             }
             $path = substr($r, -4) == ".php" ? $r : $r . ".php";
-            if (! file_exists("app/controller/$path")) {
+            if (! \Classes\Ctrx::file_exists_strict("app/controller/$path")) {
                 Response::code(notfound_code)->message("In group route, backend route $r not found.!")->send(notfound_code);
             }
         }
@@ -118,8 +118,8 @@ class Routing
                 return self::group_page(ctrx_get_routes($parent), ...$args);
             }
             $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";
-            if (! file_exists("_frontend/pages/$path")) {
-                //throw new Exception("Group page error: $pages not exist");
+            if (! \Classes\Ctrx::file_exists_strict("_frontend/pages/$path")) {
+                throw new Exception("Group page error: $pages not exist");
             }
             $current = current_page();
             if ($current == $pages) {
@@ -149,7 +149,7 @@ class Routing
         if (is_string($routes)) {
             $current = current_be();
             $path = substr($routes, -4) == ".php" ? $routes : $routes . ".php";
-            if (! file_exists("app/controller/$path")) {
+            if (! \Classes\Ctrx::file_exists_strict("app/controller/$path")) {
                 Response::code(notfound_code)
                     ->message("In set route, backend route $routes not found.!")
                     ->send(notfound_code);

@@ -26,22 +26,24 @@ class Router
         $pref = self::getGlobalPrefix();
         self::checkRoutes($route);
         $key = 'ctrx_post_' . $route;
-        if($pref){
-            $key = 'ctrx_post_' .$pref."/".$route;
+        if ($pref) {
+            $key = 'ctrx_post_' . $pref . "/" . $route;
         }
         $_REQUEST[$key] = ["route" => $route, "method" => "post", "intro" => 'ctrx_post_'];
         return new self($key);
     }
 
-    public function run(callable $function){
+    public function run(callable $function)
+    {
         $key = $this->arr;
         $current = current_be();
-        if($this->hasRoute($key, $current)){
+        if ($this->hasRoute($key, $current)) {
             $function();
         }
     }
 
-    private function hasRoute($routes, $r){
+    private function hasRoute($routes, $r)
+    {
         $exists = false;
         foreach ($routes as $route) {
             if (in_array($r, $route, true)) {
@@ -57,8 +59,8 @@ class Router
         $pref = self::getGlobalPrefix();
         self::checkRoutes($route);
         $key = 'ctrx_get_' . $route;
-        if($pref){
-            $key = 'ctrx_get_' .$pref."/".$route;
+        if ($pref) {
+            $key = 'ctrx_get_' . $pref . "/" . $route;
         }
         $_REQUEST[$key] = ["route" => $route, "method" => "get", "intro" => 'ctrx_get_'];
         return new self($key);
@@ -69,8 +71,8 @@ class Router
         $pref = self::getGlobalPrefix();
         self::checkRoutes($route);
         $key = 'ctrx_put_' . $route;
-        if($pref){
-            $key = 'ctrx_put_' .$pref."/".$route;
+        if ($pref) {
+            $key = 'ctrx_put_' . $pref . "/" . $route;
         }
         $_REQUEST[$key] = ["route" => $route, "method" => "put", "intro" => 'ctrx_put_'];
         return new self($key);
@@ -81,8 +83,8 @@ class Router
         $pref = self::getGlobalPrefix();
         self::checkRoutes($route);
         $key = 'ctrx_delete_' . $route;
-        if($pref){
-            $key = 'ctrx_delete_' .$pref."/".$route;
+        if ($pref) {
+            $key = 'ctrx_delete_' . $pref . "/" . $route;
         }
         $_REQUEST[$key] = ["route" => $route, "method" => "delete", "intro" => 'ctrx_delete_'];
         return new self($key);
@@ -91,8 +93,8 @@ class Router
     private static function checkRoutes(string $route)
     {
         $route = append_php($route);
-        if (! file_exists("app/_controller/" . $route)) {
-            throw new Exception("Controller $route not found.!");
+        if (! \Classes\Ctrx::file_exists_strict("app/_controller/" . $route)) {
+            throw new Exception("(Routes): Controller $route not found.!");
         }
     }
 
@@ -105,7 +107,7 @@ class Router
     {
         foreach ($middleware as $k => $v) {
             $file = append_php($v);
-            if (! file_exists("app/middleware/$file")) {
+            if (! \Classes\Ctrx::file_exists_strict("app/middleware/$file")) {
                 throw new Error("middleware '$v' not found.!");
             }
         }
@@ -165,13 +167,13 @@ class Router
 
     static function group(array ...$routes)
     {
-        if(! $routes){
+        if (! $routes) {
             return;
         }
         $arr = [];
         $pref = self::getGlobalPrefix();
         foreach ($routes as $fk => $vk) {
-            if(! $vk) continue;
+            if (! $vk) continue;
             foreach ($vk as $k => $v) {
                 if (is_string($v)) {
                     $newvexpl = explode(">>", $v);
