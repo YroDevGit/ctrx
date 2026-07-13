@@ -100,53 +100,98 @@ class Ctrx
 
     private static function ctrratelimit($limit = 100, $seconds = 60, $route = "")
     {
-        $ip = $_SERVER['REMOTE_ADDR'];
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $dir = "app/php/core/partials/dir";
-        if (! is_dir($dir)) {
+
+        if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        $window = $seconds;
+
+        $window = (int) $seconds;
         $org = $route;
-        $route = ! $route ? current_be() : "ctzr_" . $route;
+        $route = empty($route) ? current_be() : "ctzr_" . $route;
         $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
-        if (\Classes\Ctrx::file_exists_strict($file)) {
-            $data = json_decode(file_get_contents($file), true);
-            if (time() - $data['start'] > $window) {
-                $data = ['count' => 0, 'start' => time()];
+
+        if (mt_rand(1, 50) === 5) {
+            foreach (glob($dir . '/ratelimit_*') as $f) {
+                if (@filemtime($f) + $window < time()) {
+                    @unlink($f);
+                }
             }
-        } else {
-            $data = ['count' => 0, 'start' => time()];
+        }
+
+        $fp = fopen($file, 'c+');
+
+        if (!$fp) {
+            return false;
+        }
+
+        flock($fp, LOCK_EX);
+
+        rewind($fp);
+        $contents = stream_get_contents($fp);
+
+        $data = json_decode($contents, true);
+
+        if (!is_array($data)) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
+        }
+
+        if ((time() - $data['start']) > $window) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
         }
 
         $data['route'] = $org;
         $data['ctr'] = $route;
         $data['count']++;
-        $data['left'] = $limit - intval($data['count']);
+        $data['left'] = max(0, $limit - $data['count']);
         $data['limit'] = $limit;
-        $data['seconds'] = $seconds;
+        $data['seconds'] = $window;
+
         $remaining = max(0, $limit - $data['count']);
         $reset = $data['start'] + $window;
 
-        header("X-RateLimit-Limit: $limit");
-        header("X-RateLimit-Remaining: $remaining");
-        header("X-RateLimit-Reset: $reset");
+        header("X-RateLimit-Limit: {$limit}");
+        header("X-RateLimit-Remaining: {$remaining}");
+        header("X-RateLimit-Reset: {$reset}");
 
         if ($data['count'] > $limit) {
+            flock($fp, LOCK_UN);
+            fclose($fp);
+
             header('Content-Type: application/json');
             http_response_code(429);
-            header('Retry-After: ' . ($window - (time() - $data['start'])));
-            $msg = ! self::$xrateMessage ? 'Request limit exceed, Please try again later.' : self::$xrateMessage;
+            header('Retry-After: ' . max(0, $window - (time() - $data['start'])));
+
+            $msg = self::$xrateMessage ?: 'Request limit exceeded. Please try again later.';
+
             echo json_encode([
-                'code' => 429,
-                'message' => $msg,
-                'error' => 'Request limit exceeded',
-                'limit' => $limit,
-                'window' => $window,
-                'retry_after' => $window - (time() - $data['start'])
+                'code'        => 429,
+                'message'     => $msg,
+                'error'       => 'Request limit exceeded',
+                'limit'       => $limit,
+                'window'      => $window,
+                'retry_after' => max(0, $window - (time() - $data['start']))
             ]);
+
             exit;
         }
-        return file_put_contents($file, json_encode($data));
+
+        rewind($fp);
+        ftruncate($fp, 0);
+        fwrite($fp, json_encode($data));
+        fflush($fp);
+
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        return true;
     }
 
     public static function file_exists_strict(string $path): bool
