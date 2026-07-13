@@ -286,7 +286,7 @@ class DB
         foreach ($where as $column => $value) {
 
             $keywords = preg_split('/\s+/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
-
+            $keywords[] = $value;
             $parts = [];
 
             foreach ($keywords as $i => $keyword) {
@@ -294,21 +294,26 @@ class DB
                 $likeParam  = ":{$column}_like_$i";
                 $soundParam = ":{$column}_sound_$i";
 
-                $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(`$column`) = SOUNDEX($soundParam))";
+                $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(REPLACE(`$column`, ' ','')) = SOUNDEX(REPLACE($soundParam, ' ','')))";
 
                 $bindings[$likeParam]  = "%{$keyword}%";
                 $bindings[$soundParam] = $keyword;
             }
 
             if ($parts) {
-                $clauses[] = '(' . implode(' AND ', $parts) . ')';
+                $clauses[] = '(' . implode(' OR ', $parts) . ')';
             }
         }
 
         $sql = "SELECT {$select} FROM `$table`";
 
         if ($clauses) {
-            $sql .= " WHERE " . implode(" AND ", $clauses);
+            $str = " WHERE " . implode(" AND ", $clauses);
+            if (is_array($extra)) {
+                $AndOr = $extra['soundex'] ?? $extra['condition'] ?? "AND";
+                $str = " WHERE " . implode(" $AndOr ", $clauses);
+            }
+            $sql .= $str;
         }
 
         if (is_numeric($extra)) {
@@ -346,9 +351,7 @@ class DB
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         $stmt->closeCursor();
-
         $filtered = [];
-
         foreach ($rows as $row) {
 
             $totalDistance = 0;
@@ -356,10 +359,9 @@ class DB
             foreach ($where as $column => $search) {
 
                 $searchWords = preg_split('/\s+/', strtolower(trim($search)), -1, PREG_SPLIT_NO_EMPTY);
-                $valueWords  = preg_split('/\s+/', strtolower(trim($row[$column])), -1, PREG_SPLIT_NO_EMPTY);
+                $valueWords  = preg_split('/\s+/', strtolower(trim($row[$column] ?? "")), -1, PREG_SPLIT_NO_EMPTY);
 
                 foreach ($searchWords as $searchWord) {
-
                     $best = PHP_INT_MAX;
 
                     foreach ($valueWords as $valueWord) {
