@@ -39,7 +39,7 @@ $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
  * This load javascript from frontend (js) folder (views/js)
  */
 if (str_starts_with($uri, "\\views\js\\") || str_starts_with($uri, "/views/js/")) {
-    if (! str_ends_with($uri, ".js")) {
+    if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css")) {
         $uri = $uri . ".js";
         $uri = trim($uri, "/");
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -56,7 +56,7 @@ if (str_starts_with($uri, "\\views\js\\") || str_starts_with($uri, "/views/js/")
  * This load javascript from frontend (js) folder (views/code/*)
  */
 if (str_starts_with($uri, "\\views\code\src\\") || str_starts_with($uri, "/views/code/src/") || str_starts_with($uri, "/views/code/script/")) {
-    if (! str_ends_with($uri, ".js")) {
+    if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css")) {
         $uri = $uri . ".js";
         $uri = trim($uri, "/");
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
