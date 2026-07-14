@@ -44,20 +44,18 @@ class TModal {
             transition: opacity .3s ease;
         }
 
-        .tmodal-overlay.show{
+        .tmodal-overlay.tmodal-show{
             display: flex;
             opacity: 1;
         }
 
-        .error_text{
+        .tmodal_error_text{
             color: #dc3545;
-            font-size: 12px;
-            display: block;
-            font-weight: 500;
-            min-height: 18px;
+            font-size: 13.6px;
+            padding-bottom: 10px;
         }
 
-        .error_text.show{
+        .tmodal_error_text.tmodal-show{
             display: block;
         }
 
@@ -74,7 +72,7 @@ class TModal {
             opacity: 0;
         }
 
-        .tmodal-overlay.show .tmodal{
+        .tmodal-overlay.tmodal-show .tmodal{
             transform: scale(1);
             opacity: 1;
         }
@@ -155,8 +153,8 @@ class TModal {
 
         .tmodal-label{
             display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
+            margin-bottom: 2px;
+            font-size: 15px;
             font-weight: 600;
             color: #333;
         }
@@ -176,9 +174,9 @@ class TModal {
             color: #1a1a1a;
         }
 
-        .tmodal-input.error,
-        .tmodal-textarea.error,
-        .tmodal-select.error{
+        .tmodal-input.tmodal-error,
+        .tmodal-textarea.tmodal-error,
+        .tmodal-select.tmodal-error{
             border-color: #dc3545;
             background: #fff5f5;
         }
@@ -191,9 +189,9 @@ class TModal {
             box-shadow: 0 0 0 3px rgba(0,102,204,.1);
         }
 
-        .tmodal-input.error:focus,
-        .tmodal-textarea.error:focus,
-        .tmodal-select.error:focus{
+        .tmodal-input.tmodal-error:focus,
+        .tmodal-textarea.tmodal-error:focus,
+        .tmodal-select.tmodal-error:focus{
             border-color: #dc3545;
             box-shadow: 0 0 0 3px rgba(220,53,69,.1);
         }
@@ -210,6 +208,7 @@ class TModal {
         }
 
         .tmodal-footer{
+            margin-top:10px;
             padding: 16px 24px;
             display: flex;
             justify-content: flex-end;
@@ -317,36 +316,35 @@ class TModal {
         document.head.appendChild(style);
     }
 
-    static errStr(str = null, errorString = "err_"){
-        if(! str) return errorString;
-        if(typeof str == "string"){
+    static errStr(str = null, errorString = "err_t_") {
+        if (!str) return errorString;
+        if (typeof str == "string") {
             return `${errorString}${str}`;
         }
     }
 
-    static errStrId(str = null, errorString = "err_"){
-        if(! str) return `#${errorString}`;
-        if(typeof str == "string"){
+    static errStrId(str = null, errorString = "err_t_") {
+        if (!str) return `#${errorString}`;
+        if (typeof str == "string") {
             return `#${errorString}${str}`;
         }
     }
 
-    static resetErrorStr(errorClass = "error_text"){
+    static resetErrorStr(errorClass = "tmodal_error_text") {
         let elm = undefined;
-        if(errorClass.startsWith(".")){
+        if (errorClass.startsWith(".")) {
             elm = document.querySelectorAll(errorClass);
-        }else{
+        } else {
             elm = document.querySelectorAll(`.${errorClass}`);
         }
         elm.forEach(element => {
             element.innerHTML = "";
-            element.classList.remove("show");
         });
     }
 
-    static clearFieldErrors(){
-        document.querySelectorAll('.tmodal-input.error, .tmodal-textarea.error, .tmodal-select.error').forEach(el => {
-            el.classList.remove('error');
+    static clearFieldErrors() {
+        document.querySelectorAll('.tmodal-input.tmodal-error, .tmodal-textarea.tmodal-error, .tmodal-select.tmodal-error').forEach(el => {
+            el.classList.remove('tmodal-error');
         });
     }
 
@@ -359,7 +357,7 @@ class TModal {
                 if (typeof rule === 'string') {
                     rules.push(rule);
                 } else if (Array.isArray(rule)) {
-                    rules.push({name: rule[0], value: rule[1]});
+                    rules.push({ name: rule[0], value: rule[1] });
                 } else if (typeof rule === 'object') {
                     rules.push(rule);
                 }
@@ -382,21 +380,21 @@ class TModal {
             if (validation.ip) rules.push('ip');
             if (validation.trim) rules.push('trim');
             if (validation.optional) rules.push('optional');
-            
-            if (validation.min) rules.push({name: 'min', value: validation.min});
-            if (validation.label) rules.push({name: "label", value: validation.label});
-            if (validation.max) rules.push({name: 'max', value: validation.max});
-            if (validation.minChars) rules.push({name: 'minChars', value: validation.minChars});
-            if (validation.maxChars) rules.push({name: 'maxChars', value: validation.maxChars});
-            if (validation.length) rules.push({name: 'length', value: validation.length});
-            if (validation.equal) rules.push({name: 'equal', value: validation.equal});
-            if (validation.regex) rules.push({name: 'regex', value: validation.regex});
-            if (validation.startsWith) rules.push({name: 'startsWith', value: validation.startsWith});
-            if (validation.endsWith) rules.push({name: 'endsWith', value: validation.endsWith});
-            if (validation.contain) rules.push({name: 'contain', value: validation.contain});
-            if (validation.exclude) rules.push({name: 'exclude', value: validation.exclude});
-            if (validation.in) rules.push({name: 'in', value: validation.in});
-            if (validation.notIn) rules.push({name: 'notIn', value: validation.notIn});
+
+            if (validation.min) rules.push({ name: 'min', value: validation.min });
+            if (validation.label) rules.push({ name: "label", value: validation.label });
+            if (validation.max) rules.push({ name: 'max', value: validation.max });
+            if (validation.minChars) rules.push({ name: 'minChars', value: validation.minChars });
+            if (validation.maxChars) rules.push({ name: 'maxChars', value: validation.maxChars });
+            if (validation.length) rules.push({ name: 'length', value: validation.length });
+            if (validation.equal) rules.push({ name: 'equal', value: validation.equal });
+            if (validation.regex) rules.push({ name: 'regex', value: validation.regex });
+            if (validation.startsWith) rules.push({ name: 'startsWith', value: validation.startsWith });
+            if (validation.endsWith) rules.push({ name: 'endsWith', value: validation.endsWith });
+            if (validation.contain) rules.push({ name: 'contain', value: validation.contain });
+            if (validation.exclude) rules.push({ name: 'exclude', value: validation.exclude });
+            if (validation.in) rules.push({ name: 'in', value: validation.in });
+            if (validation.notIn) rules.push({ name: 'notIn', value: validation.notIn });
         }
 
         return rules;
@@ -411,23 +409,23 @@ class TModal {
 
         Object.keys(formConfig).forEach(key => {
             const field = formConfig[key];
-            
+
             if (field.validation) {
                 const rules = TModal.buildValidationRules(field);
                 const label = field.label || key.charAt(0).toUpperCase() + key.slice(1);
-                
+
                 const isOptional = rules.some(r => {
                     if (typeof r === 'string') return r === 'optional';
                     if (typeof r === 'object') return r.name === 'optional';
                     return false;
                 });
-                
+
                 const value = formData[key];
-                
+
                 if (isOptional && (value === undefined || value === null || value === '')) {
                     return;
                 }
-                
+
                 let validator = Validator.input(key).label(label);
 
                 rules.forEach(rule => {
@@ -441,7 +439,7 @@ class TModal {
                 });
 
                 const result = validator.validate();
-                
+
                 if (Validator.failed()) {
                     isValid = false;
                     errors[key] = Validator.field_error(key);
@@ -458,17 +456,14 @@ class TModal {
         Object.keys(errors).forEach(key => {
             const errorMsg = errors[key];
             if (errorMsg) {
-                // Show error on input only
                 const input = document.getElementById(key);
                 if (input) {
-                    input.classList.add('error');
+                    input.classList.add('tmodal-error');
                 }
 
-                // Show error text
-                const errorEl = document.getElementById(`err_${key}`);
+                const errorEl = document.getElementById(`err_t_${key}`);
                 if (errorEl) {
                     errorEl.textContent = errorMsg;
-                    errorEl.classList.add('show');
                 }
             }
         });
@@ -502,11 +497,11 @@ class TModal {
             _cancelCallback: null,
 
             show() {
-                overlay.classList.add("show");
+                overlay.classList.add("tmodal-show");
             },
 
             hide() {
-                overlay.classList.remove("show");
+                overlay.classList.remove("tmodal-show");
                 TModal.resetErrorStr();
                 TModal.clearFieldErrors();
                 Validator.reset();
@@ -569,7 +564,7 @@ class TModal {
 
         const formData = config.form || {};
 
-        Object.keys(formData).forEach(async(key) => {
+        Object.keys(formData).forEach(async (key) => {
 
             let field = formData[key];
 
@@ -638,36 +633,36 @@ class TModal {
 
                 input.className =
                     "tmodal-select " + (field.class || "");
-                    
+
                 if (Array.isArray(field.options)) {
 
-                    if(field.config){
+                    if (field.config) {
                         let conf = field.config;
                         let value = conf.value ?? "value";
                         let label = conf.label ?? "label";
                         let spl = [];
                         let opt = field.options;
-                        for(let op in opt){
+                        for (let op in opt) {
                             let separator = conf.separator ?? "";
                             let lbl = "";
                             let lblarr = [];
                             let labl = opt[op][label];
-                            if(Array.isArray(label)){
-                                for(let l in label){
+                            if (Array.isArray(label)) {
+                                for (let l in label) {
                                     lblarr = [...lblarr, opt[op][label[l]]];
                                 }
                                 lbl = lblarr.join(separator);
-                            }else{
+                            } else {
                                 lbl = labl;
                             }
                             spl[op] = { value: opt[op][value], label: lbl };
                         }
-                        if(typeof field?.config.index && field?.config.index == false){
+                        if (typeof field?.config.index && field?.config.index == false) {
                             field.options = spl;
-                        }else{
-                            field.options = [{value: "", label: `${field?.config?.index ?? "Select Item"}`},...spl];
+                        } else {
+                            field.options = [{ value: "", label: `${field?.config?.index ?? "Select Item"}` }, ...spl];
                         }
-                        
+
                     }
 
                     field.options.forEach((opt) => {
@@ -690,8 +685,8 @@ class TModal {
             }
 
             /* attributes */
-            if(field.required && field.required == true){
-                input.setAttribute("required","");
+            if (field.required && field.required == true) {
+                input.setAttribute("required", "");
             }
             if (field.attributes) {
 
@@ -710,11 +705,11 @@ class TModal {
             }
 
             let err = document.createElement("div");
-            err.className ="error_text";
-            err.setAttribute("id", `err_${input.id}`);
+            err.className = "tmodal_error_text";
+            err.setAttribute("id", `err_t_${input.id}`);
             wrapper.appendChild(input);
             wrapper.appendChild(err);
-            
+
             form.appendChild(wrapper);
         });
 
@@ -787,7 +782,7 @@ class TModal {
 
             if (config.form) {
                 const validationResult = TModal.validateForm(data, config.form);
-                
+
                 if (!validationResult.isValid) {
                     TModal.displayErrors(validationResult.errors);
                     return;
