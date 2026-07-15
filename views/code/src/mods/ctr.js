@@ -185,6 +185,14 @@ class CtrClass {
         }
     }
 
+    /**
+        Ctr.set_loading(true, "#mapContainer", 32, { 
+            preserveMethod: 'wrapper'  // For complex widgets
+        });
+        Ctr.set_loading(true, "#simpleTable", 24, { 
+            preserveMethod: 'height'   // For simple tables
+        });
+     */
     set_loading(isLoading, selector, size = 24, options = {}) {
         let elements = [];
         let border = 3;
@@ -203,7 +211,7 @@ class CtrClass {
         }
 
         const defaults = {
-            preserveMethod: 'height',
+            preserveMethod: 'wrapper',
             preserveScrollPosition: true,
             loadingBackground: "rgb(248, 250, 252,0)",
             loadingText: '',
