@@ -185,7 +185,7 @@ class CtrClass {
         }
     }
 
-    set_loading(isLoading, selector, size = 24) {
+    set_loading(isLoading, selector, size = 24, options = {}) {
         let elements = [];
         let border = 3;
         if (size <= 10) {
@@ -201,6 +201,15 @@ class CtrClass {
         } else {
             border = 7;
         }
+
+        const defaults = {
+            preserveMethod: 'height',
+            preserveScrollPosition: true,
+            loadingBackground: "rgb(248, 250, 252,0)",
+            loadingText: '',
+            minHeight: 100
+        };
+        const config = { ...defaults, ...options };
 
         if (typeof selector == "string") {
             if (selector.charAt(0) === "#") {
@@ -232,47 +241,176 @@ class CtrClass {
         elements.forEach(element => {
             if (isLoading) {
                 if (!this.cacheMap.has(element)) {
-                    const originalDisplay = element.style.display || getComputedStyle(element).display;
-                    this.cacheMap.set(element, {
-                        originalDisplay: originalDisplay,
-                        originalParent: element.parentNode,
-                        nextSibling: element.nextSibling
-                    });
+                    const rect = element.getBoundingClientRect();
+                    const computedStyle = getComputedStyle(element);
+
+                    if (config.preserveMethod === 'wrapper') {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'loading-wrapper';
+
+                        const wrapperStyles = {
+                            display: 'block',
+                            width: rect.width + 'px',
+                            minHeight: Math.max(rect.height, config.minHeight) + 'px',
+                            height: computedStyle.height || 'auto',
+                            position: 'relative',
+                            boxSizing: 'border-box'
+                        };
+
+                        Object.keys(wrapperStyles).forEach(key => {
+                            wrapper.style[key] = wrapperStyles[key];
+                        });
+
+                        element.parentNode.insertBefore(wrapper, element);
+                        wrapper.appendChild(element);
+
+                        this.cacheMap.set(element, {
+                            method: 'wrapper',
+                            wrapper: wrapper,
+                            originalDisplay: element.style.display || computedStyle.display,
+                            scrollTop: config.preserveScrollPosition ? window.pageYOffset || document.documentElement.scrollTop : 0
+                        });
+                    } else {
+                        const originalDisplay = element.style.display || computedStyle.display;
+                        const originalHeight = element.style.height || computedStyle.height;
+                        const originalMinHeight = element.style.minHeight || computedStyle.minHeight;
+                        const originalPadding = element.style.padding || computedStyle.padding;
+                        const originalMargin = element.style.margin || computedStyle.margin;
+                        const originalOverflow = element.style.overflow || computedStyle.overflow;
+
+                        this.cacheMap.set(element, {
+                            method: 'height',
+                            originalDisplay: originalDisplay,
+                            originalHeight: originalHeight,
+                            originalMinHeight: originalMinHeight,
+                            originalPadding: originalPadding,
+                            originalMargin: originalMargin,
+                            originalOverflow: originalOverflow,
+                            rectHeight: rect.height,
+                            rectWidth: rect.width,
+                            scrollTop: config.preserveScrollPosition ? window.pageYOffset || document.documentElement.scrollTop : 0
+                        });
+                    }
                 }
 
-                element.style.display = 'none';
-
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'loading-container';
-                loadingDiv.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 2rem;
-                    gap: 0.75rem;
-                    min-height: 100px;
-                `;
-
-                loadingDiv.innerHTML = `
-                    <div style="
-                        width: ${size}px;
-                        height: ${size}px;
-                        border: ${border}px solid #e2e8f0;
-                        border-top-color: #00ccff;
-                        border-radius: 50%;
-                        animation: spin 0.8s linear infinite;
-                    "></div>
-                    <style>
-                        @keyframes spin {
-                            to { transform: rotate(360deg); }
-                        }
-                    </style>
-                `;
-
-                element.parentNode.insertBefore(loadingDiv, element.nextSibling);
-
                 const cache = this.cacheMap.get(element);
-                cache.loadingElement = loadingDiv;
+
+                if (config.preserveMethod === 'wrapper') {
+                    const child = cache.wrapper.querySelector(':scope > *');
+                    if (child) {
+                        child.style.display = 'none';
+                    }
+
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'loading-indicator';
+                    loadingDiv.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2rem;
+                        gap: 0.75rem;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: ${config.loadingBackground};
+                        border-radius: 6px;
+                        flex-direction: ${config.loadingText ? 'column' : 'row'};
+                    `;
+
+                    let spinnerHTML = `
+                        <div style="
+                            width: ${size}px;
+                            height: ${size}px;
+                            border: ${border}px solid #e2e8f0;
+                            border-top-color: #00ccff;
+                            border-radius: 50%;
+                            animation: spin 0.8s linear infinite;
+                            flex-shrink: 0;
+                        "></div>
+                    `;
+
+                    if (config.loadingText) {
+                        spinnerHTML += `
+                            <span style="color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">
+                                ${config.loadingText}
+                            </span>
+                        `;
+                    }
+
+                    loadingDiv.innerHTML = spinnerHTML + `
+                        <style>
+                            @keyframes spin {
+                                to { transform: rotate(360deg); }
+                            }
+                        </style>
+                    `;
+
+                    cache.wrapper.appendChild(loadingDiv);
+                    cache.loadingElement = loadingDiv;
+
+                } else {
+                    element.style.display = 'none';
+
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'loading-container';
+
+                    let minHeight = Math.max(cache.rectHeight, config.minHeight) + 'px';
+                    if (cache.originalHeight && cache.originalHeight !== 'auto') {
+                        minHeight = cache.originalHeight;
+                    }
+
+                    loadingDiv.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2rem;
+                        gap: 0.75rem;
+                        min-height: ${minHeight};
+                        height: ${cache.originalHeight || 'auto'};
+                        width: ${cache.rectWidth}px;
+                        box-sizing: border-box;
+                        background: ${config.loadingBackground};
+                        border-radius: 6px;
+                        flex-direction: ${config.loadingText ? 'column' : 'row'};
+                    `;
+
+                    let spinnerHTML = `
+                        <div style="
+                            width: ${size}px;
+                            height: ${size}px;
+                            border: ${border}px solid #e2e8f0;
+                            border-top-color: #00ccff;
+                            border-radius: 50%;
+                            animation: spin 0.8s linear infinite;
+                            flex-shrink: 0;
+                        "></div>
+                    `;
+
+                    if (config.loadingText) {
+                        spinnerHTML += `
+                            <span style="color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">
+                                ${config.loadingText}
+                            </span>
+                        `;
+                    }
+
+                    loadingDiv.innerHTML = spinnerHTML + `
+                        <style>
+                            @keyframes spin {
+                                to { transform: rotate(360deg); }
+                            }
+                        </style>
+                    `;
+
+                    element.parentNode.insertBefore(loadingDiv, element.nextSibling);
+                    cache.loadingElement = loadingDiv;
+                }
+
+                if (config.preserveScrollPosition && cache.scrollTop) {
+                    window.scrollTo(0, cache.scrollTop);
+                }
 
             } else {
                 if (this.cacheMap.has(element)) {
@@ -282,7 +420,36 @@ class CtrClass {
                         cache.loadingElement.remove();
                     }
 
-                    element.style.display = cache.originalDisplay || '';
+                    if (cache.method === 'wrapper') {
+                        const child = cache.wrapper.querySelector(':scope > *');
+                        if (child) {
+                            child.style.display = cache.originalDisplay || '';
+                        }
+
+                        cache.wrapper.parentNode.insertBefore(element, cache.wrapper);
+                        cache.wrapper.remove();
+                    } else {
+                        element.style.display = cache.originalDisplay || '';
+                        if (cache.originalHeight) {
+                            element.style.height = cache.originalHeight;
+                        }
+                        if (cache.originalMinHeight) {
+                            element.style.minHeight = cache.originalMinHeight;
+                        }
+                        if (cache.originalPadding) {
+                            element.style.padding = cache.originalPadding;
+                        }
+                        if (cache.originalMargin) {
+                            element.style.margin = cache.originalMargin;
+                        }
+                        if (cache.originalOverflow) {
+                            element.style.overflow = cache.originalOverflow;
+                        }
+                    }
+
+                    if (config.preserveScrollPosition && cache.scrollTop) {
+                        window.scrollTo(0, cache.scrollTop);
+                    }
 
                     this.cacheMap.delete(element);
                 } else {
