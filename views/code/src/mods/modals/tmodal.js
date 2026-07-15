@@ -486,6 +486,7 @@ class TModal {
 
         modal.className = `tmodal ${config.class || ""}`;
         modal.id = config.id || "tmodal";
+        config.form_id = config.form_id ?? "tmodal-form";
         const instance = {
             _submitCallback: null,
             _cancelCallback: null,
@@ -543,6 +544,14 @@ class TModal {
                     this._submitCallback = callback;
                 }
                 return this;
+            },
+
+            get form_id() {
+                return config.form_id;
+            },
+
+            get form() {
+                return document.getElementById(config.form_id);
             },
 
             onCancel(callback) {

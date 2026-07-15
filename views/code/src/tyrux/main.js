@@ -1,5 +1,6 @@
 import { Tyrux } from "./lib/tyrux.js";
 import { headerHandler, errorHandler, CtrLoading } from "../../tyrax/config.js";
+import Ctr from "../mods/ctr.js";
 
 
 const baseURL = "";   //Backend url end-point
@@ -101,12 +102,26 @@ const tyrequest = { // For raw/universal request :: CodeYRO
 const configure = {
     _mergeOptions(option, tyrax) {
         const global = tyrax.config || {};
-        if(option?.loading){
+        if (option?.loading) {
+            let fc1 = undefined;
+            let fc2 = undefined;
+            if (typeof option?.loading == "string") {
+                fc1 = () => Ctr.set_loading(true, option?.loading);
+                fc2 = () => Ctr.set_loading(false, option?.loading);
+            } else if (typeof option?.loading == "object") {
+                let ld = option?.loading;
+                fc1 = () => Ctr.set_loading(true, ld.id ?? ld.element, ld.size);
+                fc2 = () => Ctr.set_loading(false, ld.id ?? ld.element, ld.size);
+            } else {
+                fc1 = () => CtrLoading.wait();
+                fc2 = () => CtrLoading.done();
+            }
+
             if (!option?.wait) {
-                option.wait = ()=>CtrLoading.wait();
+                option.wait = () => fc1();
             }
             if (!option?.done) {
-                option.done = ()=>CtrLoading.done();
+                option.done = () => fc2();
             }
         }
         const merged = {
@@ -254,7 +269,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         };
         delete option.data;
         option.method = "POST";
-        if(option.loading == undefined){
+        if (option.loading == undefined) {
             option.loading = false;
         }
         tyrux(configure._mergeOptions(option, this));
@@ -308,7 +323,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
         return result;
     },
 
-    async insert(options = {...opt, data: undefined}) {
+    async insert(options = { ...opt, data: undefined }) {
         return await this.ctrsync({
             table: options.table,
             action: "insert",
@@ -318,7 +333,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async update(options = {...opt, update: undefined }) {
+    async update(options = { ...opt, update: undefined }) {
         return await this.ctrsync({
             table: options.table,
             action: "update",
@@ -329,7 +344,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async remove(options = {...opt }) {
+    async remove(options = { ...opt }) {
         return await this.ctrsync({
             table: options.table,
             action: "delete",
@@ -339,7 +354,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async findOne(options = {...opt }) {
+    async findOne(options = { ...opt }) {
         return await this.ctrsync({
             action: "findOne",
             table: options.table,
@@ -350,7 +365,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async select(options = {...opt }) {
+    async select(options = { ...opt }) {
         return await this.ctrsync({
             action: "select",
             table: options.table,
@@ -361,7 +376,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async query(options = {...opt}) {
+    async query(options = { ...opt }) {
         return await this.ctrsync({
             action: "query",
             query: options.query,
@@ -371,7 +386,7 @@ const tyrax = { // tyrux default config :: CodeTazeR
             loading: options.loading
         });
     },
-    async userData(){
+    async userData() {
         let data = await this.ctrsync({
             action: "userdata",
             dataOnly: true
@@ -379,13 +394,13 @@ const tyrax = { // tyrux default config :: CodeTazeR
 
         return data;
     },
-    async setUserData(data){
+    async setUserData(data) {
         return await this.ctrsync({
             action: "setUserData",
             data: data ?? {}
         });
     },
-    async deleteUserData(options = {...opt}){
+    async deleteUserData(options = { ...opt }) {
         return await this.ctrsync({
             action: "removeUserData",
             data: options.data ?? {},

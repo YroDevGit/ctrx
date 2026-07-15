@@ -5,6 +5,7 @@ class CtrClass {
         this.frontend = "";
         this.backend = "";
         this.func = "";
+        this.cacheMap = new Map();
     }
 
     page($page = "", params = {}) {
@@ -182,6 +183,113 @@ class CtrClass {
         } else {
             console.warn(`No elements found for selector: "${selector}"`);
         }
+    }
+
+    set_loading(isLoading, selector, size = 24) {
+        let elements = [];
+        let border = 3;
+        if (size <= 10) {
+            border = 2;
+        } else if (size <= 20) {
+            border = 3;
+        } else if (size <= 30) {
+            border = 4;
+        } else if (size <= 40) {
+            border = 5;
+        } else if (size <= 50) {
+            border = 6;
+        } else {
+            border = 7;
+        }
+
+        if (typeof selector == "string") {
+            if (selector.charAt(0) === "#") {
+                const element = document.getElementById(selector.substring(1));
+                if (element) {
+                    elements.push(element);
+                }
+            } else if (selector.charAt(0) === ".") {
+                elements = Array.from(document.querySelectorAll(selector));
+            } else {
+                const element = document.getElementById(selector);
+                if (element) {
+                    elements.push(element);
+                }
+            }
+        } else if (selector instanceof HTMLElement) {
+            elements.push(selector);
+        } else if (Array.isArray(selector)) {
+            selector.forEach(sel => {
+                elements.push(sel);
+            });
+        }
+
+        if (elements.length === 0) {
+            console.warn(`No elements found for selector: "${selector}"`);
+            return;
+        }
+
+        elements.forEach(element => {
+            if (isLoading) {
+                if (!this.cacheMap.has(element)) {
+                    const originalDisplay = element.style.display || getComputedStyle(element).display;
+                    this.cacheMap.set(element, {
+                        originalDisplay: originalDisplay,
+                        originalParent: element.parentNode,
+                        nextSibling: element.nextSibling
+                    });
+                }
+
+                element.style.display = 'none';
+
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading-container';
+                loadingDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 2rem;
+                    gap: 0.75rem;
+                    min-height: 100px;
+                `;
+
+                loadingDiv.innerHTML = `
+                    <div style="
+                        width: ${size}px;
+                        height: ${size}px;
+                        border: ${border}px solid #e2e8f0;
+                        border-top-color: #00ccff;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                    "></div>
+                    <style>
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+
+                element.parentNode.insertBefore(loadingDiv, element.nextSibling);
+
+                const cache = this.cacheMap.get(element);
+                cache.loadingElement = loadingDiv;
+
+            } else {
+                if (this.cacheMap.has(element)) {
+                    const cache = this.cacheMap.get(element);
+
+                    if (cache.loadingElement && cache.loadingElement.parentNode) {
+                        cache.loadingElement.remove();
+                    }
+
+                    element.style.display = cache.originalDisplay || '';
+
+                    this.cacheMap.delete(element);
+                } else {
+                    console.warn(`No cached content found for element: "${selector}"`);
+                }
+            }
+        });
     }
 
     add_html(selector, strhtml) {
