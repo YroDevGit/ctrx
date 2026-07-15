@@ -51,7 +51,7 @@ class TModal {
 
         .tmodal_error_text{
             color: #dc3545;
-            font-size: 13.6px;
+            font-size: 14px;
             padding-bottom: 10px;
         }
 
@@ -350,8 +350,6 @@ class TModal {
 
     static buildValidationRules(fieldConfig) {
         const rules = [];
-
-        // Handle array validation
         if (Array.isArray(fieldConfig.validation)) {
             fieldConfig.validation.forEach(rule => {
                 if (typeof rule === 'string') {
@@ -365,7 +363,6 @@ class TModal {
             return rules;
         }
 
-        // Handle object validation
         if (fieldConfig.validation) {
             const validation = fieldConfig.validation;
 
@@ -489,12 +486,42 @@ class TModal {
 
         modal.className = `tmodal ${config.class || ""}`;
         modal.id = config.id || "tmodal";
-
-        /* instance */
         const instance = {
-
             _submitCallback: null,
             _cancelCallback: null,
+
+            displayErrors(errors, autoReset = true) {
+                const formElement = this.form;
+
+                if (!formElement) {
+                    console.error('TModal: Form not found for displaying errors');
+                    return;
+                }
+
+                if (autoReset) {
+                    TModal.clearFieldErrors();
+                    TModal.resetErrorStr();
+                }
+
+                Object.keys(errors).forEach(fieldName => {
+                    const errorMsg = errors[fieldName];
+                    if (!errorMsg) return;
+
+                    const input = formElement.querySelector(`#${fieldName}`);
+                    if (input) {
+                        input.classList.add('tmodal-error');
+                    } else {
+                        console.error(`TModal: Input with ID '${fieldName}' not found`);
+                    }
+
+                    const errorEl = formElement.querySelector(`#err_t_${fieldName}`);
+                    if (errorEl) {
+                        errorEl.textContent = errorMsg;
+                    } else {
+                        console.error(`TModal: Error element with ID 'err_t_${fieldName}' not found`);
+                    }
+                });
+            },
 
             show() {
                 overlay.classList.add("tmodal-show");
@@ -538,7 +565,7 @@ class TModal {
 
         const title = document.createElement("span");
 
-        title.innerText = config.title || "CTRX MODAL";
+        title.innerHTML = config.title || "CTRX MODAL";
 
         const closeBtn = document.createElement("button");
 
@@ -599,7 +626,7 @@ class TModal {
 
                 label.setAttribute("for", key);
 
-                label.innerText =
+                label.innerHTML =
                     field.label ||
                     key.charAt(0).toUpperCase() + key.slice(1);
 
@@ -669,16 +696,12 @@ class TModal {
 
                         const option = document.createElement("option");
                         if (typeof opt === "object") {
-
                             option.value = opt.value;
-                            option.textContent = opt.label;
-
+                            option.innerHTML = opt.label;
                         } else {
-
                             option.value = opt;
-                            option.textContent = opt;
+                            option.innerHTML = opt;
                         }
-
                         input.appendChild(option);
                     });
                 }

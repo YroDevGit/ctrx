@@ -19,11 +19,13 @@ class Validator
     private array $rules = [];
     private static array $collect = [];
     private static array $errorList = [];
+    private array $error_bucket = [];
 
     private static $msg = "";
 
     public function __construct(string $field)
     {
+        $this->error_bucket = [];
         $this->field = $field;
     }
 
@@ -51,56 +53,83 @@ class Validator
         return $this;
     }
 
-    public function required(): self
+    public function required(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['required'] = $message;
+        }
         $this->rules[] = 'required';
         return $this;
     }
 
-    public function email(): self
+    public function email(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['email'] = $message;
+        }
         $this->rules[] = 'email';
         return $this;
     }
 
-    public function number(): self
+    public function number(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['number'] = $message;
+        }
         $this->rules[] = 'number';
         return $this;
     }
 
-    public function string(): self
+    public function string(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['string'] = $message;
+        }
         $this->rules[] = 'string';
         return $this;
     }
 
-    public function equal(string $val): self
+    public function equal(string $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['equal'] = $message;
+        }
         $this->rules[] = "equal:$val";
         return $this;
     }
 
-    public function max(int|float $val): self
+    public function max(int|float $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['max'] = $message;
+        }
         $this->rules[] = "max:$val";
         return $this;
     }
 
-    public function min(int|float $val): self
+    public function min(int|float $val,  string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['min'] = $message;
+        }
         $this->rules[] = "min:$val";
         return $this;
     }
 
-    public function minChars(int $val): self
+    public function minChars(int $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['min_chars'] = $message;
+        }
         $this->rules[] = "min_chars:$val";
         return $this;
     }
 
-    public function maxChars(int $val): self
+    public function maxChars(int $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['max_chars'] = $message;
+        }
         $this->rules[] = "max_chars:$val";
         return $this;
     }
@@ -123,8 +152,11 @@ class Validator
         return $this;
     }
 
-    public function regex(string $pattern): self
+    public function regex(string $pattern, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['regex'] = $message;
+        }
         $this->rules[] = "regex:$pattern";
         return $this;
     }
@@ -158,14 +190,20 @@ class Validator
         return $this;
     }
 
-    public function length(int $len): self
+    public function length(int $len, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['length'] = $message;
+        }
         $this->rules[] = "length:$len";
         return $this;
     }
 
-    public function in_table(string $tablecolumn): self
+    public function in_table(string $tablecolumn, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['in_table'] = $message;
+        }
         $this->rules[] = "in_table:$tablecolumn";
         return $this;
     }
@@ -178,14 +216,20 @@ class Validator
         return $this;
     }
 
-    public function startsWith(string $val): self
+    public function startsWith(string $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['starts_with'] = $message;
+        }
         $this->rules[] = "starts_with:$val";
         return $this;
     }
 
-    public function endsWith(string $val): self
+    public function endsWith(string $val, string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['ends_with'] = $message;
+        }
         $this->rules[] = "ends_with:$val";
         return $this;
     }
@@ -196,38 +240,65 @@ class Validator
         return $this;
     }
 
-    public function alpha(): self
+    public function alpha(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['alpha'] = $message;
+        }
         $this->rules[] = "alpha";
         return $this;
     }
 
-    public function alphanumeric(): self
+    public function alphaStrict(string|null $message = null)
     {
+        if ($message) {
+            $this->error_bucket['alphaStrict'] = $message;
+        }
+        $this->rules[] = "alphaStrict";
+        return $this;
+    }
+
+    public function alphanumeric(string|null $message = null): self
+    {
+        if ($message) {
+            $this->error_bucket['alphanumeric'] = $message;
+        }
         $this->rules[] = "alphanumeric";
         return $this;
     }
 
-    public function date(): self
+    public function date(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['date'] = $message;
+        }
         $this->rules[] = "date";
         return $this;
     }
 
-    public function url(): self
+    public function url(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['url'] = $message;
+        }
         $this->rules[] = "url";
         return $this;
     }
 
-    public function ip(): self
+    public function ip(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['ip'] = $message;
+        }
         $this->rules[] = "ip";
         return $this;
     }
 
-    public function boolean(): self
+    public function boolean(string|null $message = null): self
     {
+        if ($message) {
+            $this->error_bucket['boolean'] = $message;
+        }
         $this->rules[] = "boolean";
         return $this;
     }
@@ -242,7 +313,7 @@ class Validator
     {
         $rulesString = implode('|', $this->rules);
         $label = $this->label ?: $this->field;
-        $ret = self::check($this->field, $label, $rulesString);
+        $ret = self::check($this->field, $label, $rulesString, null, $this->error_bucket);
         $this->label = null;
         $this->field = null;
         $this->rules = [];
@@ -293,7 +364,17 @@ class Validator
         self::$errorList[$rule] = $error;
     }
 
-    public static function check($postname, $label, $rules, $allpost = null)
+    public static function getErrorMsg($rule, $label, $errorMessages, $default)
+    {
+        $err = $errorMessages[$rule] ?? null;
+        if (! $err) {
+            $err = $default;
+        }
+        $newText = str_replace(":?", $label, $err);
+        return $newText;
+    }
+
+    public static function check($postname, $label, $rules, $allpost = null, $errorMessages = [])
     {
         $postdata = [];
         $errorList = self::$errorList;
@@ -344,20 +425,20 @@ class Validator
             }
 
             if ($ruleName === 'required' && $value === '') {
-                self::addError($postname, "$label is required.");
-                self::addErrs($postname, "required.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label is required."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "required."));
             }
 
             if ($ruleName === 'min') {
                 if (is_numeric($value)) {
                     if ($value < (float)$ruleParam) {
-                        self::addError($postname, "$label must be at least $ruleParam.");
-                        self::addErrs($postname, "must be at least $ruleParam.");
+                        self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be at least $ruleParam."));
+                        self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be at least $ruleParam."));
                     }
                 } else {
                     if (strlen($value) < (int)$ruleParam) {
-                        self::addError($postname, "$label must be at least $ruleParam characters.");
-                        self::addErrs($postname, "must be at least $ruleParam characters.");
+                        self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be at least $ruleParam characters."));
+                        self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be at least $ruleParam characters."));
                     }
                 }
             }
@@ -365,21 +446,21 @@ class Validator
             if ($ruleName === 'max') {
                 if (is_numeric($value)) {
                     if ($value > (float)$ruleParam) {
-                        self::addError($postname, "$label must not exceed $ruleParam.");
-                        self::addErrs($postname, "must not exceed $ruleParam.");
+                        self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must not exceed $ruleParam."));
+                        self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must not exceed $ruleParam."));
                     }
                 } else {
                     if (strlen($value) > (int)$ruleParam) {
-                        self::addError($postname, "$label must not exceed $ruleParam characters.");
-                        self::addErrs($postname, "must not exceed $ruleParam characters.");
+                        self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must not exceed $ruleParam characters."));
+                        self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must not exceed $ruleParam characters."));
                     }
                 }
             }
 
             if ($ruleName === 'min_chars') {
                 if (strlen((string)$value) < (int)$ruleParam) {
-                    self::addError($postname, "$label must be at least $ruleParam characters.");
-                    self::addErrs($postname, "must be at least $ruleParam characters.");
+                    self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be at least $ruleParam characters."));
+                    self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be at least $ruleParam characters."));
                 }
             }
 
@@ -403,15 +484,15 @@ class Validator
                     if (! $hasIt) {
                         $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
                         if (! $result) {
-                            self::addError($postname, "$label has invalid value.");
-                            self::addErrs($postname, "Invalid value.");
+                            self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label has invalid value."));
+                            self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "Invalid value."));
                         }
                     }
                 } else {
                     $result = \Classes\DB::findOne($tblname, [$tblcolumn => $value]);
                     if (! $result) {
-                        self::addError($postname, "$label has invalid value.");
-                        self::addErrs($postname, "Invalid value.");
+                        self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label has invalid value."));
+                        self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "Invalid value."));
                     }
                 }
             }
@@ -432,29 +513,34 @@ class Validator
 
             if ($ruleName === 'max_chars') {
                 if (strlen((string)$value) > (int)$ruleParam) {
-                    self::addError($postname, "$label must not exceed $ruleParam characters.");
-                    self::addErrs($postname, "must not exceed $ruleParam characters.");
+                    self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must not exceed $ruleParam characters."));
+                    self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must not exceed $ruleParam characters."));
                 }
             }
 
             if ($ruleName === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                self::addError($postname, "$label must be a valid email address.");
-                self::addErrs($postname, "invalid email address.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid email address."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid email address."));
             }
 
             if (($ruleName === 'string' || $ruleName === 'text') && !is_string($value)) {
-                self::addError($postname, "$label must be a string.");
-                self::addErrs($postname, "must be a string.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a string."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a string."));
             }
 
             if (($ruleName === 'numeric' || $ruleName === 'number') && !is_numeric($value)) {
-                self::addError($postname, "$label must be a number.");
-                self::addErrs($postname, "must be a number.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a number."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a number."));
             }
 
-            if ($ruleName === 'alpha' && !ctype_alpha($value)) {
-                self::addError($postname, "$label must contain only letters.");
-                self::addErrs($postname, "must contain only letters.");
+            if ($ruleName === 'alpha' && !ctype_alpha(str_replace(" ", "", $value))) {
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters."));
+            }
+
+            if ($ruleName === 'alphaStrict' && !ctype_alpha($value)) {
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters."));
             }
 
             if ($ruleName == "contain" || $ruleName == "having") {
@@ -482,14 +568,14 @@ class Validator
             }
 
             if ($ruleName === 'alphanumeric' && !ctype_alnum($value)) {
-                self::addError($postname, "$label must contain only letters and numbers.");
-                self::addErrs($postname, "must contain only letters and numbers.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters and numbers."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters and numbers."));
             }
 
             if ($ruleName === 'regex' && $ruleParam) {
                 if (!preg_match($ruleParam, $value)) {
-                    self::addError($postname, "$label format is invalid.");
-                    self::addErrs($postname, "format is invalid.");
+                    self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label format is invalid."));
+                    self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "format is invalid."));
                 }
             }
 
@@ -520,44 +606,44 @@ class Validator
             }
 
             if ($ruleName === 'date' && strtotime($value) === false) {
-                self::addError($postname, "$label must be a valid date.");
-                self::addErrs($postname, "invalid date.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid date."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid date."));
             }
 
             if ($ruleName === 'url' && !filter_var($value, FILTER_VALIDATE_URL)) {
-                self::addError($postname, "$label must be a valid URL.");
-                self::addErrs($postname, "invalid URL.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid URL."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid URL."));
             }
 
             if ($ruleName === 'ip' && !filter_var($value, FILTER_VALIDATE_IP)) {
-                self::addError($postname, "$label must be a valid IP address.");
-                self::addErrs($postname, "must be a valid IP address.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid IP address."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a valid IP address."));
             }
 
             if ($ruleName === 'boolean' && !in_array($value, [true, false, 0, 1, '0', '1'], true)) {
-                self::addError($postname, "$label must be true or false.");
-                self::addErrs($postname, "must be true or false.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be true or false."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be true or false."));
             }
 
             if ($ruleName === 'length' && strlen($value) !== (int)$ruleParam) {
-                self::addError($postname, "$label must be exactly $ruleParam characters.");
-                self::addErrs($postname, "must be exactly $ruleParam characters.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be exactly $ruleParam characters."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be exactly $ruleParam characters."));
             }
 
             if ($ruleName === 'starts_with' && !str_starts_with($value, $ruleParam)) {
-                self::addError($postname, "$label must start with $ruleParam.");
-                self::addErrs($postname, "must start with $ruleParam.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must start with $ruleParam."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must start with $ruleParam."));
             }
 
             if ($ruleName === 'ends_with' && !str_ends_with($value, $ruleParam)) {
-                self::addError($postname, "$label must end with $ruleParam.");
-                self::addErrs($postname, "must end with $ruleParam.");
+                self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must end with $ruleParam."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must end with $ruleParam."));
             }
 
             if ($ruleName === 'equal' && $ruleParam !== null) {
                 if ($value !== $ruleParam) {
-                    self::addError($postname, "$label has invalid value.");
-                    self::addErrs($postname, "invalid value.");
+                    self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label has invalid value."));
+                    self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid value."));
                 }
             }
         }
@@ -578,17 +664,53 @@ class Validator
         self::$ers = [];
     }
 
-    public static function failed()
+    public static function failed(array|string $fields = [])
     {
+        if (! $fields) return self::$failed;
+
+        if (is_array($fields)) {
+            if (empty($fields)) {
+                return self::$failed;
+            } else {
+                $errs = self::errors(true, $fields);
+                if ($errs) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+        if (is_string($fields)) {
+            if ($fields == "*") {
+                return self::$failed;
+            } else {
+                $errs = self::errors(true, $fields);
+                if ($errs) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
         return self::$failed;
     }
 
-    public static function errors($complete = true)
+    public static function errors($complete = true, array|string $fields = "*")
     {
-        return $complete ? self::$errors : self::$ers;
+        $error_list = $complete ? self::$errors : self::$ers;
+        if (! $error_list) return [];
+        if ((is_string($fields) && $fields == "*")) {
+            return $error_list;
+        }
+        if (is_string($fields) && $fields != "*") {
+            $arr = [$fields];
+            return array_intersect_key($error_list, array_flip($arr)) ?? [];
+        }
+        if (is_array($fields)) {
+            return array_intersect_key($error_list, array_flip($fields)) ?? [];
+        }
+        return [];
     }
-
-
 
     protected static function addError(string $post, string $message)
     {
