@@ -758,22 +758,59 @@ class CtrClass {
 
     }
 
-    get_selected(seletor, type = null) {
-        const select = document.querySelector(seletor);
+    get_selected(selector, type = null) {
+        const select = document.querySelector(selector);
+        if (!select) return null;
+
+        if (select.multiple) {
+            const selectedOptions = Array.from(select.selectedOptions);
+            const values = selectedOptions.map(opt => opt.value);
+            const labels = selectedOptions.map(opt => opt.text);
+
+            if (type == null) {
+                return {
+                    values: values,
+                    labels: labels,
+                    selected: selectedOptions.map(opt => ({
+                        value: opt.value,
+                        label: opt.text
+                    }))
+                };
+            }
+            if (typeof type === "string") {
+                if (type === "value" || type === "values") {
+                    return values;
+                }
+                if (type === "label" || type === "labels") {
+                    return labels;
+                }
+                if (type === "full" || type === "all") {
+                    return selectedOptions.map(opt => ({
+                        value: opt.value,
+                        label: opt.text
+                    }));
+                }
+                return null;
+            }
+            return null;
+        }
+
         const value = select.value ?? null;
         const label = select?.options[select.selectedIndex]?.text ?? null;
+
         if (type == null) {
             return { value: value, label: label };
         }
-        if (typeof type == "string") {
-            if (type == "value") {
+        if (typeof type === "string") {
+            if (type === "value") {
                 return value;
             }
-            if (type == "label") {
+            if (type === "label") {
                 return label;
             }
             return null;
         }
+        return null;
     }
 
     empty_obect(object) {

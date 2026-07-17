@@ -476,12 +476,10 @@ class TModal {
             old.parentElement.remove();
         }
 
-        /* overlay */
         const overlay = document.createElement("div");
 
         overlay.className = "tmodal-overlay";
 
-        /* modal */
         const modal = document.createElement("div");
 
         modal.className = `tmodal ${config.class || ""}`;
@@ -567,7 +565,6 @@ class TModal {
             config: config
         };
 
-        /* header */
         const header = document.createElement("div");
 
         header.className = "tmodal-header";
@@ -586,12 +583,10 @@ class TModal {
         header.appendChild(title);
         header.appendChild(closeBtn);
 
-        /* body */
         const body = document.createElement("div");
 
         body.className = "tmodal-body";
 
-        /* form */
         const form = document.createElement("form");
 
         form.id = config.form_id || "";
@@ -604,7 +599,6 @@ class TModal {
 
             let field = formData[key];
 
-            /* shortcut string */
             if (typeof field === "string") {
 
                 field = {
@@ -612,7 +606,6 @@ class TModal {
                 };
             }
 
-            /* hidden shortcut */
             if (field.hidden) {
                 field.type = "hidden";
             }
@@ -623,7 +616,6 @@ class TModal {
 
             const tag = field.tag || "input";
 
-            /* label */
             if (
                 field.label !== false &&
                 field.type !== "hidden"
@@ -642,13 +634,11 @@ class TModal {
                 wrapper.appendChild(label);
             }
 
-            /* element */
             const input = document.createElement(tag);
 
             input.name = key;
             input.id = key;
 
-            /* input */
             if (tag === "input") {
 
                 input.type = field.type || "text";
@@ -671,15 +661,22 @@ class TModal {
                 sel : {
                     tag: "select",
                     label: "Select something",
-                    options: [{value: "1", label: "Hi"},
-                    {value: "2", label: "Hello"}],
-                    onchange: (input, value)=> {console.log(value)}
+                    options: [{value: "1", label: "Hi"},{value: "2", label: "Hello"}],
+                    onchange: (input, value)=> {console.log(value)},
+                    value: 2,
+                    placeholder: "Select word"
                 }
             }*/
             if (tag === "select") {
                 input.className =
                     "tmodal-select " + (field.class || "");
                 if (Array.isArray(field.options)) {
+                    let placeholder = field.placeholder ?? field.index ?? "Select item";
+                    if (placeholder && !field.multiple) {
+                        let orgData = field.options;
+                        orgData.unshift({ value: "", label: placeholder ?? "Select Item" });
+                        field.options = orgData;
+                    }
                     if (field.config) {
                         let conf = field.config;
                         let value = conf.value ?? "value";
@@ -712,10 +709,21 @@ class TModal {
                     const onchange = field.onchange ?? field.onChange ?? undefined;
                     if (onchange && typeof onchange == "function") {
                         input.addEventListener("change", () => {
-                            const label = input?.options[input.selectedIndex]?.text ?? null;
-                            let value = input.value ?? null;
-                            let labelValue = { label: label, value: value };
-                            onchange(input, labelValue);
+                            if (field.multiple) {
+                                const selectedOptions = Array.from(input.selectedOptions);
+                                const selectedValues = selectedOptions.map(option => ({
+                                    label: option.text,
+                                    value: option.value
+                                }));
+
+                                onchange(input, selectedValues);
+
+                            } else {
+                                const label = input?.options[input.selectedIndex]?.text ?? null;
+                                let value = input.value ?? null;
+                                let labelValue = { label: label, value: value };
+                                onchange(input, labelValue);
+                            }
                         });
                     }
 
@@ -730,6 +738,13 @@ class TModal {
                         }
                         input.appendChild(option);
                     });
+                    let vval = field.value ?? field.default ?? undefined;
+                    if (field.value) {
+                        input.value = vval;
+                    }
+                    if (field.multiple) {
+                        input.setAttribute("multiple", "");
+                    }
                 }
             }
 
@@ -748,7 +763,6 @@ class TModal {
                 });
             }
 
-            /* value */
             if (field.value !== undefined) {
                 input.value = field.value;
             }
@@ -762,12 +776,10 @@ class TModal {
             form.appendChild(wrapper);
         });
 
-        /* footer */
         const footer = document.createElement("div");
 
         footer.className = "tmodal-footer";
 
-        /* close button */
         const closeFooterBtn = document.createElement("button");
 
         closeFooterBtn.type = "button";
@@ -796,7 +808,6 @@ class TModal {
             instance.hide();
         };
 
-        /* submit button (blue) */
         const submitBtn = document.createElement("button");
 
         submitBtn.type = "submit";
@@ -811,12 +822,9 @@ class TModal {
         footer.appendChild(cancelBtn);
         footer.appendChild(submitBtn);
 
-        /* append footer INSIDE form */
         form.appendChild(footer);
 
-        /* submit */
         form.onsubmit = (e) => {
-
             e.preventDefault();
 
             TModal.resetErrorStr();
@@ -824,9 +832,27 @@ class TModal {
             Validator.reset();
 
             const data = {};
-            let formData = new FormData(form);
+            const formData = new FormData(form);
+
+            const multipleSelects = form.querySelectorAll('select[multiple]');
+            const multipleSelectNames = new Set();
+
+            multipleSelects.forEach(select => {
+                multipleSelectNames.add(select.name);
+                data[select.name] = Array.from(select.selectedOptions).map(opt => opt.value);
+            });
+
             formData.forEach((value, key) => {
-                data[key] = value;
+                if (!multipleSelectNames.has(key)) {
+                    if (data[key] !== undefined) {
+                        if (!Array.isArray(data[key])) {
+                            data[key] = [data[key]];
+                        }
+                        data[key].push(value);
+                    } else {
+                        data[key] = value;
+                    }
+                }
             });
 
             if (config.form) {
