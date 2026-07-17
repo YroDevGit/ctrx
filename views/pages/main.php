@@ -5,6 +5,7 @@ $build = 1;
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,10 +17,13 @@ $build = 1;
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@400;500;700;900&display=swap');
 
     :root {
-      --primary: #00ccff;       /* Neon Blue */
+      --primary: #00ccff;
+      /* Neon Blue */
       --primary-glow: rgba(0, 204, 255, 0.4);
-      --secondary: #0d0d20;     /* Dark Navy */
-      --accent: #bb00ff;        /* Purple accent */
+      --secondary: #0d0d20;
+      /* Dark Navy */
+      --accent: #bb00ff;
+      /* Purple accent */
     }
 
     body {
@@ -46,8 +50,13 @@ $build = 1;
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 5px var(--primary); }
-      100% { box-shadow: 0 0 15px var(--primary), 0 0 30px var(--primary-glow); }
+      0% {
+        box-shadow: 0 0 5px var(--primary);
+      }
+
+      100% {
+        box-shadow: 0 0 15px var(--primary), 0 0 30px var(--primary-glow);
+      }
     }
 
     .btn-primary {
@@ -58,11 +67,13 @@ $build = 1;
       position: relative;
       overflow: hidden;
     }
+
     .btn-primary:hover {
       background: linear-gradient(135deg, rgba(0, 204, 255, 0.2) 0%, rgba(0, 204, 255, 0.1) 100%);
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(0, 204, 255, 0.2);
     }
+
     .btn-primary::after {
       content: '';
       position: absolute;
@@ -70,10 +81,13 @@ $build = 1;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
       transition: left 0.7s;
     }
-    .btn-primary:hover::after { left: 100%; }
+
+    .btn-primary:hover::after {
+      left: 100%;
+    }
 
     .feature-card {
       background: rgba(13, 13, 32, 0.7);
@@ -81,16 +95,22 @@ $build = 1;
       border-radius: 8px;
       transition: all 0.3s ease;
     }
+
     .feature-card:hover {
       border-color: var(--primary);
       transform: translateY(-5px);
       box-shadow: 0 10px 25px rgba(0, 204, 255, 0.1);
     }
-    .feature-icon { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; }
+
+    .feature-icon {
+      color: var(--primary);
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
 
     .terminal-effect {
       position: relative;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.2);
       padding: 1rem;
       border-radius: 0 5px 5px 0;
     }
@@ -104,12 +124,45 @@ $build = 1;
       background: linear-gradient(90deg, transparent, var(--primary), transparent);
       animation: scan 5s linear infinite;
     }
-    @keyframes scan { 0%{top:0%}100%{top:100%} }
 
-    .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; }
-    .copy-btn { background: rgba(0,204,255,0.1); border:1px solid rgba(0,204,255,0.3); color:var(--primary); padding:0.5rem 1rem; border-radius:4px; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }
-    .copy-btn:hover { background: rgba(0,204,255,0.2); transform: translateY(-2px); }
-    .copy-btn.copied { background: rgba(0,204,255,0.3); color:#fff; }
+    @keyframes scan {
+      0% {
+        top: 0%
+      }
+
+      100% {
+        top: 100%
+      }
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+    }
+
+    .copy-btn {
+      background: rgba(0, 204, 255, 0.1);
+      border: 1px solid rgba(0, 204, 255, 0.3);
+      color: var(--primary);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .copy-btn:hover {
+      background: rgba(0, 204, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .copy-btn.copied {
+      background: rgba(0, 204, 255, 0.3);
+      color: #fff;
+    }
   </style>
 </head>
 
@@ -132,8 +185,8 @@ $build = 1;
         <a href="#" class="btn-primary px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2">
           <i class="fab fa-github"></i> Visit Repository
         </a>
-        <a href="#" class="btn-primary px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2">
-          <i class="fas fa-download"></i> Download Now
+        <a href="https://drive.google.com/file/d/1P1RvCMcPFzs_-jLE2ddsORy9PSLE4klf/view?usp=sharing" target="_blank" class="btn-primary px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2">
+          <i class="fas fa-database"></i> Download MariaDB
         </a>
       </div>
 
@@ -183,6 +236,7 @@ $build = 1;
     <p class="text-blue-400 mb-2">&copy; <?= date('Y') ?> CTRX Framework. Built with <span class="text-purple-400">❤️</span> in PHP</p>
   </footer>
 
- <?=js('main')?>
+  <?= js('main') ?>
 </body>
+
 </html>
