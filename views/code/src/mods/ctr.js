@@ -635,28 +635,89 @@ class CtrClass {
         });
     }
 
-    setOptions(selector, options = [], config = { value: "value", label: "label", onChange: undefined, index: "Select item" }) {
-        let val = config.value ?? "value";
-        let lab = config.label ?? "label";
-        let elements = document.querySelectorAll(selector);
-        if (config.onChange && typeof config.onChange == "function") {
+    setOptions(selector, {
+        options = null,
+        config = { value: "id", label: "fullname" },
+        placeholder = "Select item",
+        value = "",
+        onChange = undefined,
+        ...rest
+    } = {}) {
+
+        const elements = document.querySelectorAll(selector);
+        const valKey = config.value ?? "id";
+        const labKey = config.label ?? "fullname";
+
+        if (onChange && typeof onChange === "function") {
             elements.forEach(element => {
                 element.addEventListener("change", () => {
-                    config.onChange(element);
+                    const selectedValue = element.value;
+                    const selectedOption = element.options[element.selectedIndex];
+                    const selectedLabel = selectedOption ? selectedOption.textContent : "";
+                    onChange(element, { value: selectedValue, label: selectedLabel });
                 });
             });
         }
 
-        if (Array.isArray(options)) {
-            if (typeof config.index != "boolean") {
-                config.index = config.index ?? "Select item";
-                this.set_html(selector, `<option value=''>${config.index}</option>` ?? "<option value=''>Select item</option>");
+        elements.forEach(element => {
+            if (options === null || options === undefined) {
+                if (value !== undefined && value !== "") {
+                    element.value = value;
+                }
+                return;
             }
-            for (let op in options) {
-                let row = options[op];
-                this.add_html(selector, `<option value='${row[val]}'>${row[lab]}</option>`)
+            const existingOptions = element.querySelectorAll('option[opt]');
+            element.innerHTML = "";
+            if (Array.isArray(options)) {
+                const allOptions = element.querySelectorAll('option');
+
+                allOptions.forEach(opt => {
+                    if (!opt.hasAttribute('opt')) {
+                        opt.remove();
+                    }
+                });
+
+                if (placeholder !== false) {
+                    const placeholderText = placeholder ?? "Select item";
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = "";
+                    placeholderOption.textContent = placeholderText;
+                    element.appendChild(placeholderOption);
+                }
+
+                existingOptions.forEach(opt => {
+                    element.appendChild(opt.cloneNode(true));
+                });
+
+                options.forEach(row => {
+                    const option = document.createElement('option');
+                    option.value = row[valKey] ?? "";
+                    option.textContent = row[labKey] ?? "";
+                    element.appendChild(option);
+                });
+
+                if (value !== undefined && value !== "") {
+                    element.value = value;
+                }
             }
+        });
+
+        if (Object.keys(rest).length > 0) {
+            elements.forEach(element => {
+                Object.keys(rest).forEach(key => {
+                    element.dataset[key] = rest[key];
+                });
+            });
         }
+    }
+
+    set_value(selector, value) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            element.value = value;
+            const event = new Event('change', { bubbles: true });
+            element.dispatchEvent(event);
+        });
     }
 
     base_url(path = null) {

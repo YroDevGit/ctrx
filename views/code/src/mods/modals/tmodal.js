@@ -665,13 +665,21 @@ class TModal {
             }
 
             /* select */
+            /*
+            ussage:
+            form: {
+                sel : {
+                    tag: "select",
+                    label: "Select something",
+                    options: [{value: "1", label: "Hi"},
+                    {value: "2", label: "Hello"}],
+                    onchange: (input, value)=> {console.log(value)}
+                }
+            }*/
             if (tag === "select") {
-
                 input.className =
                     "tmodal-select " + (field.class || "");
-
                 if (Array.isArray(field.options)) {
-
                     if (field.config) {
                         let conf = field.config;
                         let value = conf.value ?? "value";
@@ -701,8 +709,17 @@ class TModal {
 
                     }
 
-                    field.options.forEach((opt) => {
+                    const onchange = field.onchange ?? field.onChange ?? undefined;
+                    if (onchange && typeof onchange == "function") {
+                        input.addEventListener("change", () => {
+                            const label = input?.options[input.selectedIndex]?.text ?? null;
+                            let value = input.value ?? null;
+                            let labelValue = { label: label, value: value };
+                            onchange(input, labelValue);
+                        });
+                    }
 
+                    field.options.forEach((opt) => {
                         const option = document.createElement("option");
                         if (typeof opt === "object") {
                             option.value = opt.value;
