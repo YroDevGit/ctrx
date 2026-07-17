@@ -532,7 +532,7 @@ class CtrClass {
                     attrs[attr.name] = attr.value;
                 }
                 form.addEventListener("click", function () {
-                    callable(attrs);
+                    callable(form, attrs);
                 });
             }
         } else if (selector instanceof HTMLElement) {
@@ -541,7 +541,7 @@ class CtrClass {
                 for (let attr of selector.attributes) {
                     attrs[attr.name] = attr.value;
                 }
-                callable(attrs);
+                callable(selector, attrs);
             })
         }
     }
