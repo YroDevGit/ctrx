@@ -677,7 +677,7 @@ class CtrClass {
                     }
                 });
 
-                if (placeholder !== false) {
+                if (placeholder && typeof placeholder == "string" && !element.multiple) {
                     const placeholderText = placeholder ?? "Select item";
                     const placeholderOption = document.createElement('option');
                     placeholderOption.value = "";
