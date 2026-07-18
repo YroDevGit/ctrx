@@ -10,30 +10,135 @@ include_once "app/php/core/partials/be.php";
 include_once "app/php/core/partials/backend.php";
 
 $pdo = pdo($dbname);
+$driver = env('dbdriver') ?: 'mysql';
 $message = "";
 $tableName = "translations";
 
 ctrx_force_save_previous_pages(previous_page());
 
-$check = $pdo->query("SHOW TABLES LIKE 'translations'");
-$tableExists = $check->rowCount() > 0;
+function quoteIdentifier($identifier, $driver = null)
+{
+    global $driver;
+    $driver = $driver ?? $GLOBALS['driver'] ?? 'mysql';
+
+    if ($driver === 'pgsql' || $driver === 'sqlite') {
+        return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+    return '`' . str_replace('`', '``', $identifier) . '`';
+}
+
+function tableExists($pdo, $table, $driver)
+{
+    if ($driver === 'pgsql') {
+        $stmt = $pdo->prepare("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = :table)");
+        $stmt->execute(['table' => $table]);
+        return $stmt->fetchColumn() === 't' || $stmt->fetchColumn() === true;
+    } elseif ($driver === 'sqlite') {
+        $stmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = :table");
+        $stmt->execute(['table' => $table]);
+        return $stmt->fetchColumn() !== false;
+    } else {
+        $stmt = $pdo->prepare("SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
+        $stmt->execute([$table]);
+        return $stmt->rowCount() > 0;
+    }
+}
+
+function getTableColumns($pdo, $table, $driver)
+{
+    if ($driver === 'pgsql') {
+        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = :table");
+        $stmt->execute(['table' => $table]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($driver === 'sqlite') {
+        $stmt = $pdo->prepare("PRAGMA table_info(" . quoteIdentifier($table, 'sqlite') . ")");
+        $stmt->execute();
+        $columns = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $columns[] = $row['name'];
+        }
+        return $columns;
+    } else {
+        $stmt = $pdo->query("SHOW COLUMNS FROM " . quoteIdentifier($table, 'mysql'));
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
+
+function addColumnIfNotExists($pdo, $table, $column, $definition, $driver)
+{
+    if ($driver === 'pgsql') {
+        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns 
+                               WHERE table_name = :table AND column_name = :column");
+        $stmt->execute(['table' => $table, 'column' => $column]);
+        if (!$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'pgsql') . " ADD COLUMN " . quoteIdentifier($column, 'pgsql') . " $definition");
+        }
+    } elseif ($driver === 'sqlite') {
+        $columns = getTableColumns($pdo, $table, 'sqlite');
+        if (!in_array($column, $columns)) {
+            $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'sqlite') . " ADD COLUMN " . quoteIdentifier($column, 'sqlite') . " $definition");
+        }
+    } else {
+        $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'mysql') . " ADD COLUMN IF NOT EXISTS " . quoteIdentifier($column, 'mysql') . " $definition");
+    }
+}
+
+$check = tableExists($pdo, $tableName, $driver);
+$tableExists = $check;
 
 $activationSuccess = false;
 if (isset($_POST['activate_table']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest' && isset($_POST['action']) && $_POST['action'] == 'activate_table')) {
     try {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `translations` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `lang` TEXT,
-            `name` VARCHAR(255),
-            `en` TEXT,
-            `str` TEXT,
-            `active` INT DEFAULT 1,
-            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`)
-        )");
+        if ($driver === 'pgsql') {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS " . quoteIdentifier($tableName, 'pgsql') . " (
+                id SERIAL PRIMARY KEY,
+                lang TEXT,
+                name VARCHAR(255),
+                en TEXT,
+                str TEXT,
+                active INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )");
 
-        $pdo->exec("ALTER TABLE `translations` ADD COLUMN IF NOT EXISTS `active` INT DEFAULT 1");
+            $pdo->exec("CREATE OR REPLACE FUNCTION update_updated_at_column()
+                        RETURNS TRIGGER AS $$
+                        BEGIN
+                            NEW.updated_at = CURRENT_TIMESTAMP;
+                            RETURN NEW;
+                        END;
+                        $$ language 'plpgsql'");
+
+            $pdo->exec("DROP TRIGGER IF EXISTS update_translations_updated_at ON " . quoteIdentifier($tableName, 'pgsql'));
+            $pdo->exec("CREATE TRIGGER update_translations_updated_at 
+                        BEFORE UPDATE ON " . quoteIdentifier($tableName, 'pgsql') . "
+                        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()");
+        } elseif ($driver === 'sqlite') {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS " . quoteIdentifier($tableName, 'sqlite') . " (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lang TEXT,
+                name VARCHAR(255),
+                en TEXT,
+                str TEXT,
+                active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+        } else {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `$tableName` (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `lang` TEXT,
+                `name` VARCHAR(255),
+                `en` TEXT,
+                `str` TEXT,
+                `active` INT DEFAULT 1,
+                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`)
+            )");
+        }
+
+        addColumnIfNotExists($pdo, $tableName, 'active', 'INT DEFAULT 1', $driver);
 
         $activationSuccess = true;
         $tableExists = true;
@@ -55,7 +160,7 @@ if (isset($_POST['activate_table']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
 }
 
 if ($tableExists) {
-    $pdo->exec("ALTER TABLE `translations` ADD COLUMN IF NOT EXISTS `active` INT DEFAULT 1");
+    addColumnIfNotExists($pdo, $tableName, 'active', 'INT DEFAULT 1', $driver);
 
     function exportAsCSV($langCode, $langName, $data)
     {
@@ -152,7 +257,7 @@ if ($tableExists) {
         return ['langCode' => $langCode, 'langName' => $langName, 'data' => $data];
     }
 
-    $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
+    $langStmt = $pdo->query("SELECT DISTINCT " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . " FROM " . quoteIdentifier($tableName) . " ORDER BY " . quoteIdentifier('lang'));
     $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (isset($_POST['export_table'])) {
@@ -164,7 +269,7 @@ if ($tableExists) {
                 $message = "❌ Please select a language to export.";
             } else {
                 if ($selected_lang === 'all') {
-                    $stmt = $pdo->query("SELECT `id`, `lang`, `name`, `en`, `str`, `active` FROM `$tableName` ORDER BY `lang`, `en`");
+                    $stmt = $pdo->query("SELECT " . quoteIdentifier('id') . ", " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . " FROM " . quoteIdentifier($tableName) . " ORDER BY " . quoteIdentifier('lang') . ", " . quoteIdentifier('en'));
                     $allData = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     $jsonData = [];
                     foreach ($allData as $item) {
@@ -195,7 +300,7 @@ if ($tableExists) {
                     echo json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                     exit;
                 } else {
-                    $stmt = $pdo->prepare("SELECT `id`, `lang`, `name`, `en`, `str`, `active` FROM `$tableName` WHERE `lang` = ? ORDER BY `en`");
+                    $stmt = $pdo->prepare("SELECT " . quoteIdentifier('id') . ", " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . " FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ? ORDER BY " . quoteIdentifier('en'));
                     $stmt->execute([$selected_lang]);
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     $langName = !empty($data) ? $data[0]['name'] : $selected_lang;
@@ -322,10 +427,11 @@ if ($tableExists) {
                     }
 
                     if ($langCode && count($languagesInFile) <= 1) {
-                        $pdo->prepare("DELETE FROM `$tableName` WHERE `lang` = ?")->execute([$langCode]);
+                        $stmt = $pdo->prepare("DELETE FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ?");
+                        $stmt->execute([$langCode]);
                         $message = "🗑️ Existing data for language '{$langCode}' cleared. ";
                     } else {
-                        $pdo->exec("TRUNCATE TABLE `$tableName`");
+                        $pdo->exec("TRUNCATE TABLE " . quoteIdentifier($tableName));
                         $message = "🗑️ All existing data cleared. ";
                     }
                 }
@@ -348,14 +454,14 @@ if ($tableExists) {
 
                     if ($importMode === 'skip') {
                         if (!empty($row['id']) && is_numeric($row['id'])) {
-                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
+                            $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE id = ?");
                             $checkStmt->execute([$row['id']]);
                             if ($checkStmt->fetch()) {
                                 $skipped++;
                                 continue;
                             }
                         }
-                        $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
+                        $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ? AND " . quoteIdentifier('en') . " = ?");
                         $checkStmt->execute([$currentLang, $row['en']]);
                         if ($checkStmt->fetch()) {
                             $skipped++;
@@ -367,10 +473,10 @@ if ($tableExists) {
                         $updatedRecord = false;
 
                         if (!empty($row['id']) && is_numeric($row['id'])) {
-                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE id = ?");
+                            $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE id = ?");
                             $checkStmt->execute([$row['id']]);
                             if ($checkStmt->fetch()) {
-                                $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ?, `active` = ? WHERE `id` = ?");
+                                $updateStmt = $pdo->prepare("UPDATE " . quoteIdentifier($tableName) . " SET " . quoteIdentifier('lang') . " = ?, " . quoteIdentifier('name') . " = ?, " . quoteIdentifier('en') . " = ?, " . quoteIdentifier('str') . " = ?, " . quoteIdentifier('active') . " = ? WHERE " . quoteIdentifier('id') . " = ?");
                                 $updateStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active, $row['id']]);
                                 $updated++;
                                 $updatedRecord = true;
@@ -378,11 +484,11 @@ if ($tableExists) {
                         }
 
                         if (!$updatedRecord) {
-                            $checkStmt = $pdo->prepare("SELECT id FROM `$tableName` WHERE `lang` = ? AND `en` = ?");
+                            $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ? AND " . quoteIdentifier('en') . " = ?");
                             $checkStmt->execute([$currentLang, $row['en']]);
                             $existing = $checkStmt->fetch();
                             if ($existing) {
-                                $updateStmt = $pdo->prepare("UPDATE `$tableName` SET `name` = ?, `str` = ?, `active` = ? WHERE `lang` = ? AND `en` = ?");
+                                $updateStmt = $pdo->prepare("UPDATE " . quoteIdentifier($tableName) . " SET " . quoteIdentifier('name') . " = ?, " . quoteIdentifier('str') . " = ?, " . quoteIdentifier('active') . " = ? WHERE " . quoteIdentifier('lang') . " = ? AND " . quoteIdentifier('en') . " = ?");
                                 $updateStmt->execute([$currentLangName, $row['str'], $active, $currentLang, $row['en']]);
                                 $updated++;
                                 $updatedRecord = true;
@@ -394,7 +500,7 @@ if ($tableExists) {
                         }
                     }
 
-                    $insertStmt = $pdo->prepare("INSERT INTO `$tableName` (`lang`, `name`, `en`, `str`, `active`) VALUES (?, ?, ?, ?, ?)");
+                    $insertStmt = $pdo->prepare("INSERT INTO " . quoteIdentifier($tableName) . " (" . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . ") VALUES (?, ?, ?, ?, ?)");
                     $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
                     $inserted++;
                 }
@@ -411,7 +517,7 @@ if ($tableExists) {
 
                 $message .= "✅ {$inserted} inserted, {$updated} updated, {$skipped} skipped successfully in '{$tableName}' ({$modeText})";
 
-                $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
+                $langStmt = $pdo->query("SELECT DISTINCT " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . " FROM " . quoteIdentifier($tableName) . " ORDER BY " . quoteIdentifier('lang'));
                 $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
             }
         } catch (Throwable $e) {
@@ -423,7 +529,7 @@ if ($tableExists) {
         try {
             $id = (int)$_POST['delete_id'];
             if ($id > 0) {
-                $stmt = $pdo->prepare("DELETE FROM `$tableName` WHERE `id` = ?");
+                $stmt = $pdo->prepare("DELETE FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('id') . " = ?");
                 $stmt->execute([$id]);
                 $message = "✅ Record ID {$id} deleted successfully.";
             }
@@ -441,7 +547,7 @@ if ($tableExists) {
             $name = $_POST['edit_name'];
 
             if ($id > 0 && !empty($en) && !empty($str) && !empty($lang)) {
-                $stmt = $pdo->prepare("UPDATE `$tableName` SET `lang` = ?, `name` = ?, `en` = ?, `str` = ? WHERE `id` = ?");
+                $stmt = $pdo->prepare("UPDATE " . quoteIdentifier($tableName) . " SET " . quoteIdentifier('lang') . " = ?, " . quoteIdentifier('name') . " = ?, " . quoteIdentifier('en') . " = ?, " . quoteIdentifier('str') . " = ? WHERE " . quoteIdentifier('id') . " = ?");
                 $stmt->execute([$lang, $name, $en, $str, $id]);
                 $message = "✅ Record ID {$id} updated successfully.";
             } else {
@@ -452,44 +558,44 @@ if ($tableExists) {
         }
     }
 
-    $langStmt = $pdo->query("SELECT DISTINCT `lang`, `name` FROM `$tableName` ORDER BY `lang`");
+    $langStmt = $pdo->query("SELECT DISTINCT " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . " FROM " . quoteIdentifier($tableName) . " ORDER BY " . quoteIdentifier('lang'));
     $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
 
     $searchLang = isset($_POST['search_lang']) ? $_POST['search_lang'] : 'all';
     $searchEn = isset($_POST['search_en']) ? trim($_POST['search_en']) : '';
     $searchStr = isset($_POST['search_str']) ? trim($_POST['search_str']) : '';
 
-    $sql = "SELECT `id`, `lang`, `name`, `en`, `str`, `active` FROM `$tableName` WHERE 1=1";
+    $sql = "SELECT " . quoteIdentifier('id') . ", " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . " FROM " . quoteIdentifier($tableName) . " WHERE 1=1";
     $params = [];
 
     if ($searchLang !== 'all' && !empty($searchLang)) {
-        $sql .= " AND `lang` = ?";
+        $sql .= " AND " . quoteIdentifier('lang') . " = ?";
         $params[] = $searchLang;
     }
 
     if (!empty($searchEn)) {
-        $sql .= " AND `en` LIKE ?";
+        $sql .= " AND " . quoteIdentifier('en') . " LIKE ?";
         $params[] = "%" . $searchEn . "%";
     }
 
     if (!empty($searchStr)) {
-        $sql .= " AND `str` LIKE ?";
+        $sql .= " AND " . quoteIdentifier('str') . " LIKE ?";
         $params[] = "%" . $searchStr . "%";
     }
 
-    $sql .= " ORDER BY `lang`, `en` LIMIT 500";
+    $sql .= " ORDER BY " . quoteIdentifier('lang') . ", " . quoteIdentifier('en') . " LIMIT 500";
 
     $previewStmt = $pdo->prepare($sql);
     $previewStmt->execute($params);
     $previewData = $previewStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $totalRecords = $pdo->query("SELECT COUNT(*) as total FROM `$tableName`")->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalRecords = $pdo->query("SELECT COUNT(*) as total FROM " . quoteIdentifier($tableName))->fetch(PDO::FETCH_ASSOC)['total'];
 
     $editRecord = null;
     if (isset($_GET['edit'])) {
         $editId = (int)$_GET['edit'];
         if ($editId > 0) {
-            $stmt = $pdo->prepare("SELECT * FROM `$tableName` WHERE `id` = ?");
+            $stmt = $pdo->prepare("SELECT * FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('id') . " = ?");
             $stmt->execute([$editId]);
             $editRecord = $stmt->fetch(PDO::FETCH_ASSOC);
         }
@@ -500,6 +606,7 @@ if ($tableExists) {
 }
 ?>
 
+<!-- HTML remains exactly the same -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -508,6 +615,7 @@ if ($tableExists) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Translation Manager</title>
     <style>
+        /* ... (keep your existing styles, they're fine) ... */
         * {
             margin: 0;
             padding: 0;

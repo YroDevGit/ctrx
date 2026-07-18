@@ -5,10 +5,10 @@ include_once "app/php/core/partials/envloader.php";
  * This is CTR-X database management page
  * Where you can manage your entire database
  * Made by CodeYro
- * Modified date: July 1 2026
+ * Modified date: July 17 2026
  * 
- * Added Import SQL feature (file upload + paste query)
- * Updated Export to use INSERT IGNORE to skip errors on duplicate keys
+ * Added Multi-Database Support (MySQL, PostgreSQL, SQLite)
+ * Updated Export to use INSERT IGNORE / ON CONFLICT based on driver
  */
 
 $dbname = env("database");
@@ -21,12 +21,31 @@ define('DB_USER', env('dbuser'));
 define('DB_PASS', env('dbpass'));
 define('DB_CHARSET', env('dbcharset'));
 $port = env('dbport') ?? "3306";
-$driver = env("dbdriver") == null ? "mysql" : env("dbdriver");
+global $driver;
+$driver = env("dbdriver") ?? "mysql";
+
+$driver = strtolower($driver);
 
 function getDBConnection($driver, $host, $port, $dbname, $charSet)
 {
     try {
-        $dsn = "$driver:host=$host;port=$port;dbname=$dbname;charset=$charSet;";
+        switch ($driver) {
+            case 'mysql':
+            case 'mariadb':
+                $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=$charSet;";
+                break;
+            case 'pgsql':
+            case 'postgres':
+            case 'postgresql':
+                $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;";
+                break;
+            case 'sqlite':
+                $dsn = "sqlite:" . $dbname;
+                break;
+            default:
+                throw new Exception("Unsupported database driver: $driver");
+        }
+
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -35,6 +54,35 @@ function getDBConnection($driver, $host, $port, $dbname, $charSet)
         return $pdo;
     } catch (PDOException $e) {
         die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
+    }
+}
+
+function isPostgres()
+{
+    global $driver;
+    return in_array($driver, ['pgsql', 'postgres', 'postgresql']);
+}
+
+function isSqlite()
+{
+    global $driver;
+    return $driver === 'sqlite';
+}
+
+function isMysql()
+{
+    global $driver;
+    return in_array($driver, ['mysql', 'mariadb']);
+}
+
+function quoteIdentifier($identifier)
+{
+    global $driver;
+    $identifier = trim($identifier, '`"');
+    if (isMysql()) {
+        return "`$identifier`";
+    } else {
+        return "\"$identifier\"";
     }
 }
 
@@ -51,8 +99,19 @@ function executeQuery($pdo, $sql, $params = [])
 
 function getTables($pdo)
 {
-    $result = executeQuery($pdo, "SHOW TABLES");
+    global $driver;
+
+    if (isMysql()) {
+        $sql = "SHOW TABLES";
+    } elseif (isPostgres()) {
+        $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'";
+    } else {
+        $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+    }
+
+    $result = executeQuery($pdo, $sql);
     if (!$result['success']) return $result;
+
     $tables = [];
     while ($row = $result['data']->fetch()) {
         $tables[] = reset($row);
@@ -62,33 +121,116 @@ function getTables($pdo)
 
 function getTableInfo($pdo, $table)
 {
+    global $driver;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $result = executeQuery($pdo, "SHOW FULL COLUMNS FROM `$table`");
-    if (!$result['success']) return $result;
-    $columns = [];
-    while ($row = $result['data']->fetch()) {
-        $columns[] = $row;
-    }
+    $quoted = quoteIdentifier($table);
 
-    $keyResult = executeQuery($pdo, "SHOW INDEXES FROM `$table`");
-    $keys = ['PRIMARY' => [], 'UNIQUE' => []];
-    if ($keyResult['success']) {
-        while ($row = $keyResult['data']->fetch()) {
-            if ($row['Key_name'] == 'PRIMARY') {
-                $keys['PRIMARY'][] = $row['Column_name'];
-            } elseif ($row['Non_unique'] == 0) {
-                $keys['UNIQUE'][$row['Key_name']][] = $row['Column_name'];
+    if (isMysql()) {
+        $result = executeQuery($pdo, "SHOW FULL COLUMNS FROM $quoted");
+        if (!$result['success']) return $result;
+        $columns = [];
+        while ($row = $result['data']->fetch()) {
+            $columns[] = $row;
+        }
+
+        $keyResult = executeQuery($pdo, "SHOW INDEXES FROM $quoted");
+        $keys = ['PRIMARY' => [], 'UNIQUE' => []];
+        if ($keyResult['success']) {
+            while ($row = $keyResult['data']->fetch()) {
+                if ($row['Key_name'] == 'PRIMARY') {
+                    $keys['PRIMARY'][] = $row['Column_name'];
+                } elseif ($row['Non_unique'] == 0) {
+                    $keys['UNIQUE'][$row['Key_name']][] = $row['Column_name'];
+                }
             }
         }
-    }
+        return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
+    } elseif (isPostgres()) {
+        $sql = "SELECT 
+                    column_name as Field,
+                    data_type as Type,
+                    is_nullable as Null,
+                    column_default as Default,
+                    '' as Extra
+                FROM information_schema.columns 
+                WHERE table_name = ?";
+        $result = executeQuery($pdo, $sql, [$table]);
+        if (!$result['success']) return $result;
 
-    return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
+        $columns = [];
+        while ($row = $result['data']->fetch()) {
+            $row['Type'] = $row['type'];
+            $row['Null'] = $row['null'] == 'YES' ? 'YES' : 'NO';
+            $row['Default'] = $row['default'] ?? null;
+            $row['Extra'] = '';
+
+            $pkCheck = executeQuery($pdo, "
+                SELECT a.attname
+                FROM pg_index i
+                JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                WHERE i.indrelid = ?::regclass AND i.indisprimary
+            ", [$table]);
+            if ($pkCheck['success'] && $pkCheck['data']->rowCount() > 0) {
+                $pkRow = $pkCheck['data']->fetch();
+                if ($pkRow['attname'] == $row['field']) {
+                    $row['Key'] = 'PRI';
+                }
+            }
+
+            $columns[] = $row;
+        }
+
+        $keys = ['PRIMARY' => [], 'UNIQUE' => []];
+        $keyResult = executeQuery($pdo, "
+            SELECT 
+                i.relname as Key_name,
+                a.attname as Column_name,
+                i.indisprimary as is_primary,
+                i.indisunique as is_unique
+            FROM pg_index i
+            JOIN pg_class c ON c.oid = i.indrelid
+            JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(i.indkey)
+            WHERE c.relname = ?
+        ", [$table]);
+
+        if ($keyResult['success']) {
+            while ($row = $keyResult['data']->fetch()) {
+                if ($row['is_primary']) {
+                    $keys['PRIMARY'][] = $row['column_name'];
+                } elseif ($row['is_unique']) {
+                    $keys['UNIQUE'][$row['key_name']][] = $row['column_name'];
+                }
+            }
+        }
+
+        return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
+    } else {
+        $result = executeQuery($pdo, "PRAGMA table_info($quoted)");
+        if (!$result['success']) return $result;
+
+        $columns = [];
+        while ($row = $result['data']->fetch()) {
+            $columns[] = [
+                'Field' => $row['name'],
+                'Type' => $row['type'],
+                'Null' => $row['notnull'] ? 'NO' : 'YES',
+                'Key' => $row['pk'] ? 'PRI' : '',
+                'Default' => $row['dflt_value'],
+                'Extra' => ''
+            ];
+        }
+
+        $keys = ['PRIMARY' => [], 'UNIQUE' => []];
+
+        return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
+    }
 }
 
 function getTableData($pdo, $table, $limit = 100)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $result = executeQuery($pdo, "SELECT * FROM `$table` LIMIT $limit");
+    $quoted = quoteIdentifier($table);
+    $result = executeQuery($pdo, "SELECT * FROM $quoted LIMIT $limit");
     if (!$result['success']) return $result;
     $data = [];
     while ($row = $result['data']->fetch()) {
@@ -100,7 +242,8 @@ function getTableData($pdo, $table, $limit = 100)
 function createTable($pdo, $tableName, $columnDefs)
 {
     $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $tableName);
-    $sql = "CREATE TABLE `$tableName` ($columnDefs)";
+    $quoted = quoteIdentifier($tableName);
+    $sql = "CREATE TABLE $quoted ($columnDefs)";
     $result = executeQuery($pdo, $sql);
     return $result;
 }
@@ -108,7 +251,8 @@ function createTable($pdo, $tableName, $columnDefs)
 function dropTable($pdo, $table)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $result = executeQuery($pdo, "DROP TABLE `$table`");
+    $quoted = quoteIdentifier($table);
+    $result = executeQuery($pdo, "DROP TABLE $quoted");
     return $result;
 }
 
@@ -116,14 +260,17 @@ function renameTable($pdo, $oldName, $newName)
 {
     $oldName = preg_replace('/[^a-zA-Z0-9_]/', '', $oldName);
     $newName = preg_replace('/[^a-zA-Z0-9_]/', '', $newName);
-    $result = executeQuery($pdo, "RENAME TABLE `$oldName` TO `$newName`");
+    $quotedOld = quoteIdentifier($oldName);
+    $quotedNew = quoteIdentifier($newName);
+    $result = executeQuery($pdo, "ALTER TABLE $quotedOld RENAME TO $quotedNew");
     return $result;
 }
 
 function addColumn($pdo, $table, $columnDef)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $result = executeQuery($pdo, "ALTER TABLE `$table` ADD COLUMN $columnDef");
+    $quoted = quoteIdentifier($table);
+    $result = executeQuery($pdo, "ALTER TABLE $quoted ADD COLUMN $columnDef");
     return $result;
 }
 
@@ -131,7 +278,14 @@ function removeColumn($pdo, $table, $columnName)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $columnName = preg_replace('/[^a-zA-Z0-9_]/', '', $columnName);
-    $result = executeQuery($pdo, "ALTER TABLE `$table` DROP COLUMN `$columnName`");
+    $quoted = quoteIdentifier($table);
+    $quotedCol = quoteIdentifier($columnName);
+
+    if (isSqlite()) {
+        return ['success' => false, 'message' => 'SQLite does not support DROP COLUMN. Please recreate the table.'];
+    }
+
+    $result = executeQuery($pdo, "ALTER TABLE $quoted DROP COLUMN $quotedCol");
     return $result;
 }
 
@@ -140,41 +294,61 @@ function renameColumn($pdo, $table, $oldName, $newName)
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $oldName = preg_replace('/[^a-zA-Z0-9_]/', '', $oldName);
     $newName = preg_replace('/[^a-zA-Z0-9_]/', '', $newName);
+    $quoted = quoteIdentifier($table);
+    $quotedOld = quoteIdentifier($oldName);
+    $quotedNew = quoteIdentifier($newName);
 
-    $info = getTableInfo($pdo, $table);
-    if (!$info['success']) return $info;
-    $col = null;
-    foreach ($info['data']['columns'] as $c) {
-        if ($c['Field'] == $oldName) {
-            $col = $c;
-            break;
+    if (isPostgres()) {
+        $sql = "ALTER TABLE $quoted RENAME COLUMN $quotedOld TO $quotedNew";
+        return executeQuery($pdo, $sql);
+    } elseif (isSqlite()) {
+        return ['success' => false, 'message' => 'SQLite does not support RENAME COLUMN directly. Please recreate the table.'];
+    } else {
+        $info = getTableInfo($pdo, $table);
+        if (!$info['success']) return $info;
+        $col = null;
+        foreach ($info['data']['columns'] as $c) {
+            if ($c['Field'] == $oldName) {
+                $col = $c;
+                break;
+            }
         }
+        if (!$col) {
+            return ['success' => false, 'message' => 'Column not found'];
+        }
+        $type = $col['Type'];
+        $null = $col['Null'] == 'YES' ? '' : 'NOT NULL';
+        $default = $col['Default'] !== null ? "DEFAULT '" . addslashes($col['Default']) . "'" : '';
+        $extra = $col['Extra'] ? $col['Extra'] : '';
+        $sql = "ALTER TABLE $quoted CHANGE $quotedOld $quotedNew $type $null $default $extra";
+        return executeQuery($pdo, $sql);
     }
-    if (!$col) {
-        return ['success' => false, 'message' => 'Column not found'];
-    }
-    $type = $col['Type'];
-    $null = $col['Null'] == 'YES' ? '' : 'NOT NULL';
-    $default = $col['Default'] !== null ? "DEFAULT '" . addslashes($col['Default']) . "'" : '';
-    $extra = $col['Extra'] ? $col['Extra'] : '';
-    $sql = "ALTER TABLE `$table` CHANGE `$oldName` `$newName` $type $null $default $extra";
-    $result = executeQuery($pdo, $sql);
-    return $result;
 }
 
 function modifyColumn($pdo, $table, $columnName, $newDef)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $columnName = preg_replace('/[^a-zA-Z0-9_]/', '', $columnName);
-    $result = executeQuery($pdo, "ALTER TABLE `$table` MODIFY `$columnName` $newDef");
-    return $result;
+    $quoted = quoteIdentifier($table);
+    $quotedCol = quoteIdentifier($columnName);
+
+    if (isMysql()) {
+        $sql = "ALTER TABLE $quoted MODIFY $quotedCol $newDef";
+    } elseif (isPostgres()) {
+        $sql = "ALTER TABLE $quoted ALTER COLUMN $quotedCol TYPE $newDef";
+    } else {
+        return ['success' => false, 'message' => 'SQLite does not support MODIFY COLUMN directly. Please recreate the table.'];
+    }
+    return executeQuery($pdo, $sql);
 }
 
 function setPrimaryKey($pdo, $table, $column)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
-    $result = executeQuery($pdo, "ALTER TABLE `$table` ADD PRIMARY KEY (`$column`)");
+    $quoted = quoteIdentifier($table);
+    $quotedCol = quoteIdentifier($column);
+    $result = executeQuery($pdo, "ALTER TABLE $quoted ADD PRIMARY KEY ($quotedCol)");
     return $result;
 }
 
@@ -182,18 +356,31 @@ function setUniqueKey($pdo, $table, $column)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
-    $result = executeQuery($pdo, "ALTER TABLE `$table` ADD UNIQUE (`$column`)");
+    $quoted = quoteIdentifier($table);
+    $quotedCol = quoteIdentifier($column);
+    $result = executeQuery($pdo, "ALTER TABLE $quoted ADD UNIQUE ($quotedCol)");
     return $result;
 }
 
 function dropKey($pdo, $table, $keyName)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $quoted = quoteIdentifier($table);
+
     if (strtoupper($keyName) == 'PRIMARY') {
-        $result = executeQuery($pdo, "ALTER TABLE `$table` DROP PRIMARY KEY");
+        if (isPostgres() || isSqlite()) {
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT {$table}_pkey");
+        } else {
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP PRIMARY KEY");
+        }
     } else {
         $keyName = preg_replace('/[^a-zA-Z0-9_]/', '', $keyName);
-        $result = executeQuery($pdo, "ALTER TABLE `$table` DROP INDEX `$keyName`");
+        if (isPostgres()) {
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT $keyName");
+        } else {
+            $quotedKey = quoteIdentifier($keyName);
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP INDEX $quotedKey");
+        }
     }
     return $result;
 }
@@ -201,9 +388,16 @@ function dropKey($pdo, $table, $keyName)
 function insertRow($pdo, $table, $data)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $quoted = quoteIdentifier($table);
     $columns = array_keys($data);
+    $quotedColumns = array_map('quoteIdentifier', $columns);
     $placeholders = array_fill(0, count($columns), '?');
-    $sql = "INSERT INTO `$table` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $placeholders) . ")";
+    $sql = "INSERT INTO $quoted (" . implode(', ', $quotedColumns) . ") VALUES (" . implode(', ', $placeholders) . ")";
+
+    if (isPostgres()) {
+        $sql .= " RETURNING *";
+    }
+
     $result = executeQuery($pdo, $sql, array_values($data));
     return $result;
 }
@@ -212,15 +406,19 @@ function updateRow($pdo, $table, $data, $where, $whereValue)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $where = preg_replace('/[^a-zA-Z0-9_]/', '', $where);
+    $quoted = quoteIdentifier($table);
+    $quotedWhere = quoteIdentifier($where);
+
     $sets = [];
     $params = [];
     foreach ($data as $col => $val) {
         $col = preg_replace('/[^a-zA-Z0-9_]/', '', $col);
-        $sets[] = "`$col` = ?";
+        $quotedCol = quoteIdentifier($col);
+        $sets[] = "$quotedCol = ?";
         $params[] = $val;
     }
     $params[] = $whereValue;
-    $sql = "UPDATE `$table` SET " . implode(', ', $sets) . " WHERE `$where` = ?";
+    $sql = "UPDATE $quoted SET " . implode(', ', $sets) . " WHERE $quotedWhere = ?";
     $result = executeQuery($pdo, $sql, $params);
     return $result;
 }
@@ -229,14 +427,23 @@ function deleteRow($pdo, $table, $where, $value)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $where = preg_replace('/[^a-zA-Z0-9_]/', '', $where);
-    $result = executeQuery($pdo, "DELETE FROM `$table` WHERE `$where` = ?", [$value]);
+    $quoted = quoteIdentifier($table);
+    $quotedWhere = quoteIdentifier($where);
+    $result = executeQuery($pdo, "DELETE FROM $quoted WHERE $quotedWhere = ?", [$value]);
     return $result;
 }
 
 function truncateTable($pdo, $table)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-    $result = executeQuery($pdo, "TRUNCATE TABLE `$table`");
+    $quoted = quoteIdentifier($table);
+
+    if (isPostgres()) {
+        $sql = "TRUNCATE TABLE $quoted RESTART IDENTITY";
+    } else {
+        $sql = "TRUNCATE TABLE $quoted";
+    }
+    $result = executeQuery($pdo, $sql);
     return $result;
 }
 
@@ -251,39 +458,77 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     $sql = "-- ============================================\n";
     $sql .= "-- Database Export By CTR-X\n";
     $sql .= "-- Database: " . DB_NAME . "\n";
+    $sql .= "-- Driver: " . $GLOBALS['driver'] . "\n";
     $sql .= "-- Export Date: " . date('Y-m-d H:i:s') . "\n";
-    $sql .= "-- CodeYro " . date("Y-m-d") . "\n";
     $sql .= "-- ============================================\n\n";
-    $sql .= "-- CREATE DATABASE `" . DB_NAME . "`;\n";
-    $sql .= "-- USE `" . DB_NAME . "`;\n\n";
+
+    if (!isSqlite()) {
+        $sql .= "-- CREATE DATABASE " . quoteIdentifier(DB_NAME) . ";\n";
+        $sql .= "-- USE " . quoteIdentifier(DB_NAME) . ";\n\n";
+    }
+
     $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
 
     foreach ($allTables as $table) {
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        $quoted = quoteIdentifier($table);
 
-        $createResult = executeQuery($pdo, "SHOW CREATE TABLE `$table`");
-        if ($createResult['success']) {
-            $row = $createResult['data']->fetch();
-            $sql .= "-- Table structure for `$table`\n";
-            $sql .= "DROP TABLE IF EXISTS `$table`;\n";
-            $sql .= $row['Create Table'] . ";\n\n";
+        if (isMysql()) {
+            $createResult = executeQuery($pdo, "SHOW CREATE TABLE $quoted");
+            if ($createResult['success']) {
+                $row = $createResult['data']->fetch();
+                $sql .= "-- Table structure for `$table`\n";
+                $sql .= "DROP TABLE IF EXISTS $quoted;\n";
+                $sql .= $row['Create Table'] . ";\n\n";
+            }
+        } elseif (isPostgres()) {
+            $sql .= "-- Table structure for \"$table\"\n";
+            $sql .= "DROP TABLE IF EXISTS $quoted CASCADE;\n";
+
+            $colResult = executeQuery($pdo, "
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns 
+                WHERE table_name = ?
+            ", [$table]);
+
+            if ($colResult['success']) {
+                $cols = [];
+                while ($row = $colResult['data']->fetch()) {
+                    $colDef = quoteIdentifier($row['column_name']) . " " . $row['data_type'];
+                    if ($row['is_nullable'] == 'NO') $colDef .= " NOT NULL";
+                    if ($row['column_default']) $colDef .= " DEFAULT " . $row['column_default'];
+                    $cols[] = $colDef;
+                }
+                $sql .= "CREATE TABLE $quoted (\n  " . implode(",\n  ", $cols) . "\n);\n\n";
+            }
+        } else {
+            $createResult = executeQuery($pdo, "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$table]);
+            if ($createResult['success'] && $createResult['data']->rowCount() > 0) {
+                $row = $createResult['data']->fetch();
+                $sql .= "-- Table structure for \"$table\"\n";
+                $sql .= "DROP TABLE IF EXISTS $quoted;\n";
+                $sql .= $row['sql'] . ";\n\n";
+            }
         }
 
         $includeData = in_array($table, $tablesWithData);
 
         if ($includeData) {
-            $dataResult = executeQuery($pdo, "SELECT * FROM `$table`");
+            $dataResult = executeQuery($pdo, "SELECT * FROM $quoted");
             if ($dataResult['success']) {
                 $rows = $dataResult['data']->fetchAll();
                 if (count($rows) > 0) {
                     $columns = array_keys($rows[0]);
-                    $escapedColumns = array_map(function ($col) {
-                        return "`" . str_replace('`', '``', $col) . "`";
-                    }, $columns);
+                    $escapedColumns = array_map('quoteIdentifier', $columns);
                     $columnList = implode(', ', $escapedColumns);
 
                     $sql .= "-- Dumping data for table `$table`\n";
-                    $sql .= "INSERT IGNORE INTO `$table` ($columnList) VALUES\n";
+
+                    if (isPostgres()) {
+                        $sql .= "INSERT INTO $quoted ($columnList) VALUES\n";
+                    } else {
+                        $sql .= "INSERT IGNORE INTO $quoted ($columnList) VALUES\n";
+                    }
 
                     $values = [];
                     foreach ($rows as $row) {
@@ -383,7 +628,7 @@ function importSQL($pdo, $sql, $isFile = false)
             $pdo->exec($stmt);
             $successCount++;
         } catch (PDOException $e) {
-            $errors[] = "Error in statement: " . substr($stmt, 0, 100) . "..." . $e->getMessage();
+            $errors[] = "Error in statement: " . substr($stmt, 0, 100) . "... - " . $e->getMessage();
         }
     }
 
@@ -2693,9 +2938,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <label class="form-label">${col.Field} <small class="text-muted">(${col.Type})</small></label>
                 <div class="field-row">
                     
-                    <input class="form-control" name="col_${col.Field}" placeholder="Enter value for ${col.Field}" id="input_${col.Field}">
+                    <input class="form-control" name="col_${col.Field}" placeholder="Enter value for ${col.Field}" id="input_${col.Field}" disabled>
                     <div class="skip-checkbox" id="skip_${col.Field}">
-                        <input type="checkbox" id="skip_check_${col.Field}" onchange="toggleSkip('${col.Field}')">
+                        <input type="checkbox" id="skip_check_${col.Field}" onchange="toggleSkip('${col.Field}')" checked>
                         <label for="skip_check_${col.Field}">Skip</label>
                     </div>
                 </div>
@@ -2704,6 +2949,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             });
             container.innerHTML = html;
             openModal('insertRowModal');
+            updateSkipColumnsList();
         }
 
         function toggleSkip(columnName) {
@@ -2762,6 +3008,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 showAlert('Row inserted successfully', 'success');
                 closeModal('insertRowModal');
                 await loadTableData();
+            } else {
+                closeModal('insertRowModal');
             }
         }
 
@@ -2795,12 +3043,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         <span style="flex-shrink:0; font-size:13px;">value: ${value}</span>
                     </div>`;
                 } else {
+                    let checkBoxDynamic = `<input type="checkbox" id="edit_skip_check_${col.Field}" onchange="toggleEditSkip('${col.Field}')">`;
+                    let inputDynamic = `<input class="form-control" name="col_${col.Field}" value="${value}" id="edit_input_${col.Field}">`;
+                    if (!value || value == "" || value == null) {
+                        checkBoxDynamic = `<input type="checkbox" id="edit_skip_check_${col.Field}" checked onchange="toggleEditSkip('${col.Field}')">`;
+                        inputDynamic = `<input class="form-control" name="col_${col.Field}" value="${value}" id="edit_input_${col.Field}" style="opacity: 0.5; background: rgb(240, 240, 240);" disabled>`;
+                    }
                     html += `
                 <label class="form-label">${col.Field} <small class="text-muted">(${col.Type})</small></label>
                 <div class="field-row">
-                    <input class="form-control" name="col_${col.Field}" value="${value}" id="edit_input_${col.Field}">
+                    ${inputDynamic}
                     <div class="skip-checkbox" id="edit_skip_${col.Field}">
-                        <input type="checkbox" id="edit_skip_check_${col.Field}" onchange="toggleEditSkip('${col.Field}')">
+                        ${checkBoxDynamic}
                         <label for="edit_skip_check_${col.Field}">Skip</label>
                     </div>
                 </div>
@@ -2809,6 +3063,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             });
             container.innerHTML = html;
             openModal('editRowModal');
+            updateEditSkipColumnsList();
         }
 
         function toggleEditSkip(columnName) {
@@ -2870,6 +3125,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 showAlert('Row updated successfully', 'success');
                 closeModal('editRowModal');
                 await loadTableData();
+            } else {
+                closeModal('editRowModal');
             }
         }
 

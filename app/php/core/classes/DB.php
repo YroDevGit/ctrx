@@ -25,10 +25,12 @@ class DB
 
     private static $newdb = false;
 
+    private static $driver = null;
+
     public function __construct($database = null)
     {
         if ($database) {
-            self::$pdo = pdo($database); // custom connection
+            self::$pdo = pdo($database);
             self::$newdb = true;
         }
     }
@@ -38,7 +40,41 @@ class DB
         if (self::$newdb && self::$pdo instanceof \PDO) {
             return self::$pdo;
         }
-        return pdo(); // fallback to default global PDO
+        return pdo();
+    }
+
+    private static function getDriver(): string
+    {
+        if (self::$driver === null) {
+            $envDriver = env('dbdriver');
+            self::$driver = $envDriver ? strtolower($envDriver) : 'mysql';
+        }
+        return self::$driver;
+    }
+
+    private static function isPostgres(): bool
+    {
+        return self::getDriver() === 'pgsql' || self::getDriver() === 'postgresql';
+    }
+
+    private static function isSQLite(): bool
+    {
+        return self::getDriver() === 'sqlite';
+    }
+
+    private static function isMySQL(): bool
+    {
+        $driver = self::getDriver();
+        return $driver === 'mysql' || $driver === 'mariadb';
+    }
+
+    private static function quoteIdentifier(string $identifier): string
+    {
+        if (self::isMySQL()) {
+            return '`' . str_replace('`', '``', $identifier) . '`';
+        }
+
+        return '"' . str_replace('"', '""', $identifier) . '"';
     }
 
     public static function interface(array $columns)
@@ -95,7 +131,7 @@ class DB
         }
 
         if ($useLegacy) {
-            $whereClause = implode(' AND ', array_map(fn($col) => "`$col` = :$col", array_keys($where)));
+            $whereClause = implode(' AND ', array_map(fn($col) => self::quoteIdentifier($col) . " = :$col", array_keys($where)));
             $bindings = [];
             foreach ($where as $col => $val) {
                 $bindings[":$col"] = $val;
@@ -104,7 +140,7 @@ class DB
             [$whereClause, $bindings] = self::buildWhere($where);
         }
 
-        $sql = "SELECT {$select} FROM `{$table}`" . ($whereClause ? " WHERE $whereClause" : "");
+        $sql = "SELECT {$select} FROM " . self::quoteIdentifier($table) . ($whereClause ? " WHERE $whereClause" : "");
 
         $limit = null;
         $offset = null;
@@ -150,7 +186,7 @@ class DB
         self::$rowcount = $rc;
         $stmt->closeCursor();
 
-        $countSql = "SELECT COUNT(*) as cnt FROM `{$table}`" . ($whereClause ? " WHERE $whereClause" : "");
+        $countSql = "SELECT COUNT(*) as cnt FROM " . self::quoteIdentifier($table) . ($whereClause ? " WHERE $whereClause" : "");
         $countStmt = self::conn()->prepare($countSql);
         $countStmt->execute($bindings);
         $total = (int)$countStmt->fetch(\PDO::FETCH_ASSOC)['cnt'];
@@ -178,19 +214,19 @@ class DB
             } elseif (strtolower($key) === "like") {
                 foreach ($val as $col => $v) {
                     $param = ":p" . (++$paramIndex);
-                    $clauses[] = "`$col` LIKE $param";
+                    $clauses[] = self::quoteIdentifier($col) . " LIKE $param";
                     $bindings[$param] = "%$v%";
                 }
             } elseif (is_array($val) && isset($val['between']) && is_array($val['between']) && count($val['between']) === 2) {
                 $param1 = ":p" . (++$paramIndex);
                 $param2 = ":p" . (++$paramIndex);
-                $clauses[] = "`$key` BETWEEN $param1 AND $param2";
+                $clauses[] = self::quoteIdentifier($key) . " BETWEEN $param1 AND $param2";
                 $bindings[$param1] = $val['between'][0];
                 $bindings[$param2] = $val['between'][1];
             } elseif (is_array($val) && isset($val['not between']) && is_array($val['not between']) && count($val['not between']) === 2) {
                 $param1 = ":p" . (++$paramIndex);
                 $param2 = ":p" . (++$paramIndex);
-                $clauses[] = "`$key` NOT BETWEEN $param1 AND $param2";
+                $clauses[] = self::quoteIdentifier($key) . " NOT BETWEEN $param1 AND $param2";
                 $bindings[$param1] = $val['not between'][0];
                 $bindings[$param2] = $val['not between'][1];
             } else {
@@ -198,7 +234,7 @@ class DB
                     $col = $m[1];
                     $op = $m[2];
                     $param = ":p" . (++$paramIndex);
-                    $clauses[] = "`$col` $op $param";
+                    $clauses[] = self::quoteIdentifier($col) . " $op $param";
                     $bindings[$param] = $val;
                 } elseif (is_array($val)) {
                     $placeholders = [];
@@ -207,17 +243,16 @@ class DB
                         $placeholders[] = $param;
                         $bindings[$param] = $v;
                     }
-                    $clauses[] = "`$key` IN (" . implode(",", $placeholders) . ")";
+                    $clauses[] = self::quoteIdentifier($key) . " IN (" . implode(",", $placeholders) . ")";
                 } else {
                     $param = ":p" . (++$paramIndex);
-                    $clauses[] = "`$key` = $param";
+                    $clauses[] = self::quoteIdentifier($key) . " = $param";
                     $bindings[$param] = $val;
                 }
             }
         }
         return [implode(" $glue ", $clauses), $bindings];
     }
-
 
     private static function resetColumnFilters()
     {
@@ -248,9 +283,14 @@ class DB
     public static function insert(string $table, array $data)
     {
         $data = self::filterInsertData($data);
-        $columns = implode(", ", array_map(fn($col) => "`$col`", array_keys($data)));
+        $columns = implode(", ", array_map(fn($col) => self::quoteIdentifier($col), array_keys($data)));
         $placeholders = implode(", ", array_fill(0, count($data), "?"));
-        $sql = "INSERT INTO `{$table}` ($columns) VALUES ($placeholders)";
+
+        $sql = "INSERT INTO " . self::quoteIdentifier($table) . " ($columns) VALUES ($placeholders)";
+
+        if (self::isPostgres()) {
+            $sql .= " RETURNING " . self::quoteIdentifier(self::$primaryKey);
+        }
 
         $pdo = self::conn();
         $stmt = $pdo->prepare($sql);
@@ -262,7 +302,14 @@ class DB
         self::$lastTable = $table;
 
         $stmt->execute(self::$lastBindings);
-        $id = $pdo->lastInsertId();
+
+        if (self::isPostgres()) {
+            $result = $stmt->fetch(\PDO::FETCH_NUM);
+            $id = $result ? $result[0] : null;
+        } else {
+            $id = $pdo->lastInsertId();
+        }
+
         $stmt->closeCursor();
 
         self::resetColumnFilters();
@@ -294,10 +341,19 @@ class DB
                 $likeParam  = ":{$column}_like_$i";
                 $soundParam = ":{$column}_sound_$i";
 
-                $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(REPLACE(`$column`, ' ','')) = SOUNDEX(REPLACE($soundParam, ' ','')))";
-
-                $bindings[$likeParam]  = "%{$keyword}%";
-                $bindings[$soundParam] = $keyword;
+                if (self::isPostgres()) {
+                    $parts[] = "(" . self::quoteIdentifier($column) . " ILIKE $likeParam)";
+                    $bindings[$likeParam]  = "%{$keyword}%";
+                    $bindings[$soundParam] = "%{$keyword}%";
+                } elseif (self::isSQLite()) {
+                    $parts[] = "(" . self::quoteIdentifier($column) . " LIKE $likeParam)";
+                    $bindings[$likeParam]  = "%{$keyword}%";
+                    $bindings[$soundParam] = "%{$keyword}%";
+                } else {
+                    $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(REPLACE(`$column`, ' ','')) = SOUNDEX(REPLACE($soundParam, ' ','')))";
+                    $bindings[$likeParam]  = "%{$keyword}%";
+                    $bindings[$soundParam] = $keyword;
+                }
             }
 
             if ($parts) {
@@ -305,7 +361,7 @@ class DB
             }
         }
 
-        $sql = "SELECT {$select} FROM `$table`";
+        $sql = "SELECT {$select} FROM " . self::quoteIdentifier($table);
 
         if ($clauses) {
             $str = " WHERE " . implode(" AND ", $clauses);
@@ -399,8 +455,8 @@ class DB
 
     public static function delete(string $table, array $where)
     {
-        $whereClause = implode(" AND ", array_map(fn($col) => "`$col` = ?", array_keys($where)));
-        $sql = "DELETE FROM `{$table}` WHERE $whereClause";
+        $whereClause = implode(" AND ", array_map(fn($col) => self::quoteIdentifier($col) . " = ?", array_keys($where)));
+        $sql = "DELETE FROM " . self::quoteIdentifier($table) . " WHERE $whereClause";
 
         $pdo = self::conn();
         $stmt = $pdo->prepare($sql);
@@ -422,9 +478,9 @@ class DB
     public static function update(string $table, array $data, array $where)
     {
         $data = self::filterInsertData($data);
-        $setClause = implode(", ", array_map(fn($col) => "`$col` = ?", array_keys($data)));
-        $whereClause = implode(" AND ", array_map(fn($col) => "`$col` = ?", array_keys($where)));
-        $sql = "UPDATE `{$table}` SET $setClause WHERE $whereClause";
+        $setClause = implode(", ", array_map(fn($col) => self::quoteIdentifier($col) . " = ?", array_keys($data)));
+        $whereClause = implode(" AND ", array_map(fn($col) => self::quoteIdentifier($col) . " = ?", array_keys($where)));
+        $sql = "UPDATE " . self::quoteIdentifier($table) . " SET $setClause WHERE $whereClause";
         $params = array_merge(array_values($data), array_values($where));
 
         $pdo = self::conn();
@@ -474,7 +530,12 @@ class DB
                 break;
             case 'INSERT':
                 self::$lastRowCount = 1;
-                $rett = $pdo->lastInsertId();
+                if (self::isPostgres() && stripos($sql, 'RETURNING') !== false) {
+                    $result = $stmt->fetch(\PDO::FETCH_NUM);
+                    $rett = $result ? $result[0] : $pdo->lastInsertId();
+                } else {
+                    $rett = $pdo->lastInsertId();
+                }
                 break;
             case 'UPDATE':
             case 'DELETE':
@@ -490,11 +551,15 @@ class DB
 
     public static function select(string $table, string|array|null $columns = null, array $extra = []): array
     {
-        if ($columns === null || $columns === [] || $columns === '') $cols = '*';
-        elseif (is_array($columns)) $cols = implode(',', array_map(fn($c) => "`" . trim($c, '`') . "`", $columns));
-        else $cols = "`" . trim($columns, '`') . "`";
+        if ($columns === null || $columns === [] || $columns === '') {
+            $cols = '*';
+        } elseif (is_array($columns)) {
+            $cols = implode(',', array_map(fn($c) => self::quoteIdentifier(trim($c, '`')), $columns));
+        } else {
+            $cols = self::quoteIdentifier(trim($columns, '`'));
+        }
 
-        $sql = "SELECT $cols FROM `{$table}`";
+        $sql = "SELECT $cols FROM " . self::quoteIdentifier($table);
         if (isset($extra['group by'])) $sql .= " GROUP BY " . $extra['group by'];
         if (isset($extra['having'])) $sql .= " HAVING " . $extra['having'];
         if (isset($extra['order by'])) $sql .= " ORDER BY " . $extra['order by'];
@@ -670,7 +735,7 @@ class DB
 
         $columns = array_keys($rows[0]);
 
-        $columnSql = implode(", ", array_map(fn($c) => "`{$c}`", $columns));
+        $columnSql = implode(", ", array_map(fn($c) => self::quoteIdentifier($c), $columns));
 
         $placeholder = "(" . implode(",", array_fill(0, count($columns), "?")) . ")";
 
@@ -686,7 +751,11 @@ class DB
             }
         }
 
-        $sql = "INSERT INTO `{$table}` ({$columnSql}) VALUES " . implode(",", $values);
+        $sql = "INSERT INTO " . self::quoteIdentifier($table) . " ({$columnSql}) VALUES " . implode(",", $values);
+
+        if (self::isPostgres()) {
+            $sql .= " RETURNING " . self::quoteIdentifier(self::$primaryKey);
+        }
 
         self::$lastQuery = $sql;
         self::$lastBindings = $bindings;
@@ -804,7 +873,8 @@ class DB
     ): int {
         [$whereClause, $bindings] = self::buildWhere($where);
 
-        $sql = "UPDATE `{$table}` SET `{$column}` = `{$column}` + :increment";
+        $sql = "UPDATE " . self::quoteIdentifier($table) .
+            " SET " . self::quoteIdentifier($column) . " = " . self::quoteIdentifier($column) . " + :increment";
 
         if ($whereClause) {
             $sql .= " WHERE {$whereClause}";
@@ -833,7 +903,8 @@ class DB
     ): int {
         [$whereClause, $bindings] = self::buildWhere($where);
 
-        $sql = "UPDATE `{$table}` SET `{$column}` = `{$column}` - :decrement";
+        $sql = "UPDATE " . self::quoteIdentifier($table) .
+            " SET " . self::quoteIdentifier($column) . " = " . self::quoteIdentifier($column) . " - :decrement";
 
         if ($whereClause) {
             $sql .= " WHERE {$whereClause}";
@@ -854,17 +925,6 @@ class DB
         return self::$lastRowCount;
     }
 
-    /**
-     * Execute a callback within a database transaction.
-     *
-     * The bundle (Transaction) is automatically committed if the callback
-     * completes successfully, or rolled back if any Throwable
-     * is thrown.
-     *
-     * Do not manually call commit() or rollback() inside the callback.
-     *
-     * @throws Throwable
-     */
     public static function bundle(callable $callback)
     {
         db_start();
