@@ -2407,6 +2407,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 closeModal('removeColumnModal');
                 await loadTableInfo();
                 await loadTableData();
+            } else {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+                closeModal('removeColumnModal');
             }
         }
 
@@ -3009,6 +3015,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 closeModal('insertRowModal');
                 await loadTableData();
             } else {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
                 closeModal('insertRowModal');
             }
         }
@@ -3126,6 +3136,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 closeModal('editRowModal');
                 await loadTableData();
             } else {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
                 closeModal('editRowModal');
             }
         }
