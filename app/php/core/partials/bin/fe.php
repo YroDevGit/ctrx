@@ -303,6 +303,13 @@ if (! function_exists('assets')) {
         if ($path == "" || $path == null) {
             return assets;
         } else {
+            $path = trim($path, "/");
+            $path = trim($path, "\\");
+
+            if (str_ends_with($path, ".css") || str_ends_with($path, ".js") || str_ends_with($path, ".scss")) {
+                $version = fe_config("assets_version") ? strval(fe_config("assets_version")) : "1.0";
+                $path = $path . "?v=" . $version;
+            }
             return assets . "/" . $path;
         }
     }

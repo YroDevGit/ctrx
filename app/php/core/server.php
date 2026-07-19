@@ -60,7 +60,7 @@ foreach ($system as $k => $v) {
     include $v;
 }
 
-include "app/php/core/partials/ctrxc.php";
+include_once "app/php/core/partials/ctrxc.php";
 
 define("roothpath", env("roothpath"));
 
@@ -234,7 +234,6 @@ if (str_starts_with($req, "api/")) {
     });
 
     try {
-        include "app/php/core/partials/cx.php";
         $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
         $mainpage = $view_config['main_page'] ?? "main";
