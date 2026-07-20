@@ -159,13 +159,17 @@ class Ctrx
         $remaining = max(0, $limit - $data['count']);
         $reset = $data['start'] + $window;
 
-        header("X-RateLimit-Limit: {$limit}");
-        header("X-RateLimit-Remaining: {$remaining}");
-        header("X-RateLimit-Reset: {$reset}");
-
         if ($data['count'] > $limit) {
+
+            header("X-RateLimit-Limit: {$limit}");
+            header("X-RateLimit-Remaining: {$remaining}");
+            header("X-RateLimit-Reset: {$reset}");
             flock($fp, LOCK_UN);
             fclose($fp);
+            if (ctrx_endpoint() == "FE") {
+                throw new Exception("Request limit exceeded, please try again later.");
+                return;
+            }
 
             header('Content-Type: application/json');
             http_response_code(429);
@@ -181,7 +185,6 @@ class Ctrx
                 'window'      => $window,
                 'retry_after' => max(0, $window - (time() - $data['start']))
             ]);
-
             exit;
         }
 

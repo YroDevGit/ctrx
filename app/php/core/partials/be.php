@@ -243,17 +243,9 @@ if (! function_exists("has_internet_connection")) {
 if (! function_exists("add_sql_log")) {
     function add_sql_log($string, string $type = "info", string $intro = "")
     {
-        $arr = range('A', 'Z');
-        $arr = array_merge($arr, range(1, 9));
-        shuffle($arr);
-
-        if (isset($_SESSION['set_sql_batch'])) {
-            $mx = $_SESSION['set_sql_batch'];
-        } else {
-            $mx = $arr[0] . $arr[1] . $arr[2] . $arr[3] . $arr[4];
-            $_SESSION['set_sql_batch'] = $mx;
-        }
-
+        include_once "app/php/core/partials/bin/fe.php";
+        $mx = ctr_get_current_request_id() ?? "";
+        \Classes\Ctrx::x_rate_limit(20, 60, "ctrx/add/sql/logs/1005342/1005");
         $logConfig = [
             "info"     => ["env" => "sql_logs",   "dir" => "logs/sql_logs",   "prefix" => "INFO"],
             "error"    => ["env" => "sql_errors", "dir" => "logs/sql_errors", "prefix" => "ERROR"],
@@ -586,13 +578,14 @@ if (! function_exists("in_table_strict")) {
     }
 }
 
-if(! function_exists("backend_only")){
-    function backend_only(callable|null $func = null){
+if (! function_exists("backend_only")) {
+    function backend_only(callable|null $func = null)
+    {
         $ep = ctrx_endpoint();
-        if($ep !== "BE"){
-            if(is_null($func)){
+        if ($ep !== "BE") {
+            if (is_null($func)) {
                 die("Client access declined by server.");
-            }else{
+            } else {
                 $func();
             }
         }
@@ -600,38 +593,47 @@ if(! function_exists("backend_only")){
 }
 
 
-if(! function_exists("what_ctrx_file")){
-    function what_ctrx_file(){
+if (! function_exists("what_ctrx_file")) {
+    function what_ctrx_file()
+    {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
         return $trace[1]['file'];;
     }
 }
 
-if(! function_exists("allow_client_access")){
-    function allow_client_access(){
+if (! function_exists("allow_client_access")) {
+    function allow_client_access()
+    {
         $backendPath = "app/php/core/partials/backend.php";
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
         $file = $trace[0]['file'];
-        if(! str_contains($file, "app\\model\\") && ! str_contains($file, "app\\library\\") && ! str_contains($file, "app\\base\\")){
+        if (! str_contains($file, "app\\model\\") && ! str_contains($file, "app\\library\\") && ! str_contains($file, "app\\base\\")) {
             throw new Exception("Unable to call this function on client side");
         }
         $allFiles = get_included_files();
         $hasIt = false;
-        foreach($allFiles as $k=>$v){
-            if(str_contains($v, $backendPath)){$hasIt = true; break;}
+        foreach ($allFiles as $k => $v) {
+            if (str_contains($v, $backendPath)) {
+                $hasIt = true;
+                break;
+            }
         }
-        if(! $hasIt){
+        if (! $hasIt) {
             include_once $backendPath;
         }
     }
 }
 
-if(! function_exists("is_already_included")){
-    function is_already_included(string $filepath):bool{
+if (! function_exists("is_already_included")) {
+    function is_already_included(string $filepath): bool
+    {
         $allFiles = get_included_files();
         $hasIt = false;
-        foreach($allFiles as $k=>$v){
-            if(str_contains($v, filepath)){$hasIt = true; break;}
+        foreach ($allFiles as $k => $v) {
+            if (str_contains($v, filepath)) {
+                $hasIt = true;
+                break;
+            }
         }
         return $hasIt;
     }

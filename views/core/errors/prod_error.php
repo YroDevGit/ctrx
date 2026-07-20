@@ -8,6 +8,7 @@ http_response_code(500);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>CTRX | Server Error</title>
@@ -23,6 +24,7 @@ http_response_code(500);
         body {
             font-family: 'JetBrains Mono', monospace;
         }
+
         .glow {
             text-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
         }
@@ -57,7 +59,7 @@ http_response_code(500);
         </div>
 
         <div class="flex flex-wrap justify-center gap-4">
-            <a href="/" class="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition font-semibold">
+            <a href="<?= prev_page ?>" class="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition font-semibold">
                 Go Home
             </a>
             <button onclick="location.reload()" class="px-6 py-3 rounded-lg border border-zinc-700 hover:border-indigo-500 transition">
@@ -71,4 +73,5 @@ http_response_code(500);
     </div>
 
 </body>
+
 </html>
