@@ -7,6 +7,6 @@
     "assets_version": 1.0,
     "js_version": 1.0,
     "variable": {
-        "pagename" : "CodeTazer App"
+        "app_name" : "CodeTazer App"
     }
 }
