@@ -3,10 +3,12 @@
 namespace Classes;
 
 use Error;
+use Exception;
 
 class Ctrx
 {
     private static string|null $xrateMessage = null;
+    private static $lastDuration = 60;
 
     public static function generate_token(string|int $text, string|null $key = null, int $length = 22): string
     {
@@ -252,23 +254,67 @@ class Ctrx
         return true;
     }
 
-    public static function set_user_role(string|int $role, int $duration = 60): void
+    public static function set_user_role(string|int $role, $autoAdmin = true): void
     {
-        \Classes\Ccookie::add("ctrx_user_role", $role, $duration);
-    }
-
-    public static function get_user_role(string|int $role): null|int|string
-    {
-        $role = \Classes\Ccookie::get("ctrx_user_role");
-        if (! $role) {
-            return null;
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            throw new Exception("Access tools: invalid call without user data");
         }
-        return $role;
+
+        if (env('database') && $role != "admin") {
+            if (\Classes\DB::tableExists("ctrx_roles") && \Classes\DB::tableExists("ctrx_roles_access")) {
+                $find = \Classes\DB::findOne("ctrx_roles", ["role_name" => $role]);
+                if (! $find) {
+                    throw new Exception("set_user_role: Invalid role '$role'");
+                }
+            }
+        }
+
+        $ctrxdata = [...$ctrxdata, "ctrx_user_role" => $role];
+
+        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, self::$lastDuration);
+
+        if ($role == "admin" && $autoAdmin) {
+            self::access_tools();
+        }
     }
 
-    public static function delete_user_role(): void
+    public static function set_logout_page(string|int $role): void
     {
-        \Classes\Ccookie::delete("ctrx_user_role");
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            throw new Exception("Access tools: invalid call without user data");
+        }
+
+        $ctrxdata = [...$ctrxdata, "ctrx_logout_page" => $role];
+
+        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, self::$lastDuration);
+    }
+
+    public static function get_logout_page(): null|int|string
+    {
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            return null;
+        } else {
+            if (isset($ctrxdata['ctrx_logout_page'])) {
+                return $ctrxdata['ctrx_logout_page'] ?? null;
+            }
+        }
+        return null;
+    }
+
+    public static function get_user_role(): null|int|string
+    {
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            return null;
+        } else {
+            if (isset($ctrxdata['ctrx_user_role'])) {
+                return $ctrxdata['ctrx_user_role'] ?? null;
+            }
+        }
+        return null;
     }
 
     public static function delete_user_data(): void
@@ -279,7 +325,6 @@ class Ctrx
     public static function reset_all_user_data(): void
     {
         self::delete_user_data();
-        self::delete_user_role();
         self::set_logged_in(false);
     }
 
@@ -296,7 +341,7 @@ class Ctrx
         return false;
     }
 
-    public static function set_user_data(array $data, int $duration = 60): void
+    public static function set_user_data(array $data, int $duration = 1440): void
     {
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
         if ($ctrxdata) {
@@ -304,7 +349,45 @@ class Ctrx
         } else {
             $ctrxdata = $data;
         }
+        self::$lastDuration = $duration;
         \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, $duration);
+    }
+
+    /**
+     * requirements: set_user_data
+     * Access ctrx admin tools
+     */
+    public static function access_tools(string ...$tools)
+    {
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            throw new Exception("Access tools: invalid call without user data");
+        }
+        if (! $tools) {
+            $extraData = ["data", "translations", "database", "roles"];
+            $ctrxdata = [...$ctrxdata, "access_ctrx_tools" => $extraData];
+        } else {
+            $ctrxdata = [...$ctrxdata, "access_ctrx_tools" => $tools];
+        }
+        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, self::$lastDuration);
+        return true;
+    }
+
+    /**
+     * requirements: access_tools
+     * Get tool that can be accessed by current user
+     */
+    public static function get_access_tools()
+    {
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        if (! $ctrxdata) {
+            return [];
+        } else {
+            if (isset($ctrxdata['access_ctrx_tools'])) {
+                return $ctrxdata['access_ctrx_tools'];
+            }
+        }
+        return [];
     }
 
     public static function extend_user_data($duration)
@@ -325,6 +408,52 @@ class Ctrx
             return $ctrxdata;
         }
         return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
+    }
+
+    public static function role_filtering(callable|null $execute = null)
+    {
+        $role = null;
+        $currPage = current_page();
+        $roleFilt = fe_config("role_filtering");
+        $UserRole = self::get_user_role();
+        if ($roleFilt != "yes" || $roleFilt == null) {
+            return;
+        }
+        if (! env('database')) {
+            return;
+        }
+        if ($UserRole == "admin") {
+            return;
+        }
+        if ($currPage == "ctrx/logout") {
+            return;
+        }
+        if (str_starts_with($currPage, "ctrxtools")) {
+            return;
+        }
+        if (! \Classes\DB::tableExists("ctrx_roles")) {
+            return;
+        }
+        if (! $role) {
+            $role = $UserRole ?? "public";
+        }
+
+        $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
+        $param = [$role, $currPage];
+        $result = \Classes\DB::query($query, $param);
+
+        if (! $result) {
+            if (is_null($execute)) {
+                if (self::has_user_data()) {
+                    self::forbidden_page();
+                } else {
+                    self::forbidden_page(self::get_logout_page());
+                }
+            } else if (is_callable($execute)) {
+                $execute($result);
+            }
+        }
+        return true;
     }
 
     public static function has_user_data(): bool
@@ -416,28 +545,40 @@ class Ctrx
         if ($exit) exit;
     }
 
-    public static function use_database_management(string|null $backpage = null, $exit = true)
+    public static function use_roles_tools(string|null $backpage = null, $exit = true)
     {
         self::resetBackend();
         $backRoute = $backpage ?? previous_page();
-        if ($backRoute) {
-            include "app/php/core/system/dtbs.php";
+        if ($backRoute) {;
+            include "app/php/core/system/ctrxroles.php";
         } else {
-            include "app/php/core/system/dtbs.php";
+            include "app/php/core/system/ctrxroles.php";
+        }
+        if ($exit) exit;
+    }
+
+    public static function use_database_management(string|null $backpage = null, $exit = true)
+    {
+        //self::resetBackend();
+        $backRoute = $backpage ?? previous_page();
+        if ($backRoute) {
+            include_once "app/php/core/system/dtbs.php";
+        } else {
+            include_once "app/php/core/system/dtbs.php";
         }
         if ($exit) exit;
     }
 
     public static function forbidden_page(string|null $backpage = null, $exit = true)
     {
-        $backRoute = $backpage ?? previous_page();
+        if (! defined("prev_page")) define("prev_page", prev_page());
+        $backRoute = $backpage ?? prev_page ?? "/";
         if ($backRoute) {
             $backRoute = str_starts_with($backRoute, "/") ? $backRoute : "/" . $backRoute;
             extract([
                 "backpage" => $backRoute
             ]);
         }
-        if (! defined("prev_page")) define("prev_page", prev_page());
         include "views/core/errors/forbidden.php";
         if ($exit) exit;
     }

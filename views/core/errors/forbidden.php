@@ -111,7 +111,7 @@
             This area is protected by <strong>CTR-X Security Layer</strong>.
         </p>
 
-        <a href="<?= prev_page ?>" class="btn">Return Home</a>
+        <a href="<?= $backpage ?>" class="btn">Return Home</a>
     </div>
 
 </body>

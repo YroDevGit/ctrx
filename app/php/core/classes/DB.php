@@ -937,4 +937,30 @@ class DB
             throw $e;
         }
     }
+
+    public static function tableExists($tableName)
+    {
+        try {
+            $pdo = pdo();
+            $driver = env('dbdriver') ?? "mysql";
+            switch ($driver) {
+                case 'mysql':
+                case 'mariadb':
+                    $stmt = $pdo->query("SHOW TABLES LIKE '{$tableName}'");
+                    return $stmt->rowCount() > 0;
+                case 'pgsql':
+                    $stmt = $pdo->prepare("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = ?)");
+                    $stmt->execute([$tableName]);
+                    return $stmt->fetchColumn() === 't' || $stmt->fetchColumn() === true;
+                case 'sqlite':
+                    $stmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
+                    $stmt->execute([$tableName]);
+                    return $stmt->fetch() !== false;
+                default:
+                    return false;
+            }
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
 }

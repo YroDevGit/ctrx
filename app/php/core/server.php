@@ -74,28 +74,6 @@ if ($req == "api") {
 include "app/php/core/system/loader.php";
 
 /**
- * Ctrx DB tools for import export
- */
-if (str_starts_with($req, "ctrxtools/db")) {
-    \Classes\Ctrx::use_tool("app/config/db_tools.php", "ctrxtools/db");
-    return;
-}
-/**
- * Ctrx DB tools for database management
- */
-if (str_starts_with($req, "ctrxtools/database")) {
-    \Classes\Ctrx::use_tool("app/config/ctr_db.php", "ctrxtools/database");
-    return;
-}
-/**
- * Ctrx Translation tools for import export
- */
-if (str_starts_with($req, "ctrxtools/translations")) {
-    \Classes\Ctrx::use_tool("app/config/translations.php", "ctrxtools/translations");
-    exit;
-}
-
-/**
  * Ctrx Game for devs
  */
 if (str_starts_with($req, "ctrxtools/game")) {
@@ -275,13 +253,111 @@ if (str_starts_with($req, "api/")) {
             \Classes\Ctrx::systemMaintenance();
         }
 
+        if (! defined("prev_page")) define("prev_page", prev_page());
+
+        if ($req == "ctrx/logout") {
+            $page = $_GET['page'] ?? \Classes\Ctrx::get_logout_page() ?? "/";
+            \Classes\Ctrx::delete_user_data();
+            redirect($page);
+        }
+        /**
+         * Ctrx DB tools for database management
+         */
+        if (str_starts_with($req, "ctrxtools/database")) {
+            $data = \Classes\Ctrx::get_user_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("database", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            Classes\Ctrx::use_database_management();
+        }
+        /**
+         * Ctrx DB tools for import export
+         */
+        if (str_starts_with($req, "ctrxtools/data")) {
+            $data = \Classes\Ctrx::get_user_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("data", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            \Classes\Ctrx::use_db_tools();
+        }
+        /**
+         * Ctrx Translation tools for import export
+         */
+        if (str_starts_with($req, "ctrxtools/roles")) {
+            $data = \Classes\Ctrx::get_user_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("roles", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            \Classes\Ctrx::use_roles_tools();
+        }
+        /**
+         * Ctrx Translation tools for import export
+         */
+        if (str_starts_with($req, "ctrxtools/translations")) {
+            $data = \Classes\Ctrx::get_user_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("translations", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            \Classes\Ctrx::use_translate_tools();
+        }
+
+        /**
+         * Ctrx Tools page
+         */
+        if (str_starts_with($req, "ctrxtools")) {
+            $data = \Classes\Ctrx::get_user_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
+            $userTools = \Classes\Ctrx::get_access_tools();;
+            if (empty($userTools)) {
+                \Classes\Ctrx::forbidden_page();
+            }
+            include_once "app/php/core/system/toolpicker.php";
+            exit;
+        }
+
         if (!\Classes\Ctrx::file_exists_strict($fullpath)) {
             $errorpage = $view_config["page_not_found"] ?? "404";
             \Classes\Ctrx::page404($errorpage, false);
             exit;
         }
 
-        if (! defined("prev_page")) define("prev_page", prev_page());
         include $fullpath;
         if (env('debugger') == "yes") {
             include_once "views/core/partials/system/dev.php";

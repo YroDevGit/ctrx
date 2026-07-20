@@ -23,7 +23,6 @@ if (! function_exists("load_routes")) {
     {
         $serve = "";
         $ep = ctrx_endpoint();
-
         if ($ep == "FE") $serve = "views/app/routes/";
         else $serve = "app/_routes/";
         foreach ($routes as $k => $routing) {

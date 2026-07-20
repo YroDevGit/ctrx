@@ -455,6 +455,45 @@ if (! function_exists('redirect')) {
     }
 }
 
+if (! function_exists('redirect_logout')) {
+    function redirect_logout(string|null $logoutPage = null, string $type = "page", int $time = 0, $exit = true)
+    {
+        $path = "ctrx/logout";
+        if ($path !== "/") {
+            if (! str_starts_with($path, "/")) {
+                $path = "/" . $path;
+            }
+        }
+        if ($type == "page") {
+            if ($logoutPage) {
+                header("refresh: $time; url=" . $path . "?page=" . $logoutPage);
+            } else {
+                header("refresh: $time; url=" . $path);
+            }
+        }
+        if ($exit) {
+            exit;
+        }
+    }
+}
+
+if (! function_exists("ctrx_logout")) {
+    function ctrx_logout($page = null)
+    {
+        $page = $page ?? \Classes\Ctrx::get_logout_page() ?? "/";
+        return "ctrx/logout?page=$page";
+    }
+}
+
+if (! function_exists("ctrx_error_message")) {
+    function ctrx_error_message(string $message, $path = "/", int $seconds = 2)
+    {
+        echo "<b style='color:red;'>$message</b>";
+        header("refresh: $seconds; url=" . $path);
+        exit;
+    }
+}
+
 if (! function_exists("write_sql_log")) {
     function write_sql_log($message)
     {
@@ -631,7 +670,7 @@ if (! function_exists("ctrx_endpoint")) {
     function ctrx_endpoint()
     {
         $param = ctrx_param;
-        if (str_starts_with($param, "api/") || str_starts_with($param, "ctrxtools/")) {
+        if (str_starts_with($param, "api/")) {
             return "BE";
         }
         return "FE";

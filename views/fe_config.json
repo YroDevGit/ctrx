@@ -3,6 +3,7 @@
     "page_not_found": "404",
     "prod_error_page": "prod_error",
     "dev_error_page": "dev_error",
+    "role_filtering": "yes",
     "assets_version": 1.0,
     "js_version": 1.0,
     "variable": {
