@@ -332,7 +332,7 @@ class CtrClass {
                             width: ${size}px;
                             height: ${size}px;
                             border: ${border}px solid #e2e8f0;
-                            border-top-color: #00ccff;
+                            border-top-color: ${config.color ?? "#287217"};
                             border-radius: 50%;
                             animation: spin 0.8s linear infinite;
                             flex-shrink: 0;
@@ -465,6 +465,22 @@ class CtrClass {
                 }
             }
         });
+    }
+
+    redirect_logout(page = null) {
+        let path = "/ctrx/logout";
+        if (page && typeof page == "string") {
+            path = page + "?page=" + page;
+        }
+        location.href = path;
+    }
+
+    logout(page = null) {
+        let path = "/ctrx/logout";
+        if (page && typeof page == "string") {
+            path = page + "?page=" + page;
+        }
+        return path;
     }
 
     add_html(selector, strhtml) {
@@ -958,6 +974,7 @@ class CtrClass {
 
 const CTR = new CtrClass();
 const Ctr = CTR;
+const Ctrx = CTR;
 
 if (typeof window !== "undefined") {
     window.Ctr = CTR;
@@ -967,4 +984,5 @@ if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
     module.exports = Ctr;
 }
 
+export { Ctrx };
 export default Ctr;

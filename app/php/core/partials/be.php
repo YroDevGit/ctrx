@@ -245,7 +245,7 @@ if (! function_exists("add_sql_log")) {
     {
         include_once "app/php/core/partials/bin/fe.php";
         $mx = ctr_get_current_request_id() ?? "";
-        \Classes\Ctrx::x_rate_limit(20, 60, "ctrx/add/sql/logs/1005342/1005");
+        \Classes\Ctrx::x_rate_limit(20, 200, "ctrx/add/sql/logs/1005342/1005");
         $logConfig = [
             "info"     => ["env" => "sql_logs",   "dir" => "logs/sql_logs",   "prefix" => "INFO"],
             "error"    => ["env" => "sql_errors", "dir" => "logs/sql_errors", "prefix" => "ERROR"],

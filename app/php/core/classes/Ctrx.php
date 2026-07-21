@@ -167,7 +167,7 @@ class Ctrx
             flock($fp, LOCK_UN);
             fclose($fp);
             if (ctrx_endpoint() == "FE") {
-                throw new Exception("Request limit exceeded, please try again later.");
+                die("Too many attemps, please try again later.");
                 return;
             }
 
@@ -280,6 +280,20 @@ class Ctrx
         if ($role == "admin" && $autoAdmin) {
             self::access_tools();
         }
+    }
+
+    public static function logout($page = null)
+    {
+        $path = "/ctrx/logout";
+        if ($page && is_string($path)) {
+            $path = $page + "?page=" + $page;
+        }
+        return $path;
+    }
+
+    public static function redirect_logout($page = null)
+    {
+        redirect_logout($page);
     }
 
     public static function set_logout_page(string|int $role): void
@@ -583,6 +597,12 @@ class Ctrx
             ]);
         }
         include "views/core/errors/forbidden.php";
+        if ($exit) exit;
+    }
+
+    public static function blocking_page($exit = true)
+    {
+        include "views/core/errors/blocked.php";
         if ($exit) exit;
     }
 

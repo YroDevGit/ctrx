@@ -458,7 +458,7 @@ if (! function_exists('redirect')) {
 if (! function_exists('redirect_logout')) {
     function redirect_logout(string|null $logoutPage = null, string $type = "page", int $time = 0, $exit = true)
     {
-        $path = "ctrx/logout";
+        $path = "/ctrx/logout";
         if ($path !== "/") {
             if (! str_starts_with($path, "/")) {
                 $path = "/" . $path;
@@ -480,8 +480,7 @@ if (! function_exists('redirect_logout')) {
 if (! function_exists("ctrx_logout")) {
     function ctrx_logout($page = null)
     {
-        $page = $page ?? \Classes\Ctrx::get_logout_page() ?? "/";
-        return "ctrx/logout?page=$page";
+        return "/ctrx/logout?page=$page";
     }
 }
 
