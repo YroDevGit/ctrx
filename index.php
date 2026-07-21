@@ -13,7 +13,7 @@
 
 /**
  * For deployment please attach or generate htaccess for routing
- * command: php ctrx generate:htaccess
+ * command: php cli generate:htaccess
  */
 
 
