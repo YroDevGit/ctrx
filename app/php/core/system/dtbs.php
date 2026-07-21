@@ -5,10 +5,12 @@ include_once "app/php/core/partials/envloader.php";
  * This is CTR-X database management page
  * Where you can manage your entire database
  * Made by CodeYro
- * Modified date: July 17 2026
+ * Modified date: July 21 2026
  * 
  * Added Multi-Database Support (MySQL, PostgreSQL, SQLite)
  * Updated Export to use INSERT IGNORE / ON CONFLICT based on driver
+ * Added eye icon to show credentials modal
+ * Added pagination for table data (Next button for next 100 records)
  */
 
 $dbname = env("database");
@@ -226,17 +228,26 @@ function getTableInfo($pdo, $table)
     }
 }
 
-function getTableData($pdo, $table, $limit = 100)
+function getTableData($pdo, $table, $limit = 100, $offset = 0)
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $quoted = quoteIdentifier($table);
-    $result = executeQuery($pdo, "SELECT * FROM $quoted LIMIT $limit");
+
+    $countResult = executeQuery($pdo, "SELECT COUNT(*) as total FROM $quoted");
+    if (!$countResult['success']) return $countResult;
+    $totalCount = $countResult['data']->fetch()['total'];
+
+    if ($offset >= $totalCount) {
+        return ['success' => true, 'data' => [], 'total' => $totalCount];
+    }
+
+    $result = executeQuery($pdo, "SELECT * FROM $quoted LIMIT $limit OFFSET $offset");
     if (!$result['success']) return $result;
     $data = [];
     while ($row = $result['data']->fetch()) {
         $data[] = $row;
     }
-    return ['success' => true, 'data' => $data];
+    return ['success' => true, 'data' => $data, 'total' => $totalCount];
 }
 
 function createTable($pdo, $tableName, $columnDefs)
@@ -655,7 +666,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $response = getTableInfo($pdo, $_POST['table'] ?? '');
                 break;
             case 'getTableData':
-                $response = getTableData($pdo, $_POST['table'] ?? '');
+                $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 100;
+                $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+                $response = getTableData($pdo, $_POST['table'] ?? '', $limit, $offset);
                 break;
             case 'createTable':
                 $response = createTable($pdo, $_POST['tableName'] ?? '', $_POST['columns'] ?? '');
@@ -818,11 +831,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         .db-header {
             border-left: 4px solid #0d6efd;
             padding-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .db-header h2 {
             font-size: 24px;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .db-header h2 .text-primary {
@@ -964,17 +983,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         .btn-outline-info:hover {
             background: #0dcaf0;
             color: #212529;
-        }
-
-        .btn-outline-primary {
-            background: transparent;
-            color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        .btn-outline-primary:hover {
-            background: #0d6efd;
-            color: white;
         }
 
         .w-100 {
@@ -1643,6 +1651,95 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             font-weight: 500;
         }
 
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+
+        .credential-item .label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .credential-item .value {
+            color: #212529;
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .eye-icon {
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.6;
+            transition: opacity 0.15s;
+            background: none;
+            border: none;
+            padding: 0 4px;
+        }
+
+        .eye-icon:hover {
+            opacity: 1;
+        }
+
+        .pagination-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-top: 1px solid #e9ecef;
+            margin-top: 10px;
+        }
+
+        .pagination-bar .info {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+
+        .credential-item .label {
+            font-weight: 500;
+            color: #495057;
+            min-width: 150px;
+        }
+
+        .credential-item .value {
+            color: #212529;
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .credential-item .copy-btn {
+            padding: 2px 8px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
         @media (max-width: 768px) {
 
             .col-md-3,
@@ -1713,6 +1810,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             .field-row .skip-checkbox {
                 margin-left: auto;
             }
+
+            .db-header {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -1722,9 +1823,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <div class="container" id="app">
         <div class="header">
             <div class="db-header">
-                <h2><span class="icon"></span>Database: <span class="text-primary"><?= $dbname ?></span></h2>
-                <small>CTRX database management system</small>
+                <h2>
+                    <span class="icon"></span>CTRX DBMS</span>
+                    <button class="eye-icon" onclick="showCredentialsModal()" title="View Database Credentials">👁️</button>
+                </h2>
+
             </div>
+
             <div>
                 <button class="btn btn-success btn-sm export-sql-btn" onclick="showExportModal()">
                     <span class="icon">💾</span> Export SQL
@@ -1778,6 +1883,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="credentialsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h5><span class="icon">🔐</span>Database Credentials</h5>
+                <button class="btn-close" onclick="closeModal('credentialsModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <?php
+                $actualPassword = env('dbpass');
+                $displayPassword = $actualPassword ? '••••••••' : '(empty)';
+                ?>
+                <div class="credential-item">
+                    <span class="label">HOST (dbhost)</span>
+                    <span class="value" id="cred_host"><?= env('dbhost') ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_host')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">PORT (dbport)</span>
+                    <span class="value" id="cred_port"><?= env('dbport') ?: '3306' ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_port')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">DATABASE (database)</span>
+                    <span class="value" id="cred_database"><?= env('database') ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_database')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">USER (dbuser)</span>
+                    <span class="value" id="cred_user"><?= env('dbuser') ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_user')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">PASSWORD (dbpass)</span>
+                    <span class="value" id="cred_password" data-actual="<?= htmlspecialchars($actualPassword) ?>"><?= $displayPassword ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_password')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">CHARSET (dbcharset)</span>
+                    <span class="value" id="cred_charset"><?= env('dbcharset') ?: 'utf8mb4' ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_charset')">📋</button>
+                </div>
+                <div class="credential-item">
+                    <span class="label">DRIVER (dbdriver)</span>
+                    <span class="value" id="cred_driver"><?= env('dbdriver') ?: 'mysql' ?></span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_driver')">📋</button>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="btn btn-primary btn-sm" onclick="copyAllCredentials()">📋 Copy All Credentials</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('credentialsModal')">Close</button>
             </div>
         </div>
     </div>
@@ -2072,6 +2233,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         let tableData = [];
         let allTableNames = [];
         let selectedFile = null;
+        let currentPage = 0;
+        let totalRecords = 0;
+        const dataLimit = 100;
+        let filteredData = [];
 
         function openModal(id) {
             document.getElementById(id).classList.add('show');
@@ -2110,6 +2275,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         function hideLoading(element) {
             if (!element) return;
             element.classList.remove('loading');
+        }
+
+        function showCredentialsModal() {
+            openModal('credentialsModal');
         }
 
         async function apiRequest(action, data = {}) {
@@ -2441,6 +2610,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
         async function selectTable(table) {
             currentTable = table;
+            currentPage = 0;
+            totalRecords = 0;
+            filteredData = [];
             await loadTables();
             await loadTableInfo();
             await loadTableData();
@@ -2455,6 +2627,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 currentColumns = result.data.columns || [];
                 currentKeys = result.data.keys || {};
                 renderTableInfo();
+                await loadTableData();
             }
         }
 
@@ -2546,25 +2719,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if (!container) return;
 
             showLoading(container);
+            const offset = currentPage * dataLimit;
             const result = await apiRequest('getTableData', {
-                table: currentTable
+                table: currentTable,
+                limit: dataLimit,
+                offset: offset
             });
             hideLoading(container);
 
             if (result.success && result.data) {
                 tableData = result.data;
+                totalRecords = result.total || 0;
                 renderTableData();
             } else {
                 container.innerHTML = '<div class="text-center text-danger py-3">Failed to load data</div>';
             }
         }
 
-        let filteredData = [];
+        function goToPage(page) {
+            const totalPages = Math.ceil(totalRecords / dataLimit);
+            if (page < 0 || page >= totalPages) return;
+            currentPage = page;
+            loadTableData();
+        }
 
-        function renderTableData(newColumn = null, newValue = null) {
+        function renderTableData(filtered = false) {
             const container = document.getElementById('tableDataContainer');
             if (!container) return;
-
             const dataToShow = filteredData.length ? filteredData : tableData;
 
             if (!dataToShow.length) {
@@ -2575,13 +2756,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
             const columns = Object.keys(dataToShow[0]);
             const primaryKey = currentColumns.find(c => c.Key === 'PRI')?.Field || columns[0];
+            let totalPages = Math.ceil(totalRecords / dataLimit);
+
+            if (filtered == false || filteredData.length != 0) {
+                if (filteredData.length) {
+                    totalPages = Math.ceil(filteredData.length / dataLimit);
+                } else {
+                    totalPages = Math.ceil(totalRecords / dataLimit);
+                }
+            }
 
             const columnOptions = ['all', ...columns].map(col =>
                 `<option value="${col}">${col === 'all' ? 'All Columns' : col}</option>`
             ).join('');
 
             let html = `
-        <h6 style="margin-bottom: 10px;"><span class="icon">📊</span>Data (${dataToShow.length} rows)</h6>
+        <h6 style="margin-bottom: 10px;"><span class="icon">📊</span>Data (${dataToShow.length} of ${totalRecords} rows)</h6>
         
         <div class="filter-bar">
             <span class="filter-label">🔍 Search:</span>
@@ -2604,13 +2794,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <tbody>
     `;
 
-            dataToShow.forEach(row => {
-                html += '<tr>';
-                columns.forEach(col => {
-                    html += `<td>${row[col] !== null ? row[col] : '<span class="text-muted">NULL</span>'}</td>`;
-                });
-                const pkValue = row[primaryKey];
-                html += `
+            if (filtered == false || filteredData.length != 0) {
+                dataToShow.forEach(row => {
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        html += `<td>${row[col] !== null ? row[col] : '<span class="text-muted">NULL</span>'}</td>`;
+                    });
+                    const pkValue = row[primaryKey];
+                    html += `
             <td>
                 <button class="btn btn-outline-primary btn-sm" onclick="showEditRowModal('${pkValue}')" style="margin: 2px;">
                     ✏️
@@ -2621,7 +2812,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             </td>
         </tr>
         `;
-            });
+                });
+            }
 
             html += `
                 </tbody>
@@ -2629,14 +2821,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     `;
 
-            setTimeout(() => {
-                if (newColumn) {
-                    document.getElementById('filterColumnSelect').value = newColumn ?? "all"
-                }
-                if (newValue) {
-                    document.getElementById('filterInputValue').value = newValue ?? ""
-                }
-            }, 600);
+            if (totalPages > 1 || currentPage > 0) {
+                html += `
+            <div class="pagination-bar">
+                <span class="info">Page ${currentPage + 1} of ${totalPages}</span>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="goToPage(${currentPage - 1})" ${currentPage === 0 ? 'disabled' : ''}>
+                        ← Previous
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>
+                        Next →
+                    </button>
+                </div>
+            </div>
+        `;
+            }
 
             container.innerHTML = html;
         }
@@ -2666,7 +2865,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     return String(row[column]).toLowerCase().includes(value.toLowerCase());
                 });
             }
-            renderTableData(column, value);
+            renderTableData(true);
+
+            setTimeout(() => {
+                document.getElementById('filterColumnSelect').value = column;
+                document.getElementById('filterInputValue').value = value;
+            }, 1000);
         }
 
         function clearFilter() {
@@ -2767,6 +2971,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             });
             if (result.success) {
                 showAlert(`Table "${currentTable}" truncated`, 'warning');
+                currentPage = 0;
                 await loadTableData();
             }
         }
@@ -3013,6 +3218,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if (result.success) {
                 showAlert('Row inserted successfully', 'success');
                 closeModal('insertRowModal');
+                currentPage = 0;
                 await loadTableData();
             } else {
                 window.scrollTo({
@@ -3134,6 +3340,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if (result.success) {
                 showAlert('Row updated successfully', 'success');
                 closeModal('editRowModal');
+                currentPage = 0;
                 await loadTableData();
             } else {
                 window.scrollTo({
@@ -3159,6 +3366,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             });
             if (result.success) {
                 showAlert('Row deleted', 'danger');
+                currentPage = 0;
                 await loadTableData();
             }
         }
@@ -3166,6 +3374,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         async function refreshAll() {
             await loadTables();
             if (currentTable) {
+                currentPage = 0;
                 await loadTableInfo();
                 await loadTableData();
             }
@@ -3176,6 +3385,65 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             document.getElementById('newTableName').value = '';
             document.getElementById('newTableColumns').value = 'id INT PRIMARY KEY AUTO_INCREMENT,\nname VARCHAR(100) NOT NULL';
             openModal('createTableModal');
+        }
+
+        function copyCredential(elementId) {
+            const element = document.getElementById(elementId);
+            let text;
+            if (elementId === 'cred_password') {
+                text = element.getAttribute('data-actual');
+            } else {
+                text = element.textContent;
+            }
+
+            if (!text || text === '(empty)') {
+                showAlert('No value to copy', 'warning');
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = element.parentElement.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1500);
+            }).catch(() => {
+                const range = document.createRange();
+                range.selectNode(element);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                showAlert('Copied!', 'success');
+            });
+        }
+
+        function copyAllCredentials() {
+            const credentialItems = document.querySelectorAll('.credential-item .value');
+            let allText = '';
+            credentialItems.forEach(item => {
+                const label = item.parentElement.querySelector('.label').textContent;
+                let value;
+                if (item.id === 'cred_password') {
+                    value = item.getAttribute('data-actual') || '';
+                } else {
+                    value = item.textContent;
+                }
+                allText += `${label}: ${value}\n`;
+            });
+
+            navigator.clipboard.writeText(allText).then(() => {
+                showAlert('All credentials copied!', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = allText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showAlert('All credentials copied!', 'success');
+            });
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
