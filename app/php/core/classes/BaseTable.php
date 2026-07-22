@@ -767,18 +767,19 @@ class BaseTable
         return $rwCount;
     }
 
-    public static function primaryKey(string $pk = null)
+    protected function primaryKey(string $pk = null)
     {
-        if (! $pk) return self::$primaryKey;
-        self::$primaryKey = $pk;
-        return self::$primaryKey;
+        if (! $pk) return $this->primaryKey;
+        $this->primaryKey = $pk;
+        return $this->primaryKey;
     }
 
     public static function delete(array|string|int $whereCondition)
     {
+        $self = static::instance();
         $where = [];
         if (is_string($whereCondition) || is_string($whereCondition)) {
-            $where = [self::$primaryKey => $whereCondition];
+            $where = [$self->primaryKey() => $whereCondition];
         }
         if (is_array($whereCondition)) {
             $where = $whereCondition;
@@ -900,6 +901,7 @@ class BaseTable
         string|array $uniqueColumns,
         string $condition = "and"
     ) {
+        $self = static::instance();
         $uniqueColumns = (array) $uniqueColumns;
 
         $condition = strtolower($condition);
@@ -933,7 +935,7 @@ class BaseTable
         $model = self::create($data);
 
         return self::findOne([
-            self::primaryKey() => $model->insertID()
+            $self->primaryKey() => $model->insertID()
         ]);
     }
 

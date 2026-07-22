@@ -9,6 +9,7 @@ class Ccookie
 
     public static function add(string $key, mixed $value, int|float $minute = 60): bool
     {
+        include_once "app/php/core/partials/bin/basixs.php";
         $newHour = 60 * $minute;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
@@ -26,6 +27,7 @@ class Ccookie
 
     public static function addImmortalCookie(string $key, mixed $value)
     {
+        include_once "app/php/core/partials/bin/basixs.php";
         $year = intval(date("Y")) + 10;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
@@ -113,6 +115,7 @@ class Ccookie
 
     public static function get(string $key)
     {
+        include_once "app/php/core/partials/bin/basixs.php";
         if (isset($_COOKIE[$key])) {
             $cookie = decrypt($_COOKIE[$key]);
             $ret = json_decode($cookie, true);

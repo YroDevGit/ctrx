@@ -334,6 +334,16 @@ class Ctrx
         return null;
     }
 
+    public static function has_user_roles(string ...$roles)
+    {
+        $curRole = self::get_user_role();
+        if (! $curRole) return false;
+        if (in_array($curRole, $roles)) {
+            return true;
+        }
+        return false;
+    }
+
     public static function delete_user_data(): void
     {
         \Classes\Ccookie::delete("ctrx_user_data");
@@ -744,9 +754,10 @@ class Ctrx
     {
         $beconfig = glob('app/config/*.php');
         foreach ($beconfig as $k => $v) {
-            if ($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
+            if ($v == "app/config/storage.php" || $v == "app\config\storage.php") continue;
             if ($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
             if ($v == "app/config/migration.php" || $v == "app\config\migration.php") continue;
+            if ($v == "app/config/upload_public.php" || $v == "app\config\upload_public.php") continue;
             include_once $v;
         }
     }

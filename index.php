@@ -13,7 +13,7 @@
 
 /**
  * For deployment please attach or generate htaccess for routing
- * command: php cli generate:htaccess
+ * command: php ctrx generate:htaccess
  */
 
 
@@ -92,7 +92,7 @@ if (str_starts_with($uri, "/ctrstorage/")) {
         "dir" => dirname($ctrstorage)
     ]);
     include "app/php/core/partials/filereader.php";
-    include "app/config/storage_config.php";
+    include "app/config/storage.php";
 }
 
 /**

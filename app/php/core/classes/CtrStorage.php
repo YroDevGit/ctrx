@@ -73,7 +73,7 @@ class CtrStorage
 
     //Pag gamit $upload =  Storage::upload_file($file)
     // $path = $upload['path'];
-    static function upload_file($file, bool|string $storagePath = true, string|null $path = null)
+    static function upload_file($file, bool|string $storagePath = true, string|null $path = "public")
     {
         if (! $file) {
             return null;
@@ -131,6 +131,112 @@ class CtrStorage
                 }
             }
         }
+    }
+
+    public static function ctrUploadImage($dir = "public", $roles = null)
+    {
+        if (is_array($roles)) {
+            if (!\Classes\Ctrx::has_user_roles(...$roles)) {
+                echo json_encode(['success' => false, 'message' => "User doesn't have an access to upload image."]);
+                exit;
+            }
+        }
+        $path = "views/core/partials/storage/$dir";
+        $fullPath = $path;
+
+        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => 'No image uploaded or upload error']);
+            exit;
+        }
+
+        if (!is_dir($fullPath)) {
+            mkdir($fullPath, 0755, true);
+        }
+
+        $file = $_FILES['image'];
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+
+        if (!in_array($extension, $imageTypes)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid image type']);
+            exit;
+        }
+
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file['name']);
+        $filePath = $fullPath . DIRECTORY_SEPARATOR . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+            $relativePath = str_replace(dirname(__DIR__) . '/', '', $filePath);
+            $relativePath = str_replace('\\', '/', $relativePath);
+
+            $imageData = [
+                'name' => $filename,
+                'path' => $relativePath,
+                'url' => "ctrstorage/$dir/" . $filename,
+                'size' => $file['size'],
+                'modified' => time(),
+                'extension' => $extension,
+                'type' => 'image'
+            ];
+
+            echo json_encode([
+                'success' => true,
+                'image' => $imageData,
+                'message' => 'Image uploaded successfully'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to move uploaded image'
+            ]);
+        }
+        exit;
+    }
+
+    public static function ctrImages($dir = "public")
+    {
+        $publicFolder = $dir;
+        $path =  "views/core/partials/storage/$publicFolder/";
+        $fullPath = $path;
+
+        if (!is_dir($fullPath)) {
+            echo json_encode(['images' => []]);
+            exit;
+        }
+
+        $images = [];
+        $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($fullPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $extension = strtolower($file->getExtension());
+                if (in_array($extension, $imageTypes)) {
+                    $relativePath = str_replace(dirname(__DIR__) . '/', '', $file->getPathname());
+                    $relativePath = str_replace('\\', '/', $relativePath);
+
+                    $images[] = [
+                        'name' => $file->getFilename(),
+                        'path' => $relativePath,
+                        'url' => "/ctrstorage/$publicFolder/" . $file->getFilename(),
+                        'size' => $file->getSize(),
+                        'modified' => $file->getMTime(),
+                        'extension' => $extension,
+                        'type' => 'image'
+                    ];
+                }
+            }
+        }
+
+        usort($images, function ($a, $b) {
+            return $b['modified'] - $a['modified'];
+        });
+
+        return ['images' => array_values($images)];
     }
 
     public static function last_uploaded(bool $refresh = true): array|null

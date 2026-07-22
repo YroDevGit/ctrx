@@ -81,6 +81,16 @@ if (str_starts_with($req, "ctrxtools/game")) {
     exit;
 }
 
+if ($req == "ctrx.yro.public.images/getall") {
+    echo json_encode(\Classes\CtrStorage::ctrImages() ?? []);
+    exit;
+}
+
+if ($req == "ctrx.yro.public.images/uploadHere") {
+    include "app/config/upload_public.php";
+    exit;
+}
+
 /**
  * This is backend endpoint
  */
