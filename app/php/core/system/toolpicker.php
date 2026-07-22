@@ -1,13 +1,64 @@
+<?php
+if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testdb") {
+  if (file_exists("views/pages/testdb.php")) {
+    @unlink("views/pages/testdb.php");
+    reload_page(false);
+  }
+}
+
+function folderSize($folder)
+{
+  $size = 0;
+
+  if (!is_dir($folder)) {
+    return 0;
+  }
+
+  foreach (scandir($folder) as $item) {
+    if ($item === '.' || $item === '..') {
+      continue;
+    }
+
+    $path = $folder . DIRECTORY_SEPARATOR . $item;
+
+    if (is_dir($path)) {
+      $size += folderSize($path);
+    } else {
+      $size += filesize($path);
+    }
+  }
+
+  return $size;
+}
+
+function formatSize($bytes)
+{
+  if ($bytes < 1024) {
+    return $bytes . ' B';
+  }
+
+  if ($bytes < 1024 * 1024) {
+    return round($bytes / 1024, 2) . ' KB';
+  }
+
+  if ($bytes < 1024 * 1024 * 1024) {
+    return round($bytes / (1024 * 1024), 2) . ' MB';
+  }
+
+  return round($bytes / (1024 * 1024 * 1024), 2) . ' GB';
+}
+
+$size = folderSize('logs');
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ctrx · Tools</title>
-  <!-- Font Awesome (free icons) – only CDN used -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* ----- RESET & BASE (Bootstrap-like feel) ----- */
     * {
       margin: 0;
       padding: 0;
@@ -32,10 +83,11 @@
       max-width: 1100px;
       width: 100%;
       background: #ffffff;
-      border-radius: 0.75rem;  /* Bootstrap card radius */
+      border-radius: 0.75rem;
+      /* Bootstrap card radius */
       box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
       padding: 2rem 2rem 1.8rem;
-      border: 1px solid rgba(0,0,0,0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       transition: all 0.2s;
     }
 
@@ -51,11 +103,13 @@
     }
 
     .page-title i {
-      color: #0d6efd;  /* Bootstrap primary blue */
+      color: #0d6efd;
+      /* Bootstrap primary blue */
     }
 
     .subhead {
-      color: #6c757d;  /* Bootstrap text-muted */
+      color: #6c757d;
+      /* Bootstrap text-muted */
       font-size: 1rem;
       margin-bottom: 2rem;
       padding-bottom: 0.5rem;
@@ -195,14 +249,15 @@
       background: #fff;
       border: 1px solid #ced4da;
       padding: 0.5rem 1.2rem 0.5rem 1rem;
-      border-radius: 0.375rem; /* Bootstrap btn radius */
+      border-radius: 0.375rem;
+      /* Bootstrap btn radius */
       font-size: 1rem;
       font-weight: 500;
       color: #212529;
       cursor: pointer;
       transition: all 0.2s;
       background: #f8f9fa;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
     }
 
     .back-btn i {
@@ -270,34 +325,43 @@
       .tools-container {
         padding: 1.25rem;
       }
+
       .tool-grid {
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
       }
+
       .tool-item {
         padding: 1.2rem 0.6rem;
       }
+
       .tool-icon {
         width: 60px;
         height: 60px;
         font-size: 1.8rem;
       }
+
       .tool-name {
         font-size: 1rem;
       }
+
       .tool-desc {
         font-size: 0.75rem;
       }
+
       .back-section {
         flex-direction: column;
         align-items: stretch;
       }
+
       .back-btn {
         justify-content: center;
       }
+
       .back-hint {
         justify-content: center;
       }
+
       .page-title {
         font-size: 1.6rem;
       }
@@ -313,105 +377,115 @@
     }
   </style>
 </head>
+
 <body>
-<div class="tools-container">
-  <!-- header -->
-  <div class="page-title">
-    <i class="fas fa-toolbox"></i> CTRX-Tools
-  </div>
-  <div class="subhead">
-    <i class="fas fa-mouse-pointer"></i> click a tool · you control the destination
-  </div>
+  <div class="tools-container">
+    <!-- header -->
+    <div class="page-title">
+      <i class="fas fa-toolbox"></i> CTRX-Tools
+    </div>
+    <div class="subhead">
+      <i class="fas fa-mouse-pointer"></i> click a tool · you control the destination
+    </div>
+    <?php if (file_exists("views/pages/testdb.php")): ?>
+      <div style="color:red;">
+        ⚠️ WARNING: <a href="/testdb" style="text-decoration: none;" target="_blank"><b>testdb</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testdb">Delete testdb.php?</a>
+      </div>
+    <?php endif; ?>
+    <div class="tool-grid">
+      <div class="tool-item" data-tool="database" data-destination="/ctrxtools/database">
+        <div class="tool-icon"><i class="fas fa-database"></i></div>
+        <div class="tool-name">Database</div>
+        <div class="tool-desc">Manage System database</div>
+        <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+      </div>
 
-  <div class="tool-grid">
-    <div class="tool-item" data-tool="database" data-destination="/ctrxtools/database">
-      <div class="tool-icon"><i class="fas fa-database"></i></div>
-      <div class="tool-name">Database</div>
-      <div class="tool-desc">Manage System database</div>
-      <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+      <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/data">
+        <div class="tool-icon"><i class="fas fa-file-import"></i></div>
+        <div class="tool-name">Import &amp; Export</div>
+        <div class="tool-desc">Import & Export table data</div>
+        <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+      </div>
+
+      <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/roles">
+        <div class="tool-icon"><i class="fas fa-users"></i></div>
+        <div class="tool-name">Roles</div>
+        <div class="tool-desc">Manage user roles</div>
+        <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+      </div>
+
+      <div class="tool-item" data-tool="translations" data-destination="/ctrxtools/translations">
+        <div class="tool-icon"><i class="fas fa-language"></i></div>
+        <div class="tool-name">Translations</div>
+        <div class="tool-desc">Custom translations</div>
+        <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+      </div>
     </div>
 
-    <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/data">
-      <div class="tool-icon"><i class="fas fa-file-import"></i></div>
-      <div class="tool-name">Import &amp; Export</div>
-      <div class="tool-desc">Import & Export table data</div>
-      <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+    <div class="back-section">
+      <button class="back-btn" id="backButton" aria-label="Go back">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
     </div>
 
-    <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/roles">
-      <div class="tool-icon"><i class="fas fa-users"></i></div>
-      <div class="tool-name">Roles</div>
-      <div class="tool-desc">Manage user roles</div>
-      <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
-    </div>
-
-    <div class="tool-item" data-tool="translations" data-destination="/ctrxtools/translations">
-      <div class="tool-icon"><i class="fas fa-language"></i></div>
-      <div class="tool-name">Translations</div>
-      <div class="tool-desc">Custom translations</div>
-      <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
+    <div class="footer-note">
+      <a href="/ctrxtools/logs" style="font-weight: bold;"><span><i class="fas fa-file"></i>File logs (<?= formatSize($size) ?>)</span></a>
+      <span class="badge-soft"><i class="fas fa-code"></i> no hardcoded links · you decide</span>
     </div>
   </div>
 
-  <div class="back-section">
-    <button class="back-btn" id="backButton" aria-label="Go back">
-      <i class="fas fa-arrow-left"></i> Back
-    </button>
-  </div>
+  <script>
+    (function() {
+      const toolItems = document.querySelectorAll('.tool-item');
 
-  <div class="footer-note">
-    <span><i class="fas fa-arrow-right"></i> click any card</span>
-    <span class="badge-soft"><i class="fas fa-code"></i> no hardcoded links · you decide</span>
-  </div>
-</div>
+      function handleToolClick(event) {
+        const card = event.currentTarget;
+        const toolName = card.getAttribute('data-tool') || 'tool';
+        const destination = card.getAttribute('data-destination') || 'page';
 
-<script>
-  (function() {
-    const toolItems = document.querySelectorAll('.tool-item');
-    
-    function handleToolClick(event) {
-      const card = event.currentTarget;
-      const toolName = card.getAttribute('data-tool') || 'tool';
-      const destination = card.getAttribute('data-destination') || 'page';
-      
-      card.style.transition = 'background 0.1s';
-      card.style.background = '#e3f0ff';
-      setTimeout(() => { card.style.background = ''; }, 150);
-      
-      location.href = destination;
-    }
-    
-    toolItems.forEach(card => {
-      card.addEventListener('click', handleToolClick);
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
-      card.addEventListener('keydown', (e) => {
+        card.style.transition = 'background 0.1s';
+        card.style.background = '#e3f0ff';
+        setTimeout(() => {
+          card.style.background = '';
+        }, 150);
+
+        location.href = destination;
+      }
+
+      toolItems.forEach(card => {
+        card.addEventListener('click', handleToolClick);
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleToolClick(e);
+          }
+        });
+      });
+
+      const backButton = document.getElementById('backButton');
+
+      function goBack() {
+
+        backButton.style.background = '#dee2e6';
+        setTimeout(() => {
+          backButton.style.background = '';
+        }, 150);
+        location.href = '<?= prev_page ?>';
+      }
+
+      backButton.addEventListener('click', goBack);
+      backButton.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          handleToolClick(e);
+          goBack();
         }
       });
-    });
-
-    const backButton = document.getElementById('backButton');
-    
-    function goBack() {
-
-      backButton.style.background = '#dee2e6';
-      setTimeout(() => { backButton.style.background = ''; }, 150);
-      location.href = '<?=prev_page?>';
-    }
-
-    backButton.addEventListener('click', goBack);
-    backButton.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        goBack();
-      }
-    });
-    console.log('✅ Tools ready · back button ready');
-    console.log('📌 tools:', Array.from(toolItems).map(el => el.getAttribute('data-tool')));
-  })();
-</script>
+      console.log('✅ Tools ready · back button ready');
+      console.log('📌 tools:', Array.from(toolItems).map(el => el.getAttribute('data-tool')));
+    })();
+  </script>
 </body>
+
 </html>

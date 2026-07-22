@@ -24,9 +24,15 @@ function AddAllBaseTable($dbname)
     $stmnt->execute();
     $tables = $stmnt->fetchAll(PDO::FETCH_COLUMN);
 
+    $internalTable = ["ctrx_roles", "ctrx_roles_access", "translations"];
     foreach ($tables as $filename) {
         $newname  = ucfirst($filename);
-        $phpFile = "app/base/" . ucfirst($newname) . ".php";
+        $smallName = strtolower($filename);
+        if (in_array($smallName, $internalTable)) {
+            continue;
+        }
+        if ($filename)
+            $phpFile = "app/base/" . ucfirst($newname) . ".php";
 
         $phpContent = <<<EOT
     <?php 
@@ -70,7 +76,7 @@ $extra = isset($arguments[3]) ? $arguments[3] : '';
 $exxr = isset($arguments[4]) ? $arguments[4] : '';
 
 if ($route == "run" || $route == "server") {
-    include "envloader.php";
+    include "app/php/core/partials/envloader.php";
     $host = env("rootpath");
     $exp = explode("//", $host);
     $runner = $exp[1];
@@ -174,6 +180,20 @@ if ($route == "run" || $route == "server") {
             exit(1);
         }
     }
+} else if ($route == "generate:testdb") {
+    copy(
+        'app/php/core/system/dtbs.php',
+        'views/pages/testdb.php'
+    );
+
+    include_once "app/php/core/partials/envloader.php";
+    $root = env('rootpath');
+
+    echo "\n✅ Test db has been created @views/pages/testdb.php.\n";
+    echo "⚠️  Please do not expose this in public.\n\n";
+    echo "Test-DB url @: $root/testdb\n\n";
+
+    exit;
 } else if ($route == "generate:htaccess") {
     //for deployment
     //for routing
@@ -721,12 +741,9 @@ if ($route == "update") {
         exit;
     }
 
-    if ($filename == "") {
-        echo "❌ Please input json filename for migration.\n\n";
-        exit(1);
-    }
+    $filename = "migration";
 
-    if (! \Classes\Ctrx::file_exists_strict("app/php/db/" . $filename . ".php")) {
+    if (! \Classes\Ctrx::file_exists_strict("app/config/" . $filename . ".php")) {
         echo "❌ Invalid migration name\n";
         exit;
     }
@@ -746,7 +763,7 @@ if ($route == "update") {
 
     include "app/php/core/classes/Migration.php";
 
-    $jsonfile = "app/php/db/" . $filename . ".php";
+    $jsonfile = "app/config/" . $filename . ".php";
 
     $jsonfile = str_ends_with($jsonfile, ".php") ? $jsonfile : $jsonfile . ".php";
 

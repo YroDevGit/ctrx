@@ -1,12 +1,15 @@
 {
-    "main_page" :"main", 
+    "main_page": "main",
     "page_not_found": "404",
     "prod_error_page": "prod_error",
     "dev_error_page": "dev_error",
+    "forbidden_page": "forbidden",
+    "unauthorize_page": "unauthorize",
     "role_filtering": "yes",
+    "default_logout": "/",
     "assets_version": 1.0,
     "js_version": 1.0,
     "variable": {
-        "app_name" : "CodeTazer App"
+        "app_name": "CodeTazer App"
     }
 }

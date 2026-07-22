@@ -243,9 +243,14 @@ if (! function_exists("has_internet_connection")) {
 if (! function_exists("add_sql_log")) {
     function add_sql_log($string, string $type = "info", string $intro = "")
     {
+        $needLogs = env('error_logs');
+        if (! $needLogs || $needLogs != "yes") {
+            return;
+        }
+
+        \Classes\Ctrx::logsLimit(5, 180, "ctrx/add/sql/logs/1005342/1005");
         include_once "app/php/core/partials/bin/fe.php";
         $mx = ctr_get_current_request_id() ?? "";
-        \Classes\Ctrx::x_rate_limit(20, 200, "ctrx/add/sql/logs/1005342/1005");
         $logConfig = [
             "info"     => ["env" => "sql_logs",   "dir" => "logs/sql_logs",   "prefix" => "INFO"],
             "error"    => ["env" => "sql_errors", "dir" => "logs/sql_errors", "prefix" => "ERROR"],
@@ -265,6 +270,10 @@ if (! function_exists("add_sql_log")) {
             mkdir($dir, 0777, true);
         }
 
+        if (! file_exists("logs/.gitignore")) {
+            file_put_contents("logs/.gitignore", "/*");
+        }
+
         $logfile = $dir . "/" . date("Y-m-d") . ".log";
         $timestamp = date('Y-m-d H:i:s');
         $logEntry = "$prefix: ($mx) [$timestamp] $string\n";
@@ -277,6 +286,7 @@ if (! function_exists("add_sql_log")) {
 if (! function_exists("my_log")) {
     function my_log($text, $parent = "mylogs", string $intro = "")
     {
+        \Classes\Ctrx::logsLimit(5, 180, "ctrx/add/sql/logs/14425342/5510");
         $dir = "logs/$parent";
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);

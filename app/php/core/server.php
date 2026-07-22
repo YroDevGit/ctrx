@@ -256,8 +256,10 @@ if (str_starts_with($req, "api/")) {
         if (! defined("prev_page")) define("prev_page", prev_page());
 
         if ($req == "ctrx/logout") {
-            $page = $_GET['page'] ?? \Classes\Ctrx::get_logout_page() ?? "/";
+            $lgt = fe_config("default_logout");
+            $page = $_GET['page'] ?? \Classes\Ctrx::get_logout_page() ?? $lgt ?? "/";
             \Classes\Ctrx::delete_user_data();
+            \Classes\Ccookie::delete("ctrx_user_logout_page");
             redirect($page);
         }
         /**
@@ -265,10 +267,9 @@ if (str_starts_with($req, "api/")) {
          */
         if (str_starts_with($req, "ctrxtools/database")) {
             $data = \Classes\Ctrx::get_user_data();
-            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
-                redirect($logoutPage, "page", 2);
+                redirect("ctrx/logout", "page", 2);
                 return;
             }
             $userTools = $data['access_ctrx_tools'] ?? null;
@@ -278,15 +279,32 @@ if (str_starts_with($req, "api/")) {
             }
             Classes\Ctrx::use_database_management();
         }
+
+        /**
+         * Ctrx DB tools for database management
+         */
+        if (str_starts_with($req, "ctrxtools/logs")) {
+            $data = \Classes\Ctrx::get_user_data();
+            if (! $data) {
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect("ctrx/logout", "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("logs", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            Classes\Ctrx::use_logs_tools();
+        }
         /**
          * Ctrx DB tools for import export
          */
         if (str_starts_with($req, "ctrxtools/data")) {
             $data = \Classes\Ctrx::get_user_data();
-            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
-                redirect($logoutPage, "page", 2);
+                redirect("ctrx/logout", "page", 2);
                 return;
             }
             $userTools = $data['access_ctrx_tools'] ?? null;
@@ -301,10 +319,9 @@ if (str_starts_with($req, "api/")) {
          */
         if (str_starts_with($req, "ctrxtools/roles")) {
             $data = \Classes\Ctrx::get_user_data();
-            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
-                redirect($logoutPage, "page", 2);
+                redirect("ctrx/logout", "page", 2);
                 return;
             }
             $userTools = $data['access_ctrx_tools'] ?? null;
@@ -349,6 +366,7 @@ if (str_starts_with($req, "api/")) {
                 \Classes\Ctrx::forbidden_page();
             }
             include_once "app/php/core/system/toolpicker.php";
+            \Classes\Ctrx::ctrx_save_previous_pages();
             exit;
         }
 
@@ -394,9 +412,7 @@ if (str_starts_with($req, "api/")) {
                     $all[] = $v;
                 }
                 $e_error = json_encode($all);
-                if (env("error_logs") == "yes") {
-                    ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
-                }
+                ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "frontend", $reqid);
             }
             $servererror = $view_config["prod_error_page"] ?? "dev_error";
             $servererror = append_php($servererror);

@@ -545,7 +545,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 switch ($_POST['action']) {
                     case 'create_role':
                         if (!empty($_POST['role_name'])) {
-                            if($_POST['role_name'] == "admin"){
+                            if ($_POST['role_name'] == "admin") {
                                 throw new Exception("Unable to add admin role.");
                             }
                             $roleManager->createRole($_POST['role_name'], $_POST['description'] ?? '');
@@ -1506,6 +1506,13 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
                                 <?php else: ?>
                                     <?php foreach ($all_routes as $route): ?>
                                         <?php $has_access = isset($role_access[$route['route']]) ? $role_access[$route['route']] : 0;
+                                        if (isset($route['route']) && (! str_contains($route['route'], "/") && ! isset($role_access[$route['route']]))) {
+                                            $routeN = $route['route'];
+                                            $roleId = $_GET['role_id'] ?? 1;
+                                            $stm = $pdo->prepare("INSERT INTO ctrx_roles_access (role_id, route, has_access) VALUES('$roleId', '$routeN', 1)");
+                                            $stm->execute();
+                                            $has_access = 1;
+                                        }
                                         $routeName = $route['route'];
                                         $routeNameQ = "'" . $route['route'] . "'";
                                         $roleNameQ = "'" . $selected_role['role_name'] . "'";  ?>

@@ -93,9 +93,7 @@ if (! function_exists('ctrx_response')) {
                 }
                 $e_error = json_encode($all);
                 $data['trace'] = $all;
-                if (env("error_logs") == "yes") {
-                    ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "app", $reqid);
-                }
+                ctrx_log($e_msg . " " . $fandl . "Trace: " . $e_error, "backend", $reqid);
             }
             if (env_in_prod()) {
                 $newd = json_encode($data);
@@ -140,16 +138,8 @@ if (! function_exists("request_method")) {
 if (! function_exists("fe_config")) {
     function fe_config(string $key = "*")
     {
-        $view_config = file_get_contents("views/fe_config.json");
-        $view_config = json_decode($view_config, true);
-
-        if ($key == "*") {
-            return $view_config;
-        }
-
-        if (! $key) return null;
-
-        return isset($view_config[$key]) ? $view_config[$key] : null;
+        include_once "app/php/core/system/feconfigload.php";
+        return ctrx_fe_configuration($key);
     }
 }
 
@@ -166,23 +156,29 @@ if (! function_exists("error_text")) {
 
 function ctrx_log(string $message, string $parent, string $id = null, string $filename = null)
 {
+    $needLogs = env('error_logs');
+    if (! $needLogs || $needLogs != "yes") {
+        return;
+    }
+    \Classes\Ctrx::logsLimit(5, 180, "ctrx/add/sql/logs/1005342/0510");
     $folder = "logs/" . $parent;
     if (!is_dir($folder)) {
         mkdir($folder, 0755, true);
     }
-    $filename = $filename ?? date("Y-m-d") . ".php";
+    if (! file_exists("logs/.gitignore")) {
+        file_put_contents("logs/.gitignore", "/*");
+    }
+    $filename = $filename ?? date("Y-m-d") . "";
 
-    $filePath = $folder . '/' . $filename . '-log.php';
+    $filePath = $folder . '/' . $filename . '.log';
     $time = date('Y-m-d H:i:s');
 
     $id = $id ?? ctr_get_current_request_id();
 
-    $protection = "<?php\nif(!defined('roothpath')) die('unauthorized access');\n\n";
-
-    $logEntry = "\$log['$time'][$id] = " . var_export($message, true) . ";\n";
+    $logEntry = "log['$time'][$id] = " . var_export($message, true) . ";\n";
 
     if (!\Classes\Ctrx::file_exists_strict($filePath)) {
-        $content = $protection . $logEntry;
+        $content = $logEntry;
         file_put_contents($filePath, $content, LOCK_EX);
     } else {
         file_put_contents($filePath, $logEntry, FILE_APPEND | LOCK_EX);

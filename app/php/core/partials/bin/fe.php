@@ -455,6 +455,14 @@ if (! function_exists('redirect')) {
     }
 }
 
+if (! function_exists("reload_page")) {
+    function reload_page($withParam = true)
+    {
+        $page = current_page($withParam, true);
+        redirect($page);
+    }
+}
+
 if (! function_exists('redirect_logout')) {
     function redirect_logout(string|null $logoutPage = null, string $type = "page", int $time = 0, $exit = true)
     {

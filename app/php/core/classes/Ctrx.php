@@ -102,8 +102,22 @@ class Ctrx
 
     private static function ctrratelimit($limit = 100, $seconds = 60, $route = "")
     {
+        return self::save_temp_file_limit("dir", $limit, $seconds, $route);
+    }
+
+    public static function logsLimit($limit = 100, $seconds = 60, $route = "")
+    {
+        if (ctrx_endpoint() == "FE") {
+            return self::save_temp_file_limit("fe_limit", $limit, $seconds, $route);
+        } else {
+            return self::save_temp_file_limit("be_limit", $limit, $seconds, $route);
+        }
+    }
+
+    private static function save_temp_file_limit($directory = "dir", $limit = 100, $seconds = 60, $route = "")
+    {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $dir = "app/php/core/partials/dir";
+        $dir = "app/php/core/partials/$directory";
 
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
@@ -296,29 +310,15 @@ class Ctrx
         redirect_logout($page);
     }
 
-    public static function set_logout_page(string|int $role): void
+    public static function set_logout_page(string $logoutPage): void
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if (! $ctrxdata) {
-            throw new Exception("Access tools: invalid call without user data");
-        }
-
-        $ctrxdata = [...$ctrxdata, "ctrx_logout_page" => $role];
-
-        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, self::$lastDuration);
+        \Classes\Ccookie::addImmortalCookie("ctrx_user_logout_page", $logoutPage);
     }
 
     public static function get_logout_page(): null|int|string
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if (! $ctrxdata) {
-            return null;
-        } else {
-            if (isset($ctrxdata['ctrx_logout_page'])) {
-                return $ctrxdata['ctrx_logout_page'] ?? null;
-            }
-        }
-        return null;
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_logout_page") ?? null;
+        return $ctrxdata;
     }
 
     public static function get_user_role(): null|int|string
@@ -381,7 +381,7 @@ class Ctrx
             throw new Exception("Access tools: invalid call without user data");
         }
         if (! $tools) {
-            $extraData = ["data", "translations", "database", "roles"];
+            $extraData = ["data", "translations", "database", "roles", "logs"];
             $ctrxdata = [...$ctrxdata, "access_ctrx_tools" => $extraData];
         } else {
             $ctrxdata = [...$ctrxdata, "access_ctrx_tools" => $tools];
@@ -455,19 +455,37 @@ class Ctrx
             $role = $UserRole ?? "public";
         }
 
-        $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
-        $param = [$role, $currPage];
-        $result = \Classes\DB::query($query, $param);
+        if (! str_contains($currPage, "/") && ! self::has_user_data()) {
+            $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
+            $param = [$role, $currPage];
+            $result = \Classes\DB::query($query, $param);
 
-        if (! $result) {
-            if (is_null($execute)) {
-                if (self::has_user_data()) {
-                    self::forbidden_page();
-                } else {
-                    self::forbidden_page(self::get_logout_page());
+            if ($result) {
+                if (is_null($execute)) {
+                    if (self::has_user_data()) {
+                        self::forbidden_page();
+                    } else {
+                        self::unauthorize_page();
+                    }
+                } else if (is_callable($execute)) {
+                    $execute($result);
                 }
-            } else if (is_callable($execute)) {
-                $execute($result);
+            }
+        } else {
+            $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
+            $param = [$role, $currPage];
+            $result = \Classes\DB::query($query, $param);
+
+            if (! $result) {
+                if (is_null($execute)) {
+                    if (self::has_user_data()) {
+                        self::forbidden_page();
+                    } else {
+                        self::unauthorize_page();
+                    }
+                } else if (is_callable($execute)) {
+                    $execute($result);
+                }
             }
         }
         return true;
@@ -553,7 +571,7 @@ class Ctrx
     public static function use_translate_tools(string|null $backpage = null, $exit = true)
     {
         self::resetBackend();
-        $backRoute = $backpage ?? previous_page();
+        $backRoute = $backpage ?? prev_page();
         if ($backRoute) {;
             include "app/php/core/system/trnsltn.php";
         } else {
@@ -562,10 +580,25 @@ class Ctrx
         if ($exit) exit;
     }
 
+    public static function use_logs_tools(string|null $backpage = null, $exit = true)
+    {
+        self::resetBackend();
+        $backRoute = $backpage ?? prev_page();
+        extract([
+            "backpage" => $backRoute
+        ]);
+        if ($backRoute) {;
+            include "app/php/core/system/logsmngmt.php";
+        } else {
+            include "app/php/core/system/logsmngmt.php";
+        }
+        if ($exit) exit;
+    }
+
     public static function use_roles_tools(string|null $backpage = null, $exit = true)
     {
         self::resetBackend();
-        $backRoute = $backpage ?? previous_page();
+        $backRoute = $backpage ?? prev_page();
         if ($backRoute) {;
             include "app/php/core/system/ctrxroles.php";
         } else {
@@ -577,7 +610,7 @@ class Ctrx
     public static function use_database_management(string|null $backpage = null, $exit = true)
     {
         //self::resetBackend();
-        $backRoute = $backpage ?? previous_page();
+        $backRoute = $backpage ?? prev_page();
         if ($backRoute) {
             include_once "app/php/core/system/dtbs.php";
         } else {
@@ -596,7 +629,47 @@ class Ctrx
                 "backpage" => $backRoute
             ]);
         }
-        include "views/core/errors/forbidden.php";
+        $conf = fe_config("forbidden_page") ?? null;
+        if ($conf) {
+            $conf = trim($conf);
+            $conf = trim($conf, "/");
+            $conf = append_php($conf);
+        }
+        if (! $conf) {
+            include "views/core/errors/forbidden.php";
+        } else if (str_starts_with($conf, "views/")) {
+            include $conf;
+        } else {
+            include "views/core/errors/$conf";
+        }
+
+        if ($exit) exit;
+    }
+
+    public static function unauthorize_page(string|null $exitPage = null, $exit = true)
+    {
+        if (! defined("prev_page")) define("prev_page", prev_page());
+        $backRoute = $exitPage ?? "ctrx/logout";
+        if ($backRoute) {
+            $backRoute = str_starts_with($backRoute, "/") ? $backRoute : "/" . $backRoute;
+            extract([
+                "backpage" => $backRoute
+            ]);
+        }
+        $conf = fe_config("unauthorize") ?? null;
+        if ($conf) {
+            $conf = trim($conf);
+            $conf = trim($conf, "/");
+            $conf = append_php($conf);
+        }
+        if (! $conf) {
+            include "views/core/errors/unauthorize.php";
+        } else if (str_starts_with($conf, "views/")) {
+            include $conf;
+        } else {
+            include "views/core/errors/$conf";
+        }
+
         if ($exit) exit;
     }
 
@@ -672,10 +745,8 @@ class Ctrx
         $beconfig = glob('app/config/*.php');
         foreach ($beconfig as $k => $v) {
             if ($v == "app/config/storage_config.php" || $v == "app\config\storage_config.php") continue;
-            if ($v == "app/config/db_tools.php" || $v == "app\config\db_tools.php") continue;
-            if ($v == "app/config/translations.php" || $v == "app\\config\\translations.php") continue;
             if ($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
-            if ($v == "app/config/ctr_db.php" || $v == "app\config\ctr_db.php") continue;
+            if ($v == "app/config/migration.php" || $v == "app\config\migration.php") continue;
             include_once $v;
         }
     }

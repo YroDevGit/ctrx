@@ -24,6 +24,23 @@ class Ccookie
         return false;
     }
 
+    public static function addImmortalCookie(string $key, mixed $value)
+    {
+        $year = intval(date("Y")) + 10;
+        if (is_array($value)) {
+            $val = encrypt(json_encode($value));
+            setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/", "", isset($_SERVER['HTTPS']));
+            $_COOKIE[$key] = $val;
+            return true;
+        } else {
+            $val = encrypt($value);
+            setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/");
+            $_COOKIE[$key] = $val;
+            return true;
+        }
+        return false;
+    }
+
     public static function add_all(array|null $data, int|float $minute = 60)
     {
         if (! $data) {

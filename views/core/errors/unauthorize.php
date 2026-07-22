@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTRX · Server Error</title>
+    <title>Unauthorized Access</title>
     <style>
         * {
             margin: 0;
@@ -44,14 +44,24 @@
             }
         }
 
-        .error-code {
-            font-size: 8rem;
+        .unauth-code {
+            font-size: 7.5rem;
             font-weight: 800;
-            color: #ef4444;
-            text-shadow: 0 0 40px rgba(239, 68, 68, 0.35);
+            color: #f59e0b;
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.35);
             animation: breathe 2.6s ease-in-out infinite;
             line-height: 1;
             letter-spacing: -0.04em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+
+        .unauth-code i {
+            font-size: 6rem;
+            color: #f59e0b;
+            filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
         }
 
         @keyframes breathe {
@@ -59,28 +69,13 @@
             0%,
             100% {
                 transform: scale(1);
-                text-shadow: 0 0 40px rgba(239, 68, 68, 0.35);
+                text-shadow: 0 0 40px rgba(245, 158, 11, 0.35);
             }
 
             50% {
                 transform: scale(1.04);
-                text-shadow: 0 0 60px rgba(239, 68, 68, 0.55);
+                text-shadow: 0 0 60px rgba(245, 158, 11, 0.55);
             }
-        }
-
-        .req-id {
-            color: #e2e8f0;
-            font-size: 1.1rem;
-            font-weight: 500;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            letter-spacing: 0.04em;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 0.4rem 1.5rem;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            display: inline-block;
-            margin: 0.5rem 0 1rem;
-            user-select: all;
         }
 
         h1 {
@@ -147,137 +142,55 @@
             justify-content: center;
             width: 1.8rem;
             height: 1.8rem;
-            background: rgba(239, 68, 68, 0.12);
+            background: rgba(245, 158, 11, 0.12);
             border-radius: 40px;
-            border: 1px solid rgba(239, 68, 68, 0.15);
-            color: #ef4444;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
             font-size: 0.9rem;
             font-weight: 600;
             flex-shrink: 0;
         }
 
-        .card-actions {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 1rem;
-            padding: 1.5rem 1.2rem;
-            text-align: left;
-            margin-bottom: 2rem;
-            transition: border-color 0.2s;
-        }
-
-        .card-actions:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .card-actions .title {
-            color: #94a3b8;
-            font-size: 0.8rem;
-            font-weight: 500;
-            letter-spacing: 0.02em;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card-actions .title .icon-small {
-            font-size: 1rem;
-        }
-
-        .card-actions ul {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
-
-        .card-actions li {
-            color: #cbd5e1;
-            font-size: 0.95rem;
-            padding-left: 1.4rem;
-            position: relative;
-            line-height: 1.5;
-        }
-
-        .card-actions li::before {
-            content: "▹";
-            position: absolute;
-            left: 0;
-            color: #ef4444;
-            font-weight: 300;
-        }
-
-        .card-actions li .highlight {
-            color: #f1f5f9;
-            font-weight: 500;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 0.05rem 0.6rem;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-        }
-
-        .card-actions li .action-link {
-            color: #ef4444;
-            text-decoration: none;
-            font-weight: 500;
-            border-bottom: 1px dashed rgba(239, 68, 68, 0.3);
-            transition: border-color 0.2s;
-        }
-
-        .card-actions li .action-link:hover {
-            border-bottom-color: #ef4444;
-        }
-
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.8rem 1rem;
-            margin: 0.5rem 0 1.5rem;
-        }
-
         .btn {
             display: inline-block;
             padding: 0.8rem 2.4rem;
-            background: #ef4444;
-            color: white;
+            background: #f59e0b;
+            color: #0f172a;
             text-decoration: none;
             border-radius: 60px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1rem;
             border: none;
             cursor: pointer;
             transition: all 0.25s ease;
-            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
             letter-spacing: 0.01em;
-            font-family: inherit;
         }
 
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 14px 34px rgba(239, 68, 68, 0.4);
-            background: #dc2626;
+            box-shadow: 0 14px 34px rgba(245, 158, 11, 0.4);
+            background: #d97706;
         }
 
         .btn:active {
             transform: scale(0.96);
         }
 
-        .btn-outline {
+        .btn-secondary {
             background: transparent;
             box-shadow: none;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #cbd5e1;
+            padding: 0.7rem 2rem;
+            margin-left: 0.6rem;
         }
 
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: none;
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.04);
             transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .footer-meta {
@@ -313,9 +226,9 @@
             display: inline-block;
             width: 8px;
             height: 8px;
-            background: #ef4444;
+            background: #f59e0b;
             border-radius: 50%;
-            box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
             animation: dotPulse 2.2s ease-in-out infinite;
         }
 
@@ -333,19 +246,27 @@
             }
         }
 
-        .badge-top {
-            color: #ef4444;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.25em;
+        .badge-unauth {
             display: inline-block;
-            margin-bottom: 0.5rem;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
             font-weight: 600;
+            font-size: 0.7rem;
+            padding: 0.2rem 1.2rem;
+            border-radius: 40px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 0.2rem;
         }
 
         @media (max-width: 500px) {
-            .error-code {
-                font-size: 5.5rem;
+            .unauth-code {
+                font-size: 5rem;
+            }
+
+            .unauth-code i {
+                font-size: 4rem;
             }
 
             .card {
@@ -365,19 +286,17 @@
             }
 
             .btn {
-                padding: 0.7rem 2rem;
+                padding: 0.7rem 1.8rem;
                 width: 100%;
-                text-align: center;
             }
 
-            .btn-group {
-                flex-direction: column;
-                gap: 0.7rem;
+            .btn-secondary {
+                margin-left: 0;
+                margin-top: 0.6rem;
             }
 
-            .req-id {
-                font-size: 0.9rem;
-                padding: 0.3rem 1rem;
+            .action-group {
+                width: 100%;
             }
         }
     </style>
@@ -385,21 +304,24 @@
 
 <body>
     <div class="card">
-        <span class="badge-top">CTRX Framework</span>
-        <div class="error-code">500</div>
+        <div class="unauth-code">
+            <i>🔒</i> 401
+        </div>
 
-        <div class="req-id"><?= $reqid ?></div>
+        <h1>Unauthorized Access</h1>
 
-        <h1>Internal Server Error</h1>
+        <div class="subhead">
+            <span>Authentication required</span>
+            <strong>·</strong>
+            <span>permission denied</span>
+        </div>
 
         <p class="description">
-            Something went wrong while processing your request.<br>
-            Our team has been notified. In the meantime, you can:
+            You don't have the necessary credentials to access this resource. Please log in with valid credentials or request proper permissions.
         </p>
 
-        <div class="btn-group">
-            <a href="<?= prev_page ?>" class="btn">← Go Back</a>
-            <button onclick="location.reload()" class="btn btn-outline">↻ Retry</button>
+        <div class="action-group" style="display:flex; flex-wrap:wrap; justify-content:center; gap:0.6rem;">
+            <a href="<?=$backpage?>" class="btn">Return to Home</a>
         </div>
     </div>
 </body>
