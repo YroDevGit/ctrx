@@ -1,3 +1,5 @@
+import Ctr from "../ctr";
+
 class CImagePicker {
     static styleId = "cimagepicker-style";
     static instances = [];
@@ -790,6 +792,7 @@ class CImagePicker {
                 addBtn: null,
                 infoText: null,
                 uploadArea: null,
+                nameProgress: null,
                 fileInput: null,
                 progressBar: null,
                 previewOverlay: null,
@@ -865,15 +868,20 @@ class CImagePicker {
                     const progressWrapper = document.createElement("div");
                     progressWrapper.className = "cimagepicker-upload-progress";
 
+                    const nameProgress = document.createElement("div");
+                    nameProgress.style.display = 'none';
+                    nameProgress.innerText = "Uploading, please wait...";
                     const progressBar = document.createElement("div");
                     progressBar.className = "cimagepicker-upload-progress-bar";
                     progressWrapper.appendChild(progressBar);
+
 
                     uploadLabel.appendChild(fileInput);
                     uploadArea.appendChild(uploadLabel);
                     uploadArea.appendChild(uploadText);
                     uploadArea.appendChild(progressWrapper);
 
+                    uploadArea.appendChild(nameProgress);
                     uploadArea.addEventListener("dragover", (e) => {
                         e.preventDefault();
                         uploadArea.classList.add("dragover");
@@ -1000,6 +1008,7 @@ class CImagePicker {
                     this.uploadArea = uploadArea;
                     this.fileInput = fileInput;
                     this.progressBar = progressBar;
+                    this.nameProgress = nameProgress;
                     this.previewOverlay = previewOverlay;
                     this.currentImageContainer = currentImageContainer;
 
@@ -1088,8 +1097,11 @@ class CImagePicker {
 
                     this.isUploading = true;
                     this.fileInput.disabled = true;
+                    this.addBtn.disabled = true;
                     this.progressBar.parentElement.classList.add("cimagepicker-show");
                     this.progressBar.style.width = "0%";
+                    this.nameProgress.style.display = "";
+                    Ctr.set_loading(true, ".cimagepicker-grid", 33);
 
                     try {
                         const result = await CImagePicker.uploadImage(
@@ -1123,8 +1135,11 @@ class CImagePicker {
                         alert("Upload failed: " + error.message);
                     }
 
+                    this.nameProgress.style.display = "none";
                     this.isUploading = false;
                     this.fileInput.disabled = false;
+                    this.addBtn.disabled = false;
+                    Ctr.set_loading(false, ".cimagepicker-grid");
                 },
 
                 async handleDelete(image, event) {
