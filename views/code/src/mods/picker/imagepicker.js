@@ -407,7 +407,7 @@ class CImagePicker {
 
             .cimagepicker-item-check {
                 position: absolute;
-                top: 8px;
+                bottom: 8px;
                 right: 8px;
                 width: 24px;
                 height: 24px;
@@ -440,8 +440,8 @@ class CImagePicker {
             }
 
             .cimagepicker-item-eye {
-                width: 28px;
-                height: 28px;
+                width: 24px;
+                height: 24px;
                 border-radius: 50%;
                 background: rgba(0,0,0,0.6);
                 border: none;
@@ -461,8 +461,8 @@ class CImagePicker {
             }
 
             .cimagepicker-item-delete {
-                width: 28px;
-                height: 28px;
+                width: 24px;
+                height: 24px;
                 border-radius: 50%;
                 background: rgba(220, 53, 69, 0.85);
                 border: none;
@@ -1247,8 +1247,8 @@ class CImagePicker {
                         deleteBtn.title = "Delete";
                         deleteBtn.addEventListener("click", (e) => this.handleDelete(image, e));
 
-                        actions.appendChild(eyeBtn);
                         actions.appendChild(deleteBtn);
+                        actions.appendChild(eyeBtn);
 
                         const check = document.createElement("div");
                         check.className = "cimagepicker-item-check";
