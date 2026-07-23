@@ -889,6 +889,7 @@ class CImagePicker {
                     search.type = "text";
                     search.className = "cimagepicker-search";
                     search.placeholder = "Search images...";
+                    search.style.display = "none";
                     search.addEventListener("input", (e) => {
                         this.filterImages(e.target.value);
                     });
