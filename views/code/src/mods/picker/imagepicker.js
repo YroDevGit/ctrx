@@ -245,6 +245,62 @@ class CImagePicker {
                 display: flex;
             }
 
+            .cimagepicker-item-actions {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                display: flex;
+                gap: 6px;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .cimagepicker-item:hover .cimagepicker-item-actions {
+                opacity: 1;
+            }
+
+            .cimagepicker-item-eye {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: rgba(0,0,0,0.6);
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                backdrop-filter: blur(4px);
+            }
+
+            .cimagepicker-item-eye:hover {
+                background: rgba(0,0,0,0.8);
+                transform: scale(1.1);
+            }
+
+            .cimagepicker-item-delete {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: rgba(220, 53, 69, 0.85);
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                backdrop-filter: blur(4px);
+            }
+
+            .cimagepicker-item-delete:hover {
+                background: rgba(200, 35, 51, 0.95);
+                transform: scale(1.1);
+            }
+
             .cimagepicker-empty {
                 grid-column: 1 / -1;
                 text-align: center;
@@ -318,13 +374,6 @@ class CImagePicker {
                 box-shadow: 0 4px 12px rgba(0,102,255,0.3);
             }
 
-            .cimagepicker-btn-select:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-                transform: none;
-                box-shadow: none;
-            }
-
             .cimagepicker-upload-area {
                 display: none;
                 padding: 30px;
@@ -391,6 +440,55 @@ class CImagePicker {
                 transition: width 0.3s ease;
             }
 
+            .cimagepicker-preview-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.9);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999999;
+                padding: 20px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .cimagepicker-preview-overlay.cimagepicker-show {
+                display: flex;
+                opacity: 1;
+            }
+
+            .cimagepicker-preview-overlay img {
+                max-width: 95%;
+                max-height: 95%;
+                object-fit: contain;
+                border-radius: 4px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                transform: scale(0.95);
+                transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            .cimagepicker-preview-overlay.cimagepicker-show img {
+                transform: scale(1);
+            }
+
+            .cimagepicker-preview-close {
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                font-size: 40px;
+                color: #fff;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 10px;
+                line-height: 1;
+            }
+
+            .cimagepicker-preview-close:hover {
+                color: #ccc;
+            }
+
             @media (max-width: 640px) {
                 .cimagepicker-modal {
                     width: 100%;
@@ -447,10 +545,9 @@ class CImagePicker {
         document.head.appendChild(style);
     }
 
-    static async fetchImages() {
+    static async fetchImages(path = "public") {
         try {
-            let path = "";
-            const response = await fetch(`ctrx.yro.public.images/getall?action=list&path=${encodeURIComponent(path)}`);
+            const response = await fetch(`ctrx.yro.ctrstorage.images/getall?action=list&dir=${encodeURIComponent(path)}`);
             if (!response.ok) throw new Error("Failed to fetch images");
             const data = await response.json();
             return data.images || [];
@@ -460,14 +557,14 @@ class CImagePicker {
         }
     }
 
-    static async uploadImage(file, path = "", onProgress = null) {
+    static async uploadImage(file, path = "public", onProgress = null) {
         const formData = new FormData();
         formData.append("image", file);
         formData.append("path", path);
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "ctrx.yro.public.images/uploadHere?action=upload");
+            xhr.open("POST", "ctrx.yro.ctrstorage.images/uploadHere?action=upload&dir=" + path);
 
             if (onProgress && typeof onProgress === "function") {
                 xhr.upload.addEventListener("progress", (e) => {
@@ -496,6 +593,18 @@ class CImagePicker {
         });
     }
 
+    static async deleteImage(filename, path = "public") {
+        try {
+            const response = await fetch(`ctrx.yro.ctrstorage.images/deleteImg?action=delete&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
+            if (!response.ok) throw new Error("Failed to delete image");
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error("CImagePicker: Error deleting image", error);
+            throw error;
+        }
+    }
+
     static formatSize(bytes) {
         if (bytes === 0) return "0 B";
         const k = 1024;
@@ -506,6 +615,9 @@ class CImagePicker {
 
     static init(config = {}) {
         this.ensureStyle();
+
+        config.id = config.id ?? config.class ?? config.className ?? config.element ?? undefined;
+        config.path = config.path ?? config.dir ?? config.directory ?? "public";
 
         const input = typeof config.id === "string" && config.id.startsWith("#")
             ? document.querySelector(config.id)
@@ -534,6 +646,7 @@ class CImagePicker {
             uploadArea: null,
             fileInput: null,
             progressBar: null,
+            previewOverlay: null,
             isOpen: false,
             isUploading: false,
 
@@ -661,7 +774,6 @@ class CImagePicker {
                 const selectBtn = document.createElement("button");
                 selectBtn.className = "cimagepicker-btn cimagepicker-btn-select";
                 selectBtn.textContent = "Select";
-                selectBtn.disabled = true;
                 selectBtn.addEventListener("click", () => this.confirmSelection());
 
                 footerActions.appendChild(cancelBtn);
@@ -681,6 +793,27 @@ class CImagePicker {
 
                 document.body.appendChild(overlay);
 
+                const previewOverlay = document.createElement("div");
+                previewOverlay.className = "cimagepicker-preview-overlay";
+                previewOverlay.id = `cimagepicker-preview-${Date.now()}`;
+
+                const previewClose = document.createElement("button");
+                previewClose.className = "cimagepicker-preview-close";
+                previewClose.innerHTML = "×";
+                previewClose.addEventListener("click", () => this.closePreview());
+
+                const previewImg = document.createElement("img");
+                previewImg.alt = "Preview";
+
+                previewOverlay.appendChild(previewImg);
+                previewOverlay.appendChild(previewClose);
+
+                previewOverlay.addEventListener("click", (e) => {
+                    if (e.target === previewOverlay) this.closePreview();
+                });
+
+                document.body.appendChild(previewOverlay);
+
                 this.overlay = overlay;
                 this.modal = modal;
                 this.grid = grid;
@@ -692,6 +825,7 @@ class CImagePicker {
                 this.uploadArea = uploadArea;
                 this.fileInput = fileInput;
                 this.progressBar = progressBar;
+                this.previewOverlay = previewOverlay;
 
                 return overlay;
             },
@@ -734,7 +868,7 @@ class CImagePicker {
                 try {
                     const result = await CImagePicker.uploadImage(
                         file,
-                        this.config.path || "views/core/partials/storage/public",
+                        this.config.path || "public",
                         (percent) => {
                             this.progressBar.style.width = percent + "%";
                         }
@@ -771,6 +905,68 @@ class CImagePicker {
 
                 this.isUploading = false;
                 this.fileInput.disabled = false;
+            },
+
+            async handleDelete(image, event) {
+                event.stopPropagation();
+
+                if (!confirm(`Are you sure you want to delete "${image.name}"?`)) {
+                    return;
+                }
+
+                try {
+                    let resDel = await CImagePicker.deleteImage(image.name, this.config.path || "public");
+
+                    if (resDel.success) {
+                        alert("Image deleted successfully");
+                    } else {
+                        alert(resDel.message ?? "Failed to delete image");
+                        return;
+                    }
+                    const index = this.images.findIndex(f => f.name === image.name);
+                    if (index !== -1) {
+                        this.images.splice(index, 1);
+                    }
+
+                    const filteredIndex = this.filteredImages.findIndex(f => f.name === image.name);
+                    if (filteredIndex !== -1) {
+                        this.filteredImages.splice(filteredIndex, 1);
+                    }
+
+                    const selectedIndex = this.selectedImages.findIndex(f => f.name === image.name);
+                    if (selectedIndex !== -1) {
+                        this.selectedImages.splice(selectedIndex, 1);
+                    }
+
+                    this.renderGrid();
+                    this.updateSelectionInfo();
+
+                    if (typeof this.config.onDelete === "function") {
+                        this.config.onDelete(image, this);
+                    }
+                } catch (error) {
+                    alert("Failed to delete image: " + error.message);
+                }
+            },
+
+            openPreview(image, event) {
+                event.stopPropagation();
+
+                if (!this.previewOverlay) return;
+
+                const img = this.previewOverlay.querySelector("img");
+                if (img) {
+                    img.src = image.url || image.path || "";
+                }
+
+                this.previewOverlay.classList.add("cimagepicker-show");
+                document.body.style.overflow = "hidden";
+            },
+
+            closePreview() {
+                if (!this.previewOverlay) return;
+                this.previewOverlay.classList.remove("cimagepicker-show");
+                document.body.style.overflow = "";
             },
 
             filterImages(query) {
@@ -816,6 +1012,24 @@ class CImagePicker {
                         this.style.display = "none";
                     };
 
+                    const actions = document.createElement("div");
+                    actions.className = "cimagepicker-item-actions";
+
+                    const eyeBtn = document.createElement("button");
+                    eyeBtn.className = "cimagepicker-item-eye";
+                    eyeBtn.innerHTML = "👁";
+                    eyeBtn.title = "Preview";
+                    eyeBtn.addEventListener("click", (e) => this.openPreview(image, e));
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "cimagepicker-item-delete";
+                    deleteBtn.innerHTML = "✕";
+                    deleteBtn.title = "Delete";
+                    deleteBtn.addEventListener("click", (e) => this.handleDelete(image, e));
+
+                    actions.appendChild(eyeBtn);
+                    actions.appendChild(deleteBtn);
+
                     const check = document.createElement("div");
                     check.className = "cimagepicker-item-check";
                     check.textContent = "✓";
@@ -834,6 +1048,7 @@ class CImagePicker {
                     info.appendChild(name);
                     info.appendChild(size);
                     item.appendChild(img);
+                    item.appendChild(actions);
                     item.appendChild(check);
                     item.appendChild(info);
 
@@ -856,24 +1071,25 @@ class CImagePicker {
                 const isMultiple = this.config.selection === "multiple";
 
                 if (!isMultiple) {
-                    this.selectedImages = [];
-                    document.querySelectorAll(".cimagepicker-item.cimagepicker-selected")
-                        .forEach(el => el.classList.remove("cimagepicker-selected"));
-                }
-
-                const index = this.selectedImages.findIndex(f => f.name === image.name);
-
-                if (index !== -1) {
-                    this.selectedImages.splice(index, 1);
-                    item.classList.remove("cimagepicker-selected");
-                } else {
-                    if (!isMultiple && this.selectedImages.length > 0) {
+                    if (this.selectedImages.length === 1 && this.selectedImages[0].name === image.name) {
+                        this.selectedImages = [];
+                        item.classList.remove("cimagepicker-selected");
+                    } else {
                         this.selectedImages = [];
                         document.querySelectorAll(".cimagepicker-item.cimagepicker-selected")
                             .forEach(el => el.classList.remove("cimagepicker-selected"));
+                        this.selectedImages.push(image);
+                        item.classList.add("cimagepicker-selected");
                     }
-                    this.selectedImages.push(image);
-                    item.classList.add("cimagepicker-selected");
+                } else {
+                    const index = this.selectedImages.findIndex(f => f.name === image.name);
+                    if (index !== -1) {
+                        this.selectedImages.splice(index, 1);
+                        item.classList.remove("cimagepicker-selected");
+                    } else {
+                        this.selectedImages.push(image);
+                        item.classList.add("cimagepicker-selected");
+                    }
                 }
 
                 this.updateSelectionInfo();
@@ -885,15 +1101,22 @@ class CImagePicker {
                     this.infoText.textContent = count;
                 }
                 if (this.selectBtn) {
-                    this.selectBtn.disabled = count === 0;
                     this.selectBtn.textContent = count > 0
                         ? `Select ${count} image${count > 1 ? "s" : ""}`
-                        : "Select";
+                        : "Okay";
                 }
             },
 
             confirmSelection() {
-                if (this.selectedImages.length === 0) return;
+                if (this.selectedImages.length === 0) {
+                    this.input.value = "";
+                    this.input.dispatchEvent(new Event("change", { bubbles: true }));
+                    if (typeof this.config.onSelect === "function") {
+                        this.config.onSelect([], this.input);
+                    }
+                    this.close();
+                    return;
+                }
 
                 const isMultiple = this.config.selection === "multiple";
 
@@ -936,10 +1159,11 @@ class CImagePicker {
                 if (this.uploadArea) {
                     this.uploadArea.classList.remove("cimagepicker-show");
                 }
+                this.closePreview();
             },
 
             async loadImages() {
-                this.images = await CImagePicker.fetchImages();
+                this.images = await CImagePicker.fetchImages(this.config.path || "public");
 
                 if (this.config.type && this.config.type !== "*") {
                     const allowed = this.config.type.split("|").map(t => t.trim().toLowerCase());
@@ -956,6 +1180,9 @@ class CImagePicker {
             destroy() {
                 if (this.overlay && this.overlay.parentNode) {
                     this.overlay.parentNode.removeChild(this.overlay);
+                }
+                if (this.previewOverlay && this.previewOverlay.parentNode) {
+                    this.previewOverlay.parentNode.removeChild(this.previewOverlay);
                 }
                 this.input.removeEventListener("click", this._clickHandler);
                 const index = CImagePicker.instances.indexOf(this);

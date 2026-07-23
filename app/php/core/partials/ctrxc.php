@@ -161,12 +161,12 @@ function ctrx_log(string $message, string $parent, string $id = null, string $fi
         return;
     }
     \Classes\Ctrx::logsLimit(5, 180, "ctrx/add/sql/logs/1005342/0510");
-    $folder = "logs/" . $parent;
+    $folder = "app/php/logs/" . $parent;
     if (!is_dir($folder)) {
         mkdir($folder, 0755, true);
     }
-    if (! file_exists("logs/.gitignore")) {
-        file_put_contents("logs/.gitignore", "/*");
+    if (! file_exists("app/php/logs/.gitignore")) {
+        file_put_contents("app/php/logs/.gitignore", "/*");
     }
     $filename = $filename ?? date("Y-m-d") . "";
 

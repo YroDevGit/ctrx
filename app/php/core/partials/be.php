@@ -252,10 +252,10 @@ if (! function_exists("add_sql_log")) {
         include_once "app/php/core/partials/bin/fe.php";
         $mx = ctr_get_current_request_id() ?? "";
         $logConfig = [
-            "info"     => ["env" => "sql_logs",   "dir" => "logs/sql_logs",   "prefix" => "INFO"],
-            "error"    => ["env" => "sql_errors", "dir" => "logs/sql_errors", "prefix" => "ERROR"],
-            "query"    => ["env" => "query_logs", "dir" => "logs/query_logs", "prefix" => $intro],
-            "be_errors" => ["env" => "be_errors",  "dir" => "logs/be_errors",  "prefix" => $intro],
+            "info"     => ["env" => "sql_logs",   "dir" => "app/php/logs/sql_logs",   "prefix" => "INFO"],
+            "error"    => ["env" => "sql_errors", "dir" => "app/php/logs/sql_errors", "prefix" => "ERROR"],
+            "query"    => ["env" => "query_logs", "dir" => "app/php/logs/query_logs", "prefix" => $intro],
+            "be_errors" => ["env" => "be_errors",  "dir" => "app/php/logs/be_errors",  "prefix" => $intro],
         ];
 
         if (!isset($logConfig[$type])) {
@@ -270,8 +270,8 @@ if (! function_exists("add_sql_log")) {
             mkdir($dir, 0777, true);
         }
 
-        if (! file_exists("logs/.gitignore")) {
-            file_put_contents("logs/.gitignore", "/*");
+        if (! file_exists("app/php/logs/.gitignore")) {
+            file_put_contents("app/php/logs/.gitignore", "/*");
         }
 
         $logfile = $dir . "/" . date("Y-m-d") . ".log";
@@ -287,7 +287,7 @@ if (! function_exists("my_log")) {
     function my_log($text, $parent = "mylogs", string $intro = "")
     {
         \Classes\Ctrx::logsLimit(5, 180, "ctrx/add/sql/logs/14425342/5510");
-        $dir = "logs/$parent";
+        $dir = "app/php/logs/$parent";
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }

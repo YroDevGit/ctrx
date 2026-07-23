@@ -1,7 +1,10 @@
 <?php
-// Author: Your Name
 
-$base_path = 'logs';
+/**
+ * Ctrx logs management
+ * By CodeYro
+ */
+$base_path = 'app/php/logs';
 
 $current_path = isset($_GET['path']) ? $_GET['path'] : '';
 $full_path = $base_path . $current_path;
@@ -9,11 +12,6 @@ $full_path = $base_path . $current_path;
 $real_base = realpath($base_path);
 $real_full = realpath($full_path);
 
-if ($real_full === false || strpos($real_full, $real_base) !== 0) {
-    //die('Access denied!');
-}
-
-// Handle file viewing
 if (isset($_GET['view'])) {
     $view_file = $real_full;
     if (is_file($view_file) && is_readable($view_file)) {
@@ -149,11 +147,11 @@ if (isset($_GET['clearlogs']) && $_GET['clearlogs'] == "yes") {
         }
         return rmdir($folder);
     }
-    deleteFolder("logs");
+    deleteFolder("app/php/logs");
     reload_page(false);
 }
 
-$size = folderSize('logs');
+$size = folderSize('app/php/logs');
 ?>
 
 <!DOCTYPE html>

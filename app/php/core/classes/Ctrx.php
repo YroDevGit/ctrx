@@ -754,10 +754,8 @@ class Ctrx
     {
         $beconfig = glob('app/config/*.php');
         foreach ($beconfig as $k => $v) {
-            if ($v == "app/config/storage.php" || $v == "app\config\storage.php") continue;
             if ($v == "app/config/ql.php" || $v == "app\config\ql.php") continue;
             if ($v == "app/config/migration.php" || $v == "app\config\migration.php") continue;
-            if ($v == "app/config/upload_public.php" || $v == "app\config\upload_public.php") continue;
             include_once $v;
         }
     }

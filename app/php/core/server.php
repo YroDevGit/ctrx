@@ -81,13 +81,18 @@ if (str_starts_with($req, "ctrxtools/game")) {
     exit;
 }
 
-if ($req == "ctrx.yro.public.images/getall") {
+if ($req == "ctrx.yro.ctrstorage.images/getall") {
     echo json_encode(\Classes\CtrStorage::ctrImages() ?? []);
     exit;
 }
 
-if ($req == "ctrx.yro.public.images/uploadHere") {
-    include "app/config/upload_public.php";
+if ($req == "ctrx.yro.ctrstorage.images/uploadHere") {
+    include "app/storage/upload_config.php";
+    exit;
+}
+
+if ($req == "ctrx.yro.ctrstorage.images/deleteImg") {
+    include "app/storage/remove_config.php";
     exit;
 }
 

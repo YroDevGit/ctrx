@@ -48,7 +48,7 @@ function formatSize($bytes)
   return round($bytes / (1024 * 1024 * 1024), 2) . ' GB';
 }
 
-$size = folderSize('logs');
+$size = folderSize('app/php/logs');
 ?>
 <!DOCTYPE html>
 <html lang="en">

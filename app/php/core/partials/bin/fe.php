@@ -355,7 +355,6 @@ if (! function_exists("previous_page")) {
     }
 }
 
-
 /**
  * This is the standard use for <a href="?"
  * or to any redirects

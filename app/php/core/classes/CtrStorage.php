@@ -133,10 +133,51 @@ class CtrStorage
         }
     }
 
-    public static function ctrUploadImage($dir = "public", $roles = null)
+    public static function ctr_read_image($file_path, $mime_type)
     {
+        read_ctr_file($file_path, $mime_type);
+    }
+
+    public static function ctr_remove_image($dir = "public", $roles = null)
+    {
+        $dir = $_GET['dir'] ?? $dir ?? "public";
         if (is_array($roles)) {
-            if (!\Classes\Ctrx::has_user_roles(...$roles)) {
+            if (!\Classes\Ctrx::has_user_roles(...$roles) && ! empty($roles)) {
+                echo json_encode(['success' => false, 'message' => "User doesn't have an access to delete image."]);
+                exit;
+            }
+        }
+        $filename = $_GET['filename'] ?? null;
+        if (! $filename) {
+            echo json_encode(['success' => false, 'message' => "Filename not found.!"]);
+            exit;
+        }
+        $filename = trim($filename, " /\\");
+        $dir = trim($dir, " /\\");
+
+        $path = "views/core/partials/storage/$dir/$filename";
+        $fileExist = false;
+        if (file_exists($path)) {
+            $fileExist = true;
+            unlink($path);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'path' => $path,
+            'filename' => $filename,
+            'storage' => "ctrstorage/$dir/$filename",
+            'message' => 'Image deleted successfully'
+        ]);
+        exit;
+    }
+
+    public static function ctr_upload_image($dir = "public", $roles = null)
+    {
+        $dir = $_GET['dir'] ?? $dir ?? "public";
+        if (! $roles) $role = null;
+        if (is_array($roles)) {
+            if (!\Classes\Ctrx::has_user_roles(...$roles) && ! empty($roles)) {
                 echo json_encode(['success' => false, 'message' => "User doesn't have an access to upload image."]);
                 exit;
             }
@@ -195,6 +236,7 @@ class CtrStorage
 
     public static function ctrImages($dir = "public")
     {
+        $dir = $_GET['dir'] ?? $dir ?? "public";
         $publicFolder = $dir;
         $path =  "views/core/partials/storage/$publicFolder/";
         $fullPath = $path;

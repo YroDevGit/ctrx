@@ -92,7 +92,7 @@ if (str_starts_with($uri, "/ctrstorage/")) {
         "dir" => dirname($ctrstorage)
     ]);
     include "app/php/core/partials/filereader.php";
-    include "app/config/storage.php";
+    include "app/storage/files_config.php";
 }
 
 /**
