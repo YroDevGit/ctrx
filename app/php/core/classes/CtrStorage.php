@@ -133,23 +133,23 @@ class CtrStorage
         }
     }
 
-    public static function ctr_read_image($file_path, $mime_type)
+    public static function ctr_read_file($file_path, $mime_type)
     {
         read_ctr_file($file_path, $mime_type);
     }
 
-    public static function ctr_remove_image($dir = "public", $roles = null)
+    public static function ctr_remove_image($dir = null, $roles = null)
     {
-        $dir = $_GET['dir'] ?? $dir ?? "public";
+        $dir = $dir ?? $_GET['dir'] ?? "public";
         if (is_array($roles)) {
             if (!\Classes\Ctrx::has_user_roles(...$roles) && ! empty($roles)) {
-                echo json_encode(['success' => false, 'message' => "User doesn't have an access to delete image."]);
+                echo json_encode(['success' => false, 'code'=>unauthorized_code, 'message' => "User doesn't have an access to delete image."]);
                 exit;
             }
         }
         $filename = $_GET['filename'] ?? null;
         if (! $filename) {
-            echo json_encode(['success' => false, 'message' => "Filename not found.!"]);
+            echo json_encode(['success' => false, 'code'=> 404, 'message' => "Filename not found.!"]);
             exit;
         }
         $filename = trim($filename, " /\\");
@@ -163,22 +163,23 @@ class CtrStorage
         }
 
         echo json_encode([
+            'code' => 200,
             'success' => true,
             'path' => $path,
             'filename' => $filename,
-            'storage' => "ctrstorage/$dir/$filename",
+            'storage' => "/ctrstorage/$dir/$filename",
             'message' => 'Image deleted successfully'
         ]);
         exit;
     }
 
-    public static function ctr_upload_image($dir = "public", $roles = null)
+    public static function ctr_upload_image($dir = null, $roles = null)
     {
-        $dir = $_GET['dir'] ?? $dir ?? "public";
+        $dir = $dir ?? $_GET['dir'] ?? "public";
         if (! $roles) $role = null;
         if (is_array($roles)) {
             if (!\Classes\Ctrx::has_user_roles(...$roles) && ! empty($roles)) {
-                echo json_encode(['success' => false, 'message' => "User doesn't have an access to upload image."]);
+                echo json_encode(['success' => false, 'code' => unauthorized_code, 'message' => "User doesn't have an access to upload image."]);
                 exit;
             }
         }
@@ -186,7 +187,7 @@ class CtrStorage
         $fullPath = $path;
 
         if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'No image uploaded or upload error']);
+            echo json_encode(['success' => false, 'code' => 500, 'message' => 'No image uploaded or upload error']);
             exit;
         }
 
@@ -199,7 +200,7 @@ class CtrStorage
         $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
 
         if (!in_array($extension, $imageTypes)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid image type']);
+            echo json_encode(['success' => false, 'code'=>500, 'message' => 'Invalid image type']);
             exit;
         }
 
@@ -213,7 +214,7 @@ class CtrStorage
             $imageData = [
                 'name' => $filename,
                 'path' => $relativePath,
-                'url' => "ctrstorage/$dir/" . $filename,
+                'url' => "/ctrstorage/$dir/" . $filename,
                 'size' => $file['size'],
                 'modified' => time(),
                 'extension' => $extension,
@@ -221,12 +222,14 @@ class CtrStorage
             ];
 
             echo json_encode([
+                'code' => 200,
                 'success' => true,
                 'image' => $imageData,
                 'message' => 'Image uploaded successfully'
             ]);
         } else {
             echo json_encode([
+                'code' => 500,
                 'success' => false,
                 'message' => 'Failed to move uploaded image'
             ]);
@@ -234,9 +237,9 @@ class CtrStorage
         exit;
     }
 
-    public static function ctrImages($dir = "public")
+    public static function get_images($dir = null)
     {
-        $dir = $_GET['dir'] ?? $dir ?? "public";
+        $dir = $dir ?? $_GET['dir'] ?? "public";
         $publicFolder = $dir;
         $path =  "views/core/partials/storage/$publicFolder/";
         $fullPath = $path;
@@ -278,7 +281,8 @@ class CtrStorage
             return $b['modified'] - $a['modified'];
         });
 
-        return ['images' => array_values($images)];
+        echo json_encode(['images' => array_values($images)]);
+        exit;
     }
 
     public static function last_uploaded(bool $refresh = true): array|null

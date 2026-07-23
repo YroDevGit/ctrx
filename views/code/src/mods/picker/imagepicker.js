@@ -170,6 +170,186 @@ class CImagePicker {
                 background: #ced4da;
             }
 
+            .cimagepicker-current-image {
+                display: none;
+                margin-bottom: 20px;
+                padding: 16px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                border: 2px solid #e9ecef;
+            }
+
+            .cimagepicker-current-image.cimagepicker-show {
+                display: block;
+            }
+
+            .cimagepicker-current-image-wrapper {
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                padding: 8px 4px;
+                scroll-behavior: smooth;
+                max-width: 100%;
+            }
+
+            .cimagepicker-current-image-wrapper::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .cimagepicker-current-image-wrapper::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            .cimagepicker-current-image-wrapper::-webkit-scrollbar-thumb {
+                background: #dee2e6;
+                border-radius: 10px;
+            }
+
+            .cimagepicker-current-image-wrapper::-webkit-scrollbar-thumb:hover {
+                background: #ced4da;
+            }
+
+            .cimagepicker-current-image-item {
+                position: relative;
+                flex: 0 0 auto;
+                width: 120px;
+                height: 120px;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 2px solid #e9ecef;
+                background: #ffffff;
+                transition: all 0.2s ease;
+            }
+
+            .cimagepicker-current-image-item:hover {
+                border-color: #0066ff;
+                transform: scale(1.02);
+            }
+
+            .cimagepicker-current-image-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .cimagepicker-current-image-item .cimagepicker-current-image-actions {
+                position: absolute;
+                top: 4px;
+                left: 4px;
+                display: flex;
+                gap: 4px;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .cimagepicker-current-image-item:hover .cimagepicker-current-image-actions {
+                opacity: 1;
+            }
+
+            .cimagepicker-current-image-eye {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: rgba(0,0,0,0.6);
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                transition: all 0.2s ease;
+                backdrop-filter: blur(4px);
+            }
+
+            .cimagepicker-current-image-eye:hover {
+                background: rgba(0,0,0,0.8);
+                transform: scale(1.1);
+            }
+
+            .cimagepicker-current-image-label {
+                font-size: 13px;
+                color: #6c757d;
+                font-weight: 500;
+                margin-bottom: 8px;
+            }
+
+            .cimagepicker-current-image-name {
+                font-size: 13px;
+                color: #212529;
+                font-weight: 500;
+                margin-top: 8px;
+                word-break: break-all;
+            }
+
+            .cimagepicker-upload-area {
+                display: none;
+                padding: 30px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                border: 2px dashed #dee2e6;
+                margin-bottom: 20px;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            .cimagepicker-upload-area.cimagepicker-show {
+                display: block;
+            }
+
+            .cimagepicker-upload-area.dragover {
+                border-color: #0066ff;
+                background: #f0f7ff;
+            }
+
+            .cimagepicker-upload-area input[type="file"] {
+                display: none;
+            }
+
+            .cimagepicker-upload-label {
+                display: inline-block;
+                padding: 12px 32px;
+                background: #0066ff;
+                color: #fff;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.2s ease;
+            }
+
+            .cimagepicker-upload-label:hover {
+                background: #0052cc;
+                transform: translateY(-2px);
+            }
+
+            .cimagepicker-upload-text {
+                color: #6c757d;
+                margin: 12px 0;
+                font-size: 14px;
+            }
+
+            .cimagepicker-upload-progress {
+                display: none;
+                margin-top: 16px;
+                height: 4px;
+                background: #e9ecef;
+                border-radius: 2px;
+                overflow: hidden;
+            }
+
+            .cimagepicker-upload-progress.cimagepicker-show {
+                display: block;
+            }
+
+            .cimagepicker-upload-progress-bar {
+                height: 100%;
+                background: #0066ff;
+                width: 0%;
+                transition: width 0.3s ease;
+            }
+
             .cimagepicker-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -374,72 +554,6 @@ class CImagePicker {
                 box-shadow: 0 4px 12px rgba(0,102,255,0.3);
             }
 
-            .cimagepicker-upload-area {
-                display: none;
-                padding: 30px;
-                background: #f8f9fa;
-                border-radius: 12px;
-                border: 2px dashed #dee2e6;
-                margin-bottom: 20px;
-                text-align: center;
-                transition: all 0.3s ease;
-            }
-
-            .cimagepicker-upload-area.cimagepicker-show {
-                display: block;
-            }
-
-            .cimagepicker-upload-area.dragover {
-                border-color: #0066ff;
-                background: #f0f7ff;
-            }
-
-            .cimagepicker-upload-area input[type="file"] {
-                display: none;
-            }
-
-            .cimagepicker-upload-label {
-                display: inline-block;
-                padding: 12px 32px;
-                background: #0066ff;
-                color: #fff;
-                border-radius: 8px;
-                cursor: pointer;
-                font-weight: 600;
-                transition: all 0.2s ease;
-            }
-
-            .cimagepicker-upload-label:hover {
-                background: #0052cc;
-                transform: translateY(-2px);
-            }
-
-            .cimagepicker-upload-text {
-                color: #6c757d;
-                margin: 12px 0;
-                font-size: 14px;
-            }
-
-            .cimagepicker-upload-progress {
-                display: none;
-                margin-top: 16px;
-                height: 4px;
-                background: #e9ecef;
-                border-radius: 2px;
-                overflow: hidden;
-            }
-
-            .cimagepicker-upload-progress.cimagepicker-show {
-                display: block;
-            }
-
-            .cimagepicker-upload-progress-bar {
-                height: 100%;
-                background: #0066ff;
-                width: 0%;
-                transition: width 0.3s ease;
-            }
-
             .cimagepicker-preview-overlay {
                 position: fixed;
                 inset: 0;
@@ -540,6 +654,18 @@ class CImagePicker {
                 .cimagepicker-footer-actions button {
                     flex: 1;
                 }
+
+                .cimagepicker-current-image-item {
+                    width: 80px;
+                    height: 80px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .cimagepicker-current-image-item {
+                    width: 60px;
+                    height: 60px;
+                }
             }
         `;
         document.head.appendChild(style);
@@ -547,7 +673,7 @@ class CImagePicker {
 
     static async fetchImages(path = "public") {
         try {
-            const response = await fetch(`ctrx.yro.ctrstorage.images/getall?action=list&dir=${encodeURIComponent(path)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=list&dir=${encodeURIComponent(path)}`);
             if (!response.ok) throw new Error("Failed to fetch images");
             const data = await response.json();
             return data.images || [];
@@ -564,7 +690,7 @@ class CImagePicker {
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "ctrx.yro.ctrstorage.images/uploadHere?action=upload&dir=" + path);
+            xhr.open("POST", "/ctrx.yro.ctrstorage.images/uploadHere?action=upload&dir=" + path);
 
             if (onProgress && typeof onProgress === "function") {
                 xhr.upload.addEventListener("progress", (e) => {
@@ -595,7 +721,7 @@ class CImagePicker {
 
     static async deleteImage(filename, path = "public") {
         try {
-            const response = await fetch(`ctrx.yro.ctrstorage.images/deleteImg?action=delete&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=delete&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
             if (!response.ok) throw new Error("Failed to delete image");
             const data = await response.json();
             return data;
@@ -616,591 +742,689 @@ class CImagePicker {
     static init(config = {}) {
         this.ensureStyle();
 
-        config.id = config.id ?? config.class ?? config.className ?? config.element ?? undefined;
-        config.path = config.path ?? config.dir ?? config.directory ?? "public";
+        const instances = [];
+        let elements = [];
 
-        const input = typeof config.id === "string" && config.id.startsWith("#")
-            ? document.querySelector(config.id)
-            : document.getElementById(config.id);
+        if (config.element) {
+            if (typeof config.element === 'string') {
+                if (config.element.startsWith('.')) {
+                    elements = document.querySelectorAll(config.element);
+                } else if (config.element.startsWith('#')) {
+                    const el = document.querySelector(config.element);
+                    if (el) elements = [el];
+                } else {
+                    const el = document.getElementById(config.element);
+                    if (el) elements = [el];
+                }
+            } else if (config.element instanceof HTMLElement) {
+                elements = [config.element];
+            } else if (config.element instanceof NodeList || Array.isArray(config.element)) {
+                elements = Array.from(config.element);
+            }
+        }
 
-        if (!input) {
-            console.error("CImagePicker: Input element not found");
+        if (elements.length === 0) {
+            console.error("CImagePicker: No input elements found");
             return null;
         }
-        input.setAttribute("readonly", "");
 
-        const instance = {
-            input: input,
-            config: config,
-            selectedImages: [],
-            images: [],
-            filteredImages: [],
-            overlay: null,
-            modal: null,
-            grid: null,
-            searchInput: null,
-            selectBtn: null,
-            cancelBtn: null,
-            addBtn: null,
-            infoText: null,
-            uploadArea: null,
-            fileInput: null,
-            progressBar: null,
-            previewOverlay: null,
-            isOpen: false,
-            isUploading: false,
+        elements.forEach(input => {
+            const instanceConfig = { ...config };
+            instanceConfig.id = input.id || input.className || `cimagepicker-${Date.now()}-${Math.random()}`;
+            instanceConfig.path = config.path ?? config.dir ?? config.directory ?? "public";
 
-            buildOverlay() {
-                const overlay = document.createElement("div");
-                overlay.className = "cimagepicker-overlay";
-                overlay.id = `cimagepicker-${Date.now()}`;
+            input.setAttribute("readonly", "");
 
-                const modal = document.createElement("div");
-                modal.className = "cimagepicker-modal";
+            const instance = {
+                input: input,
+                config: instanceConfig,
+                selectedImages: [],
+                images: [],
+                filteredImages: [],
+                overlay: null,
+                modal: null,
+                grid: null,
+                searchInput: null,
+                selectBtn: null,
+                cancelBtn: null,
+                addBtn: null,
+                infoText: null,
+                uploadArea: null,
+                fileInput: null,
+                progressBar: null,
+                previewOverlay: null,
+                currentImageContainer: null,
+                isOpen: false,
+                isUploading: false,
 
-                const header = document.createElement("div");
-                header.className = "cimagepicker-header";
+                buildOverlay() {
+                    const overlay = document.createElement("div");
+                    overlay.className = "cimagepicker-overlay";
+                    overlay.id = `cimagepicker-${Date.now()}-${Math.random()}`;
 
-                const headerLeft = document.createElement("div");
-                headerLeft.className = "cimagepicker-header-left";
+                    const modal = document.createElement("div");
+                    modal.className = "cimagepicker-modal";
 
-                const title = document.createElement("h2");
-                title.textContent = config.title || "Select Image(s)";
+                    const header = document.createElement("div");
+                    header.className = "cimagepicker-header";
 
-                const addBtn = document.createElement("button");
-                addBtn.className = "cimagepicker-btn-add";
-                addBtn.innerHTML = "➕ Add Image";
-                addBtn.addEventListener("click", () => this.toggleUpload());
+                    const headerLeft = document.createElement("div");
+                    headerLeft.className = "cimagepicker-header-left";
 
-                headerLeft.appendChild(title);
-                headerLeft.appendChild(addBtn);
+                    const title = document.createElement("h2");
+                    title.textContent = instanceConfig.title || "Select Image(s)";
 
-                const headerActions = document.createElement("div");
-                headerActions.className = "cimagepicker-header-actions";
+                    const addBtn = document.createElement("button");
+                    addBtn.className = "cimagepicker-btn-add";
+                    addBtn.innerHTML = "➕ Add Image";
+                    addBtn.addEventListener("click", () => this.toggleUpload());
 
-                const search = document.createElement("input");
-                search.type = "text";
-                search.className = "cimagepicker-search";
-                search.placeholder = "Search images...";
-                search.addEventListener("input", (e) => {
-                    this.filterImages(e.target.value);
-                });
+                    headerLeft.appendChild(title);
+                    headerLeft.appendChild(addBtn);
 
-                const closeBtn = document.createElement("button");
-                closeBtn.className = "cimagepicker-close";
-                closeBtn.innerHTML = "×";
-                closeBtn.addEventListener("click", () => this.close());
+                    const headerActions = document.createElement("div");
+                    headerActions.className = "cimagepicker-header-actions";
 
-                headerActions.appendChild(search);
-                headerActions.appendChild(closeBtn);
-                header.appendChild(headerLeft);
-                header.appendChild(headerActions);
+                    const search = document.createElement("input");
+                    search.type = "text";
+                    search.className = "cimagepicker-search";
+                    search.placeholder = "Search images...";
+                    search.addEventListener("input", (e) => {
+                        this.filterImages(e.target.value);
+                    });
 
-                const body = document.createElement("div");
-                body.className = "cimagepicker-body";
+                    const closeBtn = document.createElement("button");
+                    closeBtn.className = "cimagepicker-close";
+                    closeBtn.innerHTML = "×";
+                    closeBtn.addEventListener("click", () => this.close());
 
-                const uploadArea = document.createElement("div");
-                uploadArea.className = "cimagepicker-upload-area";
+                    headerActions.appendChild(search);
+                    headerActions.appendChild(closeBtn);
+                    header.appendChild(headerLeft);
+                    header.appendChild(headerActions);
 
-                const uploadLabel = document.createElement("label");
-                uploadLabel.className = "cimagepicker-upload-label";
-                uploadLabel.textContent = "Choose Image";
+                    const body = document.createElement("div");
+                    body.className = "cimagepicker-body";
 
-                const fileInput = document.createElement("input");
-                fileInput.type = "file";
-                fileInput.multiple = false;
-                fileInput.accept = "image/*";
+                    const uploadArea = document.createElement("div");
+                    uploadArea.className = "cimagepicker-upload-area";
 
-                const uploadText = document.createElement("div");
-                uploadText.className = "cimagepicker-upload-text";
-                uploadText.textContent = "or drag and drop here";
+                    const uploadLabel = document.createElement("label");
+                    uploadLabel.className = "cimagepicker-upload-label";
+                    uploadLabel.textContent = "Choose Image";
 
-                const progressWrapper = document.createElement("div");
-                progressWrapper.className = "cimagepicker-upload-progress";
+                    const fileInput = document.createElement("input");
+                    fileInput.type = "file";
+                    fileInput.multiple = false;
+                    fileInput.accept = "image/*";
 
-                const progressBar = document.createElement("div");
-                progressBar.className = "cimagepicker-upload-progress-bar";
-                progressWrapper.appendChild(progressBar);
+                    const uploadText = document.createElement("div");
+                    uploadText.className = "cimagepicker-upload-text";
+                    uploadText.textContent = "or drag and drop here";
 
-                uploadLabel.appendChild(fileInput);
-                uploadArea.appendChild(uploadLabel);
-                uploadArea.appendChild(uploadText);
-                uploadArea.appendChild(progressWrapper);
+                    const progressWrapper = document.createElement("div");
+                    progressWrapper.className = "cimagepicker-upload-progress";
 
-                uploadArea.addEventListener("dragover", (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.add("dragover");
-                });
+                    const progressBar = document.createElement("div");
+                    progressBar.className = "cimagepicker-upload-progress-bar";
+                    progressWrapper.appendChild(progressBar);
 
-                uploadArea.addEventListener("dragleave", () => {
-                    uploadArea.classList.remove("dragover");
-                });
+                    uploadLabel.appendChild(fileInput);
+                    uploadArea.appendChild(uploadLabel);
+                    uploadArea.appendChild(uploadText);
+                    uploadArea.appendChild(progressWrapper);
 
-                uploadArea.addEventListener("drop", (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.remove("dragover");
-                    if (e.dataTransfer.files.length > 0) {
-                        this.handleUpload(e.dataTransfer.files[0]);
-                    }
-                });
+                    uploadArea.addEventListener("dragover", (e) => {
+                        e.preventDefault();
+                        uploadArea.classList.add("dragover");
+                    });
 
-                fileInput.addEventListener("change", (e) => {
-                    if (e.target.files.length > 0) {
-                        this.handleUpload(e.target.files[0]);
-                    }
-                });
+                    uploadArea.addEventListener("dragleave", () => {
+                        uploadArea.classList.remove("dragover");
+                    });
 
-                const grid = document.createElement("div");
-                grid.className = "cimagepicker-grid";
-
-                body.appendChild(uploadArea);
-                body.appendChild(grid);
-
-                const footer = document.createElement("div");
-                footer.className = "cimagepicker-footer";
-
-                const info = document.createElement("div");
-                info.className = "cimagepicker-footer-info";
-                info.innerHTML = `Selected: <span id="cimagepicker-count">0</span>`;
-
-                const footerActions = document.createElement("div");
-                footerActions.className = "cimagepicker-footer-actions";
-
-                const cancelBtn = document.createElement("button");
-                cancelBtn.className = "cimagepicker-btn cimagepicker-btn-cancel";
-                cancelBtn.textContent = "Cancel";
-                cancelBtn.addEventListener("click", () => this.close());
-
-                const selectBtn = document.createElement("button");
-                selectBtn.className = "cimagepicker-btn cimagepicker-btn-select";
-                selectBtn.textContent = "Select";
-                selectBtn.addEventListener("click", () => this.confirmSelection());
-
-                footerActions.appendChild(cancelBtn);
-                footerActions.appendChild(selectBtn);
-                footer.appendChild(info);
-                footer.appendChild(footerActions);
-
-                modal.appendChild(header);
-                modal.appendChild(body);
-                modal.appendChild(footer);
-
-                overlay.appendChild(modal);
-
-                overlay.addEventListener("click", (e) => {
-                    if (e.target === overlay) this.close();
-                });
-
-                document.body.appendChild(overlay);
-
-                const previewOverlay = document.createElement("div");
-                previewOverlay.className = "cimagepicker-preview-overlay";
-                previewOverlay.id = `cimagepicker-preview-${Date.now()}`;
-
-                const previewClose = document.createElement("button");
-                previewClose.className = "cimagepicker-preview-close";
-                previewClose.innerHTML = "×";
-                previewClose.addEventListener("click", () => this.closePreview());
-
-                const previewImg = document.createElement("img");
-                previewImg.alt = "Preview";
-
-                previewOverlay.appendChild(previewImg);
-                previewOverlay.appendChild(previewClose);
-
-                previewOverlay.addEventListener("click", (e) => {
-                    if (e.target === previewOverlay) this.closePreview();
-                });
-
-                document.body.appendChild(previewOverlay);
-
-                this.overlay = overlay;
-                this.modal = modal;
-                this.grid = grid;
-                this.searchInput = search;
-                this.selectBtn = selectBtn;
-                this.cancelBtn = cancelBtn;
-                this.addBtn = addBtn;
-                this.infoText = info.querySelector("#cimagepicker-count");
-                this.uploadArea = uploadArea;
-                this.fileInput = fileInput;
-                this.progressBar = progressBar;
-                this.previewOverlay = previewOverlay;
-
-                return overlay;
-            },
-
-            toggleUpload() {
-                if (this.uploadArea) {
-                    this.uploadArea.classList.toggle("cimagepicker-show");
-                    if (!this.uploadArea.classList.contains("cimagepicker-show")) {
-                        this.fileInput.value = "";
-                        this.progressBar.style.width = "0%";
-                        this.progressBar.parentElement.classList.remove("cimagepicker-show");
-                        this.isUploading = false;
-                    }
-                }
-            },
-
-            async handleUpload(file) {
-                if (this.isUploading) return;
-
-                if (!file.type.startsWith("image/")) {
-                    alert("Please upload an image file");
-                    return;
-                }
-
-                const allowedTypes = this.config.type || this.config.types || "*";
-                if (allowedTypes !== "*") {
-                    const ext = file.name.split(".").pop().toLowerCase();
-                    const allowed = allowedTypes.split("|").map(t => t.trim().toLowerCase());
-                    if (!allowed.includes(ext)) {
-                        alert(`Image type not allowed. Allowed: ${allowedTypes}`);
-                        return;
-                    }
-                }
-
-                this.isUploading = true;
-                this.fileInput.disabled = true;
-                this.progressBar.parentElement.classList.add("cimagepicker-show");
-                this.progressBar.style.width = "0%";
-
-                try {
-                    const result = await CImagePicker.uploadImage(
-                        file,
-                        this.config.path || "public",
-                        (percent) => {
-                            this.progressBar.style.width = percent + "%";
+                    uploadArea.addEventListener("drop", (e) => {
+                        e.preventDefault();
+                        uploadArea.classList.remove("dragover");
+                        if (e.dataTransfer.files.length > 0) {
+                            this.handleUpload(e.dataTransfer.files[0]);
                         }
-                    );
+                    });
 
-                    if (result.success && result.image) {
-                        this.images.unshift(result.image);
-                        this.filteredImages.unshift(result.image);
-                        this.renderGrid();
-
-                        if (this.config.selection !== "multiple") {
-                            this.selectedImages = [result.image];
-                        } else {
-                            this.selectedImages.push(result.image);
+                    fileInput.addEventListener("change", (e) => {
+                        if (e.target.files.length > 0) {
+                            this.handleUpload(e.target.files[0]);
                         }
+                    });
 
-                        this.updateSelectionInfo();
+                    const currentImageContainer = document.createElement("div");
+                    currentImageContainer.className = "cimagepicker-current-image";
 
-                        this.uploadArea.classList.remove("cimagepicker-show");
-                        this.fileInput.value = "";
-                        this.progressBar.style.width = "0%";
-                        this.progressBar.parentElement.classList.remove("cimagepicker-show");
+                    const currentLabel = document.createElement("div");
+                    currentLabel.className = "cimagepicker-current-image-label";
+                    currentLabel.textContent = "Currently selected:";
 
-                        if (typeof this.config.onUpload === "function") {
-                            this.config.onUpload(result.image, this);
-                        }
-                    } else {
-                        this.progressBar.parentElement.classList.remove("cimagepicker-show");
-                        alert(result.message ?? "Failed to upload image");
-                    }
-                } catch (error) {
-                    alert("Upload failed: " + error.message);
-                }
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "cimagepicker-current-image-wrapper";
+                    wrapper.id = "cimagepicker-current-wrapper";
 
-                this.isUploading = false;
-                this.fileInput.disabled = false;
-            },
+                    const currentName = document.createElement("div");
+                    currentName.className = "cimagepicker-current-image-name";
+                    currentName.id = "cimagepicker-current-name";
 
-            async handleDelete(image, event) {
-                event.stopPropagation();
+                    currentImageContainer.appendChild(currentLabel);
+                    currentImageContainer.appendChild(wrapper);
+                    currentImageContainer.appendChild(currentName);
 
-                if (!confirm(`Are you sure you want to delete "${image.name}"?`)) {
-                    return;
-                }
+                    body.appendChild(uploadArea);
+                    body.appendChild(currentImageContainer);
 
-                try {
-                    let resDel = await CImagePicker.deleteImage(image.name, this.config.path || "public");
+                    const grid = document.createElement("div");
+                    grid.className = "cimagepicker-grid";
 
-                    if (resDel.success) {
-                        alert("Image deleted successfully");
-                    } else {
-                        alert(resDel.message ?? "Failed to delete image");
-                        return;
-                    }
-                    const index = this.images.findIndex(f => f.name === image.name);
-                    if (index !== -1) {
-                        this.images.splice(index, 1);
-                    }
+                    body.appendChild(grid);
 
-                    const filteredIndex = this.filteredImages.findIndex(f => f.name === image.name);
-                    if (filteredIndex !== -1) {
-                        this.filteredImages.splice(filteredIndex, 1);
-                    }
-
-                    const selectedIndex = this.selectedImages.findIndex(f => f.name === image.name);
-                    if (selectedIndex !== -1) {
-                        this.selectedImages.splice(selectedIndex, 1);
-                    }
-
-                    this.renderGrid();
-                    this.updateSelectionInfo();
-
-                    if (typeof this.config.onDelete === "function") {
-                        this.config.onDelete(image, this);
-                    }
-                } catch (error) {
-                    alert("Failed to delete image: " + error.message);
-                }
-            },
-
-            openPreview(image, event) {
-                event.stopPropagation();
-
-                if (!this.previewOverlay) return;
-
-                const img = this.previewOverlay.querySelector("img");
-                if (img) {
-                    img.src = image.url || image.path || "";
-                }
-
-                this.previewOverlay.classList.add("cimagepicker-show");
-                document.body.style.overflow = "hidden";
-            },
-
-            closePreview() {
-                if (!this.previewOverlay) return;
-                this.previewOverlay.classList.remove("cimagepicker-show");
-                document.body.style.overflow = "";
-            },
-
-            filterImages(query) {
-                const q = query.toLowerCase().trim();
-                if (!q) {
-                    this.filteredImages = [...this.images];
-                } else {
-                    this.filteredImages = this.images.filter(f =>
-                        f.name.toLowerCase().includes(q)
-                    );
-                }
-                this.renderGrid();
-            },
-
-            renderGrid() {
-                this.grid.innerHTML = "";
-
-                if (this.filteredImages.length === 0) {
-                    const empty = document.createElement("div");
-                    empty.className = "cimagepicker-empty";
-                    empty.innerHTML = `
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <path d="M3 9h18M9 21V9"/>
-                        </svg>
-                        <div>No images found</div>
-                    `;
-                    this.grid.appendChild(empty);
-                    return;
-                }
-
-                this.filteredImages.forEach(image => {
-                    const item = document.createElement("div");
-                    item.className = "cimagepicker-item";
-                    item.dataset.filename = image.name;
-
-                    const img = document.createElement("img");
-                    img.src = image.url || image.path || "";
-                    img.setAttribute("loading", "lazy");
-                    img.alt = image.name;
-                    img.loading = "lazy";
-                    img.onerror = function () {
-                        this.style.display = "none";
-                    };
-
-                    const actions = document.createElement("div");
-                    actions.className = "cimagepicker-item-actions";
-
-                    const eyeBtn = document.createElement("button");
-                    eyeBtn.className = "cimagepicker-item-eye";
-                    eyeBtn.innerHTML = "👁";
-                    eyeBtn.title = "Preview";
-                    eyeBtn.addEventListener("click", (e) => this.openPreview(image, e));
-
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "cimagepicker-item-delete";
-                    deleteBtn.innerHTML = "✕";
-                    deleteBtn.title = "Delete";
-                    deleteBtn.addEventListener("click", (e) => this.handleDelete(image, e));
-
-                    actions.appendChild(eyeBtn);
-                    actions.appendChild(deleteBtn);
-
-                    const check = document.createElement("div");
-                    check.className = "cimagepicker-item-check";
-                    check.textContent = "✓";
+                    const footer = document.createElement("div");
+                    footer.className = "cimagepicker-footer";
 
                     const info = document.createElement("div");
-                    info.className = "cimagepicker-item-info";
+                    info.className = "cimagepicker-footer-info";
+                    info.innerHTML = `Selected: <span id="cimagepicker-count">0</span>`;
 
-                    const name = document.createElement("div");
-                    name.className = "cimagepicker-item-name";
-                    name.textContent = image.name;
+                    const footerActions = document.createElement("div");
+                    footerActions.className = "cimagepicker-footer-actions";
 
-                    const size = document.createElement("div");
-                    size.className = "cimagepicker-item-size";
-                    size.textContent = image.size ? CImagePicker.formatSize(image.size) : "";
-
-                    info.appendChild(name);
-                    info.appendChild(size);
-                    item.appendChild(img);
-                    item.appendChild(actions);
-                    item.appendChild(check);
-                    item.appendChild(info);
-
-                    const isSelected = this.selectedImages.some(f => f.name === image.name);
-                    if (isSelected) {
-                        item.classList.add("cimagepicker-selected");
-                    }
-
-                    item.addEventListener("click", () => {
-                        this.toggleImage(image, item);
+                    const cancelBtn = document.createElement("button");
+                    cancelBtn.className = "cimagepicker-btn cimagepicker-btn-cancel";
+                    cancelBtn.textContent = "Clear";
+                    cancelBtn.addEventListener("click", () => {
+                        this.selectedImages = [];
+                        this.updateSelectionInfo();
+                        let allPick = document.querySelectorAll(".cimagepicker-item");
+                        allPick.forEach(element => {
+                            element.classList.remove("cimagepicker-selected");
+                        });
                     });
 
-                    this.grid.appendChild(item);
-                });
+                    const selectBtn = document.createElement("button");
+                    selectBtn.className = "cimagepicker-btn cimagepicker-btn-select";
+                    selectBtn.textContent = "Select";
+                    selectBtn.addEventListener("click", () => this.confirmSelection());
 
-                this.updateSelectionInfo();
-            },
+                    footerActions.appendChild(cancelBtn);
+                    footerActions.appendChild(selectBtn);
+                    footer.appendChild(info);
+                    footer.appendChild(footerActions);
 
-            toggleImage(image, item) {
-                const isMultiple = this.config.selection === "multiple";
+                    modal.appendChild(header);
+                    modal.appendChild(body);
+                    modal.appendChild(footer);
 
-                if (!isMultiple) {
-                    if (this.selectedImages.length === 1 && this.selectedImages[0].name === image.name) {
-                        this.selectedImages = [];
-                        item.classList.remove("cimagepicker-selected");
+                    overlay.appendChild(modal);
+
+                    overlay.addEventListener("click", (e) => {
+                        if (e.target === overlay) this.close();
+                    });
+
+                    document.body.appendChild(overlay);
+
+                    const previewOverlay = document.createElement("div");
+                    previewOverlay.className = "cimagepicker-preview-overlay";
+                    previewOverlay.id = `cimagepicker-preview-${Date.now()}-${Math.random()}`;
+
+                    const previewClose = document.createElement("button");
+                    previewClose.className = "cimagepicker-preview-close";
+                    previewClose.innerHTML = "×";
+                    previewClose.addEventListener("click", () => this.closePreview());
+
+                    const previewImg = document.createElement("img");
+                    previewImg.alt = "Preview";
+
+                    previewOverlay.appendChild(previewImg);
+                    previewOverlay.appendChild(previewClose);
+
+                    previewOverlay.addEventListener("click", (e) => {
+                        if (e.target === previewOverlay) this.closePreview();
+                    });
+
+                    document.body.appendChild(previewOverlay);
+
+                    this.overlay = overlay;
+                    this.modal = modal;
+                    this.grid = grid;
+                    this.searchInput = search;
+                    this.selectBtn = selectBtn;
+                    this.cancelBtn = cancelBtn;
+                    this.addBtn = addBtn;
+                    this.infoText = info.querySelector("#cimagepicker-count");
+                    this.uploadArea = uploadArea;
+                    this.fileInput = fileInput;
+                    this.progressBar = progressBar;
+                    this.previewOverlay = previewOverlay;
+                    this.currentImageContainer = currentImageContainer;
+
+                    return overlay;
+                },
+
+                displayCurrentImage() {
+                    if (!this.currentImageContainer) return;
+
+                    const currentValue = this.input.value;
+                    const wrapper = this.currentImageContainer.querySelector("#cimagepicker-current-wrapper");
+                    const nameEl = this.currentImageContainer.querySelector("#cimagepicker-current-name");
+
+                    wrapper.innerHTML = "";
+
+                    if (currentValue && currentValue.trim() !== "") {
+                        const urls = currentValue.split('||').map(u => u.trim()).filter(u => u !== "");
+
+                        if (urls.length > 0) {
+                            urls.forEach((url, index) => {
+                                const item = document.createElement("div");
+                                item.className = "cimagepicker-current-image-item";
+
+                                const img = document.createElement("img");
+                                img.src = url;
+                                img.alt = `Image ${index + 1}`;
+                                img.onerror = function () { this.style.display = "none"; };
+
+                                const actions = document.createElement("div");
+                                actions.className = "cimagepicker-current-image-actions";
+
+                                const eyeBtn = document.createElement("button");
+                                eyeBtn.className = "cimagepicker-current-image-eye";
+                                eyeBtn.innerHTML = "👁";
+                                eyeBtn.title = "Preview";
+                                eyeBtn.addEventListener("click", (e) => {
+                                    e.stopPropagation();
+                                    this.openPreview({ url: url, name: `Image ${index + 1}` }, e);
+                                });
+
+                                actions.appendChild(eyeBtn);
+                                item.appendChild(img);
+                                item.appendChild(actions);
+                                wrapper.appendChild(item);
+                            });
+
+                            nameEl.textContent = `${urls.length} image${urls.length > 1 ? 's' : ''} selected`;
+                            this.currentImageContainer.classList.add("cimagepicker-show");
+                            return;
+                        }
+                    }
+
+                    nameEl.textContent = "";
+                    this.currentImageContainer.classList.remove("cimagepicker-show");
+                },
+
+                toggleUpload() {
+                    if (this.uploadArea) {
+                        this.uploadArea.classList.toggle("cimagepicker-show");
+                        if (!this.uploadArea.classList.contains("cimagepicker-show")) {
+                            this.fileInput.value = "";
+                            this.progressBar.style.width = "0%";
+                            this.progressBar.parentElement.classList.remove("cimagepicker-show");
+                            this.isUploading = false;
+                        }
+                    }
+                },
+
+                async handleUpload(file) {
+                    if (this.isUploading) return;
+
+                    if (!file.type.startsWith("image/")) {
+                        alert("Please upload an image file");
+                        return;
+                    }
+
+                    const allowedTypes = instanceConfig.type || instanceConfig.types || "*";
+                    if (allowedTypes !== "*") {
+                        const ext = file.name.split(".").pop().toLowerCase();
+                        const allowed = allowedTypes.split("|").map(t => t.trim().toLowerCase());
+                        if (!allowed.includes(ext)) {
+                            alert(`Image type not allowed. Allowed: ${allowedTypes}`);
+                            return;
+                        }
+                    }
+
+                    this.isUploading = true;
+                    this.fileInput.disabled = true;
+                    this.progressBar.parentElement.classList.add("cimagepicker-show");
+                    this.progressBar.style.width = "0%";
+
+                    try {
+                        const result = await CImagePicker.uploadImage(
+                            file,
+                            instanceConfig.path || "public",
+                            (percent) => {
+                                this.progressBar.style.width = percent + "%";
+                            }
+                        );
+
+                        if (result.success && result.image) {
+                            this.images.unshift(result.image);
+                            this.filteredImages.unshift(result.image);
+                            this.renderGrid();
+
+                            this.updateSelectionInfo();
+
+                            this.uploadArea.classList.remove("cimagepicker-show");
+                            this.fileInput.value = "";
+                            this.progressBar.style.width = "0%";
+                            this.progressBar.parentElement.classList.remove("cimagepicker-show");
+
+                            if (typeof instanceConfig.onUpload === "function") {
+                                instanceConfig.onUpload(result.image, this);
+                            }
+                        } else {
+                            this.progressBar.parentElement.classList.remove("cimagepicker-show");
+                            alert(result.message ?? "Failed to upload image");
+                        }
+                    } catch (error) {
+                        alert("Upload failed: " + error.message);
+                    }
+
+                    this.isUploading = false;
+                    this.fileInput.disabled = false;
+                },
+
+                async handleDelete(image, event) {
+                    event.stopPropagation();
+
+                    if (!confirm(`Are you sure you want to delete "${image.name}"?`)) {
+                        return;
+                    }
+
+                    try {
+                        let resDel = await CImagePicker.deleteImage(image.name, instanceConfig.path || "public");
+
+                        if (resDel.success) {
+                            alert("Image deleted successfully");
+                        } else {
+                            alert(resDel.message ?? "Failed to delete image");
+                            return;
+                        }
+                        const index = this.images.findIndex(f => f.name === image.name);
+                        if (index !== -1) {
+                            this.images.splice(index, 1);
+                        }
+
+                        const filteredIndex = this.filteredImages.findIndex(f => f.name === image.name);
+                        if (filteredIndex !== -1) {
+                            this.filteredImages.splice(filteredIndex, 1);
+                        }
+
+                        const selectedIndex = this.selectedImages.findIndex(f => f.name === image.name);
+                        if (selectedIndex !== -1) {
+                            this.selectedImages.splice(selectedIndex, 1);
+                        }
+
+                        this.renderGrid();
+                        this.updateSelectionInfo();
+
+                        if (typeof instanceConfig.onDelete === "function") {
+                            instanceConfig.onDelete(image, this);
+                        }
+                    } catch (error) {
+                        alert("Failed to delete image: " + error.message);
+                    }
+                },
+
+                openPreview(image, event) {
+                    event.stopPropagation();
+
+                    if (!this.previewOverlay) return;
+
+                    const img = this.previewOverlay.querySelector("img");
+                    if (img) {
+                        img.src = image.url || image.path || "";
+                    }
+
+                    this.previewOverlay.classList.add("cimagepicker-show");
+                    document.body.style.overflow = "hidden";
+                },
+
+                closePreview() {
+                    if (!this.previewOverlay) return;
+                    this.previewOverlay.classList.remove("cimagepicker-show");
+                    document.body.style.overflow = "";
+                },
+
+                filterImages(query) {
+                    const q = query.toLowerCase().trim();
+                    if (!q) {
+                        this.filteredImages = [...this.images];
                     } else {
-                        this.selectedImages = [];
-                        document.querySelectorAll(".cimagepicker-item.cimagepicker-selected")
-                            .forEach(el => el.classList.remove("cimagepicker-selected"));
-                        this.selectedImages.push(image);
-                        item.classList.add("cimagepicker-selected");
+                        this.filteredImages = this.images.filter(f =>
+                            f.name.toLowerCase().includes(q)
+                        );
                     }
-                } else {
-                    const index = this.selectedImages.findIndex(f => f.name === image.name);
-                    if (index !== -1) {
-                        this.selectedImages.splice(index, 1);
-                        item.classList.remove("cimagepicker-selected");
+                    this.renderGrid();
+                },
+
+                renderGrid() {
+                    this.grid.innerHTML = "";
+
+                    if (this.filteredImages.length === 0) {
+                        const empty = document.createElement("div");
+                        empty.className = "cimagepicker-empty";
+                        empty.innerHTML = `
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M3 9h18M9 21V9"/>
+                            </svg>
+                            <div>No images found</div>
+                        `;
+                        this.grid.appendChild(empty);
+                        return;
+                    }
+
+                    this.filteredImages.forEach(image => {
+                        const item = document.createElement("div");
+                        item.className = "cimagepicker-item";
+                        item.dataset.filename = image.name;
+
+                        const img = document.createElement("img");
+                        img.src = image.url || image.path || "";
+                        img.setAttribute("loading", "lazy");
+                        img.alt = image.name;
+                        img.loading = "lazy";
+                        img.onerror = function () {
+                            this.style.display = "none";
+                        };
+
+                        const actions = document.createElement("div");
+                        actions.className = "cimagepicker-item-actions";
+
+                        const eyeBtn = document.createElement("button");
+                        eyeBtn.className = "cimagepicker-item-eye";
+                        eyeBtn.innerHTML = "👁";
+                        eyeBtn.title = "Preview";
+                        eyeBtn.addEventListener("click", (e) => this.openPreview(image, e));
+
+                        const deleteBtn = document.createElement("button");
+                        deleteBtn.className = "cimagepicker-item-delete";
+                        deleteBtn.innerHTML = "✕";
+                        deleteBtn.title = "Delete";
+                        deleteBtn.addEventListener("click", (e) => this.handleDelete(image, e));
+
+                        actions.appendChild(eyeBtn);
+                        actions.appendChild(deleteBtn);
+
+                        const check = document.createElement("div");
+                        check.className = "cimagepicker-item-check";
+                        check.textContent = "✓";
+
+                        const info = document.createElement("div");
+                        info.className = "cimagepicker-item-info";
+
+                        const name = document.createElement("div");
+                        name.className = "cimagepicker-item-name";
+                        name.textContent = image.name;
+
+                        const size = document.createElement("div");
+                        size.className = "cimagepicker-item-size";
+                        size.textContent = image.size ? CImagePicker.formatSize(image.size) : "";
+
+                        info.appendChild(name);
+                        info.appendChild(size);
+                        item.appendChild(img);
+                        item.appendChild(actions);
+                        item.appendChild(check);
+                        item.appendChild(info);
+
+                        const isSelected = this.selectedImages.some(f => f.name === image.name);
+                        if (isSelected) {
+                            item.classList.add("cimagepicker-selected");
+                        }
+
+                        item.addEventListener("click", () => {
+                            this.toggleImage(image, item);
+                        });
+
+                        this.grid.appendChild(item);
+                    });
+
+                    this.updateSelectionInfo();
+                },
+
+                toggleImage(image, item) {
+                    const isMultiple = instanceConfig.selection === "multiple";
+
+                    if (!isMultiple) {
+                        if (this.selectedImages.length === 1 && this.selectedImages[0].name === image.name) {
+                            this.selectedImages = [];
+                            item.classList.remove("cimagepicker-selected");
+                        } else {
+                            this.selectedImages = [];
+                            document.querySelectorAll(".cimagepicker-item.cimagepicker-selected")
+                                .forEach(el => el.classList.remove("cimagepicker-selected"));
+                            this.selectedImages.push(image);
+                            item.classList.add("cimagepicker-selected");
+                        }
                     } else {
-                        this.selectedImages.push(image);
-                        item.classList.add("cimagepicker-selected");
+                        const index = this.selectedImages.findIndex(f => f.name === image.name);
+                        if (index !== -1) {
+                            this.selectedImages.splice(index, 1);
+                            item.classList.remove("cimagepicker-selected");
+                        } else {
+                            this.selectedImages.push(image);
+                            item.classList.add("cimagepicker-selected");
+                        }
                     }
-                }
 
-                this.updateSelectionInfo();
-            },
+                    this.updateSelectionInfo();
+                },
 
-            updateSelectionInfo() {
-                const count = this.selectedImages.length;
-                if (this.infoText) {
-                    this.infoText.textContent = count;
-                }
-                if (this.selectBtn) {
-                    this.selectBtn.textContent = count > 0
-                        ? `Select ${count} image${count > 1 ? "s" : ""}`
-                        : "Okay";
-                }
-            },
-
-            confirmSelection() {
-                if (this.selectedImages.length === 0) {
-                    this.input.value = "";
-                    this.input.dispatchEvent(new Event("change", { bubbles: true }));
-                    if (typeof this.config.onSelect === "function") {
-                        this.config.onSelect([], this.input);
+                updateSelectionInfo() {
+                    const count = this.selectedImages.length;
+                    if (this.infoText) {
+                        this.infoText.textContent = count;
                     }
+                    if (this.selectBtn) {
+                        this.selectBtn.textContent = count > 0
+                            ? `Select ${count} image${count > 1 ? "s" : ""}`
+                            : "Okay";
+                    }
+                    this.displayCurrentImage();
+                },
+
+                confirmSelection() {
+                    if (this.selectedImages.length === 0) {
+                        this.input.value = "";
+                        this.input.dispatchEvent(new Event("change", { bubbles: true }));
+                        if (typeof instanceConfig.onSelect === "function") {
+                            instanceConfig.onSelect([], this.input);
+                        }
+                        this.close();
+                        return;
+                    }
+
+                    const isMultiple = instanceConfig.selection === "multiple";
+
+                    if (isMultiple) {
+                        const urls = this.selectedImages.map(f => f.url || f.path);
+                        this.input.value = urls.join("||");
+                        this.input.dispatchEvent(new Event("change", { bubbles: true }));
+                    } else {
+                        const image = this.selectedImages[0];
+                        this.input.value = image.url || image.path || image.name;
+                        this.input.dispatchEvent(new Event("change", { bubbles: true }));
+                    }
+
+                    if (typeof instanceConfig.onSelect === "function") {
+                        instanceConfig.onSelect(this.selectedImages, this.input);
+                    }
+
                     this.close();
-                    return;
+                },
+
+                open() {
+                    if (this.isOpen) return;
+
+                    if (!this.overlay) {
+                        this.buildOverlay();
+                    }
+
+                    this.displayCurrentImage();
+                    this.overlay.classList.add("cimagepicker-show");
+                    this.isOpen = true;
+                    document.body.style.overflow = "hidden";
+
+                    this.loadImages();
+                },
+
+                close() {
+                    if (!this.isOpen) return;
+                    this.overlay.classList.remove("cimagepicker-show");
+                    this.isOpen = false;
+                    document.body.style.overflow = "";
+                    if (this.uploadArea) {
+                        this.uploadArea.classList.remove("cimagepicker-show");
+                    }
+                    this.closePreview();
+                },
+
+                async loadImages() {
+                    this.images = await CImagePicker.fetchImages(instanceConfig.path || "public");
+
+                    if (instanceConfig.type && instanceConfig.type !== "*") {
+                        const allowed = instanceConfig.type.split("|").map(t => t.trim().toLowerCase());
+                        this.images = this.images.filter(f => {
+                            const ext = f.extension || f.name.split(".").pop().toLowerCase();
+                            return allowed.includes(ext);
+                        });
+                    }
+
+                    this.filteredImages = [...this.images];
+                    this.renderGrid();
+                },
+
+                destroy() {
+                    if (this.overlay && this.overlay.parentNode) {
+                        this.overlay.parentNode.removeChild(this.overlay);
+                    }
+                    if (this.previewOverlay && this.previewOverlay.parentNode) {
+                        this.previewOverlay.parentNode.removeChild(this.previewOverlay);
+                    }
+                    this.input.removeEventListener("click", this._clickHandler);
+                    const index = CImagePicker.instances.indexOf(this);
+                    if (index !== -1) CImagePicker.instances.splice(index, 1);
                 }
+            };
 
-                const isMultiple = this.config.selection === "multiple";
+            const clickHandler = (e) => {
+                e.preventDefault();
+                instance.open();
+            };
 
-                if (isMultiple) {
-                    const urls = this.selectedImages.map(f => f.url || f.path);
-                    this.input.value = urls.join(",");
-                    this.input.dispatchEvent(new Event("change", { bubbles: true }));
-                } else {
-                    const image = this.selectedImages[0];
-                    this.input.value = image.url || image.path || image.name;
-                    this.input.dispatchEvent(new Event("change", { bubbles: true }));
-                }
+            instance._clickHandler = clickHandler;
+            input.addEventListener("click", clickHandler);
 
-                if (typeof this.config.onSelect === "function") {
-                    this.config.onSelect(this.selectedImages, this.input);
-                }
+            CImagePicker.instances.push(instance);
+            instances.push(instance);
+        });
 
-                this.close();
-            },
-
-            open() {
-                if (this.isOpen) return;
-
-                if (!this.overlay) {
-                    this.buildOverlay();
-                }
-
-                this.overlay.classList.add("cimagepicker-show");
-                this.isOpen = true;
-                document.body.style.overflow = "hidden";
-
-                this.loadImages();
-            },
-
-            close() {
-                if (!this.isOpen) return;
-                this.overlay.classList.remove("cimagepicker-show");
-                this.isOpen = false;
-                document.body.style.overflow = "";
-                if (this.uploadArea) {
-                    this.uploadArea.classList.remove("cimagepicker-show");
-                }
-                this.closePreview();
-            },
-
-            async loadImages() {
-                this.images = await CImagePicker.fetchImages(this.config.path || "public");
-
-                if (this.config.type && this.config.type !== "*") {
-                    const allowed = this.config.type.split("|").map(t => t.trim().toLowerCase());
-                    this.images = this.images.filter(f => {
-                        const ext = f.extension || f.name.split(".").pop().toLowerCase();
-                        return allowed.includes(ext);
-                    });
-                }
-
-                this.filteredImages = [...this.images];
-                this.renderGrid();
-            },
-
-            destroy() {
-                if (this.overlay && this.overlay.parentNode) {
-                    this.overlay.parentNode.removeChild(this.overlay);
-                }
-                if (this.previewOverlay && this.previewOverlay.parentNode) {
-                    this.previewOverlay.parentNode.removeChild(this.previewOverlay);
-                }
-                this.input.removeEventListener("click", this._clickHandler);
-                const index = CImagePicker.instances.indexOf(this);
-                if (index !== -1) CImagePicker.instances.splice(index, 1);
-            }
-        };
-
-        const clickHandler = (e) => {
-            e.preventDefault();
-            instance.open();
-        };
-
-        instance._clickHandler = clickHandler;
-        input.addEventListener("click", clickHandler);
-
-        CImagePicker.instances.push(instance);
-
-        return instance;
+        return instances.length === 1 ? instances[0] : instances;
     }
 }
 

@@ -10,5 +10,5 @@ use Classes\CtrStorage;
  */
 
 if ($dir == "public") {
-    CtrStorage::ctr_read_image($file_path, $mime_type);
+    CtrStorage::ctr_read_file($file_path, $mime_type);
 }
