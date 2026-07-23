@@ -765,17 +765,24 @@ class CImagePicker {
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const format = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    const format = 'image/jpeg';
+                    const name = file.name.replace(/\.[^.]+$/, '.jpg');
 
                     canvas.toBlob((blob) => {
                         if (blob) {
-                            const compressedFile = new File([blob], file.name, {
-                                type: format,
-                                lastModified: Date.now()
-                            });
-                            resolve(compressedFile);
+                            if (blob.size < file.size) {
+                                const compressedFile = new File([blob], name, {
+                                    type: format,
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                resolve(file);
+                            }
                         } else {
                             reject(new Error('Compression failed'));
                         }
@@ -820,7 +827,7 @@ class CImagePicker {
             const instanceConfig = { ...config };
             instanceConfig.id = input.id || input.className || `cimagepicker-${Date.now()}-${Math.random()}`;
             instanceConfig.path = config.path ?? config.dir ?? config.directory ?? "public";
-            instanceConfig.quality = config.quality ?? 100;
+            instanceConfig.quality = config.quality ?? 95;
             instanceConfig.maxWidth = config.maxWidth ?? 1920;
             instanceConfig.maxHeight = config.maxHeight ?? 1920;
             instanceConfig.compressThreshold = config.compressThreshold ?? 100;
@@ -1146,7 +1153,7 @@ class CImagePicker {
                     }
 
                     let fileToUpload = file;
-                    const quality = instanceConfig.quality ?? 100;
+                    const quality = instanceConfig.quality ?? 95;
                     const maxWidth = instanceConfig.maxWidth ?? 1920;
                     const maxHeight = instanceConfig.maxHeight ?? 1920;
                     const compressThreshold = instanceConfig.compressThreshold ?? 100;
@@ -1155,6 +1162,7 @@ class CImagePicker {
                         try {
                             const qualityValue = quality / 100;
                             const clampedQuality = Math.max(0.1, Math.min(0.99, qualityValue));
+                            this.progressBar.style.width = "1%";
                             fileToUpload = await CImagePicker.compressImage(file, clampedQuality, maxWidth, maxHeight);
                         } catch (error) {
                             console.warn("Compression failed, using original file", error);
@@ -1166,7 +1174,7 @@ class CImagePicker {
                     this.fileInput.disabled = true;
                     this.addBtn.disabled = true;
                     this.progressBar.parentElement.classList.add("cimagepicker-show");
-                    this.progressBar.style.width = "0%";
+                    this.progressBar.style.width = "1%";
                     this.nameProgress.style.display = "";
                     Ctr.set_loading(true, ".cimagepicker-sensitive-load", 33);
 
