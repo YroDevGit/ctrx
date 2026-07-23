@@ -809,7 +809,7 @@ class CImagePicker {
                     modal.className = "cimagepicker-modal";
 
                     const header = document.createElement("div");
-                    header.className = "cimagepicker-header";
+                    header.className = "cimagepicker-header cimagepicker-sensitive-load";
 
                     const headerLeft = document.createElement("div");
                     headerLeft.className = "cimagepicker-header-left";
@@ -928,12 +928,12 @@ class CImagePicker {
                     body.appendChild(currentImageContainer);
 
                     const grid = document.createElement("div");
-                    grid.className = "cimagepicker-grid";
+                    grid.className = "cimagepicker-grid cimagepicker-sensitive-load";
 
                     body.appendChild(grid);
 
                     const footer = document.createElement("div");
-                    footer.className = "cimagepicker-footer";
+                    footer.className = "cimagepicker-footer cimagepicker-sensitive-load";
 
                     const info = document.createElement("div");
                     info.className = "cimagepicker-footer-info";
@@ -1101,7 +1101,7 @@ class CImagePicker {
                     this.progressBar.parentElement.classList.add("cimagepicker-show");
                     this.progressBar.style.width = "0%";
                     this.nameProgress.style.display = "";
-                    Ctr.set_loading(true, ".cimagepicker-grid", 33);
+                    Ctr.set_loading(true, ".cimagepicker-sensitive-load", 33);
 
                     try {
                         const result = await CImagePicker.uploadImage(
@@ -1139,7 +1139,7 @@ class CImagePicker {
                     this.isUploading = false;
                     this.fileInput.disabled = false;
                     this.addBtn.disabled = false;
-                    Ctr.set_loading(false, ".cimagepicker-grid");
+                    Ctr.set_loading(false, ".cimagepicker-sensitive-load");
                 },
 
                 async handleDelete(image, event) {
