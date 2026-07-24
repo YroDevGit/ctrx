@@ -712,6 +712,20 @@ class Ctrx
         }
     }
 
+    public static function remoteFileExists($url)
+    {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return $httpCode === 200;
+    }
+
     public static function page404($errorpage, $exit = true)
     {
         $errorpage = append_php($errorpage);
@@ -730,25 +744,29 @@ class Ctrx
         $rawUrl = 'https://raw.githubusercontent.com/YroDevGit/ctrx/main/' . $filePath;
         $localFilePath = $filePath;
 
+        if (!self::remoteFileExists($rawUrl)) {
+            return ["success" => false, "message" => "File not found in repository.!"];
+        }
+
         $newContent = null;
         try {
             $newContent = file_get_contents($rawUrl);
         } catch (Throwable $e) {
-            echo ["success" => false, "message" => $e->getMessage()];
+            return ["success" => false, "message" => $e->getMessage()];
         } catch (ErrorException $e) {
-            echo ["success" => false, "message" => $e->getMessage()];
+            return ["success" => false, "message" => $e->getMessage()];
         } catch (Exception $e) {
-            echo ["success" => false, "message" => $e->getMessage()];
+            return ["success" => false, "message" => $e->getMessage()];
         }
 
         if ($newContent !== false) {
             if (file_put_contents($localFilePath, $newContent)) {
                 return ["success" => true, "message" => "Successfully updated {$filePath} from CTRX."];
             } else {
-                echo ["success" => false, "message" => "Failed to write to the local file. Check file permissions."];
+                return ["success" => false, "message" => "Failed to write to the local file. Check file permissions."];
             }
         } else {
-            echo ["success" => true, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
+            return ["success" => true, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
         }
     }
 
