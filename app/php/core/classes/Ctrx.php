@@ -740,11 +740,13 @@ class Ctrx
     {
         include_once "app/php/core/partials/envloader.php";
         $filePath = trim($filePath, " /\\");
+        $filePath = str_replace("\\", "/", $filePath);
         $repo = env("raw_repository");
         if (! $repo) {
             return ["success" => false, "message" => "Raw repository not set @env"];
         }
         $repo = trim($repo, " /\\");
+        $repo = str_replace("\\", "/", $repo);
         $rawUrl = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
 
