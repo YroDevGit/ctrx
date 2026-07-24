@@ -63,6 +63,11 @@ class CImagePicker {
                 gap: 12px;
             }
 
+            .cimagepicker-btn-close{
+                display: none;
+                color: #212529;
+            }
+
             .cimagepicker-header-left {
                 display: flex;
                 align-items: center;
@@ -605,11 +610,28 @@ class CImagePicker {
                 color: #ccc;
             }
 
-            @media (max-width: 640px) {
+            @media (max-width:768px) {
                 .cimagepicker-modal {
                     width: 100%;
                     max-height: 100vh;
                     border-radius: 0;
+                }
+
+                .cimagepicker-btn-add{
+                    width: 50%;
+                }
+
+                .cimagepicker-header{
+                    flex-wrap: nowrap;
+                }
+
+                .cimagepicker-btn-close{
+                    display: inline-block;
+                    color: #212529;
+                }
+
+                .cimagepicker-close{
+                    display:none;
                 }
 
                 .cimagepicker-header {
@@ -1012,11 +1034,17 @@ class CImagePicker {
                         });
                     });
 
+                    const closeMe = document.createElement("button");
+                    closeMe.className = "cimagepicker-btn cimagepicker-btn-close";
+                    closeMe.textContent = "Close";
+                    closeMe.addEventListener("click", () => this.close());
+
                     const selectBtn = document.createElement("button");
                     selectBtn.className = "cimagepicker-btn cimagepicker-btn-select";
                     selectBtn.textContent = "Select";
                     selectBtn.addEventListener("click", () => this.confirmSelection());
 
+                    footerActions.appendChild(closeMe);
                     footerActions.appendChild(cancelBtn);
                     footerActions.appendChild(selectBtn);
                     footer.appendChild(info);
