@@ -738,10 +738,14 @@ class Ctrx
 
     public static function updateFile(string $filePath)
     {
-        $filePath = trim($filePath);
-        $filePath = trim($filePath, "/");
-        $filePath = trim($filePath, "\\");
-        $rawUrl = 'https://raw.githubusercontent.com/YroDevGit/ctrx/main/' . $filePath;
+        include_once "app/php/core/partials/envloader.php";
+        $filePath = trim($filePath, " /\\");
+        $repo = env("raw_repository");
+        if (! $repo) {
+            return ["success" => false, "message" => "Raw repository not set @env"];
+        }
+        $repo = trim($repo, " /\\");
+        $rawUrl = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
 
         if (!self::remoteFileExists($rawUrl)) {
