@@ -3,7 +3,9 @@
 namespace Classes;
 
 use Error;
+use ErrorException;
 use Exception;
+use Throwable;
 
 class Ctrx
 {
@@ -717,6 +719,36 @@ class Ctrx
         include "views/core/errors/" . $errorpage;
         if ($exit) {
             exit;
+        }
+    }
+
+    public static function updateFile(string $filePath)
+    {
+        $filePath = trim($filePath);
+        $filePath = trim($filePath, "/");
+        $filePath = trim($filePath, "\\");
+        $rawUrl = 'https://raw.githubusercontent.com/YroDevGit/ctrx/main/' . $filePath;
+        $localFilePath = $filePath;
+
+        $newContent = null;
+        try {
+            $newContent = file_get_contents($rawUrl);
+        } catch (Throwable $e) {
+            echo ["success" => false, "message" => $e->getMessage()];
+        } catch (ErrorException $e) {
+            echo ["success" => false, "message" => $e->getMessage()];
+        } catch (Exception $e) {
+            echo ["success" => false, "message" => $e->getMessage()];
+        }
+
+        if ($newContent !== false) {
+            if (file_put_contents($localFilePath, $newContent)) {
+                return ["success" => true, "message" => "Successfully updated {$filePath} from CTRX."];
+            } else {
+                echo ["success" => false, "message" => "Failed to write to the local file. Check file permissions."];
+            }
+        } else {
+            echo ["success" => true, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
         }
     }
 

@@ -812,6 +812,22 @@ if ($route == "update") {
     AddAllBaseTable($dbname);
     echo "-------\n";
     echo "✔️ Done\n";
+} else if ($route == "update:file") {
+    echo "\n";
+    if ($filename == "") {
+        echo "❌ Please provide a file path.\n\n";
+        exit(1);
+    }
+
+    $ret = \Classes\Ctrx::updateFile($filename);
+
+    if (isset($ret['success']) && $ret['success'] == true) {
+        echo "✅ " . $ret['message'] . "\n\n";
+        exit;
+    }
+    $err = $ret['message'] ?? "Error";
+    echo "❌ " . $err . "\n\n";
+    exit;
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "❌ Please provide a filename for Library.\n";
