@@ -1301,9 +1301,14 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
                 flex-direction: column
             }
 
+            .card-footer {
+                display: grid;
+                gap: 5px;
+            }
+
             .sidebar {
                 width: 100%;
-                max-height: 300px;
+                max-height: 400px;
                 border-right: none;
                 border-bottom: 1px solid #dee2e6
             }
@@ -1313,23 +1318,78 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
             }
 
             .route-item .row {
-                flex-wrap: wrap
+                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .route-item .col-route,
             .route-item .col-access,
             .route-item .col-file {
                 width: 100%;
-                text-align: left
+            }
+
+            .route-item .col-access {
+                text-align: right;
+            }
+
+            .route-item .col-file {
+                display: none;
+            }
+
+            .card-header-file {
+                display: none;
             }
 
             .search-box .form-control {
                 max-width: 100%
             }
 
+            .search-box label {
+                display: none;
+            }
+
             .top-bar {
+                position: absolute;
+                top: 0;
+                left: 0;
                 flex-wrap: wrap;
-                gap: 10px
+                gap: 10px;
+                width: 100%;
+                padding: 10px;
+                background-color: #dee2e6;
+            }
+
+            .sidebar-header {
+                margin-top: 40px;
+            }
+
+            .role-list {
+                max-height: 300px;
+            }
+
+            .father-of-title {
+                display: grid;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .deactivate-btn {
+                font-size: 0px;
+            }
+
+            .deactivate-btn::before {
+                content: "Deactivate";
+                font-size: 9px;
+            }
+
+            .legend-item {
+                display: block;
+            }
+
+            .legend-colors {
+                max-height: 100px;
+                overflow-y: scroll;
             }
         }
     </style>
@@ -1341,7 +1401,7 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
             <div class="sidebar">
                 <div class="sidebar-header">
                     <h5>🔒 Roles <span class="role-count">(<?= count($roles) ?>)</span></h5>
-                    <form method="POST">
+                    <form method="POST" id="addRoleForm">
                         <input type="hidden" name="action" value="create_role">
                         <div class="input-group">
                             <input type="text" name="role_name" class="form-control form-control-sm" placeholder="New role name" required>
@@ -1439,7 +1499,7 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
                 </div>
 
                 <?php if ($selected_role): ?>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 father-of-title">
                         <h2>🔑 Access Permissions: <?= htmlspecialchars($selected_role['role_name']) ?></h2>
                         <span class="badge badge-info"><?= count($all_routes) ?> routes found</span>
                     </div>
@@ -1456,22 +1516,24 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
                     <?php if (count($legend_colors) > 0): ?>
                         <div class="legend">
                             <strong>📌 Directory Colors:</strong>
-                            <?php foreach ($legend_colors as $color): ?>
-                                <span class="legend-item">
-                                    <span class="legend-color" style="background-color:<?= $color ?>;"></span>
-                                    <?php
-                                    $dir_name = 'Sub Directory';
-                                    foreach ($dirColors as $dir => $c) {
-                                        if ($c === $color && $dir !== 'root') {
-                                            $dir_name = ucwords(str_replace(['/', '_', '-'], ' ', $dir));
-                                            break;
+                            <div class="legend-colors">
+                                <?php foreach ($legend_colors as $color): ?>
+                                    <span class="legend-item">
+                                        <span class="legend-color" style="background-color:<?= $color ?>;"></span>
+                                        <?php
+                                        $dir_name = 'Sub Directory';
+                                        foreach ($dirColors as $dir => $c) {
+                                            if ($c === $color && $dir !== 'root') {
+                                                $dir_name = ucwords(str_replace(['/', '_', '-'], ' ', $dir));
+                                                break;
+                                            }
                                         }
-                                    }
-                                    if ($color === '#4CAF50') $dir_name = 'Root Pages';
-                                    echo htmlspecialchars($dir_name);
-                                    ?>
-                                </span>
-                            <?php endforeach; ?>
+                                        if ($color === '#4CAF50') $dir_name = 'Root Pages';
+                                        echo htmlspecialchars($dir_name);
+                                        ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     <?php endif; ?>
 
@@ -1496,8 +1558,8 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
                             <div class="card-header">
                                 <div style="display:flex;">
                                     <div style="flex:1;"><strong>Route</strong></div>
-                                    <div style="width:120px;text-align:center;"><strong>Access</strong></div>
-                                    <div style="width:120px;text-align:center;"><strong>File</strong></div>
+                                    <div style="width:120px;text-align:center;" class="card-header-access"><strong>Access</strong></div>
+                                    <div style="width:120px;text-align:center;" class="card-header-file"><strong>File</strong></div>
                                 </div>
                             </div>
                             <div class="card-body">

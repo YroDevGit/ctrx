@@ -1300,6 +1300,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         }
 
         .modal-body {
+            display: grid;
             padding: 20px;
             max-height: 60vh;
             overflow-y: auto;
@@ -1741,6 +1742,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         }
 
         @media (max-width: 768px) {
+            .db-header-actions {
+                display: grid;
+                gap: 2px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                align-items: center;
+                width: 100%;
+            }
+
+            .db-header-actions button {
+                width: 100%;
+            }
 
             .col-md-3,
             .col-md-9 {
@@ -1830,7 +1843,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
             </div>
 
-            <div>
+            <div class="db-header-actions">
                 <button class="btn btn-success btn-sm export-sql-btn" onclick="showExportModal()">
                     <span class="icon">💾</span> Export SQL
                 </button>
@@ -2339,6 +2352,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if (allTableNames.length === 0) {
                 container.innerHTML = '<div class="text-muted text-center">No tables found</div>';
             } else {
+                document.querySelector("#selectAllTables").checked = false;
                 container.innerHTML = allTableNames.map(table => `
                     <div class="checkbox-item">
                         <input type="checkbox" id="table_${table}" value="${table}" onchange="updateSelectedCount()">
