@@ -13,12 +13,12 @@ class Ccookie
         $newHour = 60 * $minute;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
-            setcookie($key, $val, time() + $newHour, "/", "", isset($_SERVER['HTTPS']));
+            //setcookie($key, $val, time() + $newHour, "/", "", isset($_SERVER['HTTPS']));
             $_COOKIE[$key] = $val;
             return true;
         } else {
             $val = encrypt($value);
-            setcookie($key, $val, time() + $newHour, "/");
+            //setcookie($key, $val, time() + $newHour, "/");
             $_COOKIE[$key] = $val;
             return true;
         }
@@ -31,12 +31,12 @@ class Ccookie
         $year = intval(date("Y")) + 10;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
-            setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/", "", isset($_SERVER['HTTPS']));
+            //setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/", "", isset($_SERVER['HTTPS']));
             $_COOKIE[$key] = $val;
             return true;
         } else {
             $val = encrypt($value);
-            setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/");
+            //setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/");
             $_COOKIE[$key] = $val;
             return true;
         }
