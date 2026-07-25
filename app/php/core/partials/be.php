@@ -3,20 +3,21 @@ if (! function_exists('json_response')) {
     function json_response(array $data, int $status = 200)
     {
         $newCookies = $GLOBALS['_CTRX_COOKIES'] ?? null;
-        if($newCookies){
-            foreach($newCookies as $key=>$val){
-                if(isset($val['delete']) && $val['delete'] == "yes"){
-                    setcookie($key, "", time() - 3600, $val['slash'] ?? "", "", isset($_SERVER['HTTPS']));
+        if ($newCookies) {
+            foreach ($newCookies as $key => $val) {
+                if (isset($val['delete']) && $val['delete'] == "yes") {
+                    setcookie($key, "", time() - 3600, "/", "", isset($_SERVER['HTTPS']));
                     continue;
                 }
                 $value = $val['value'] ?? null;
                 $expiry = $val['expiry'] ?? null;
-                if(! $value && ! $expiry){
+                if (! $value && ! $expiry) {
                     continue;
                 }
-                setcookie($key, $value, $expiry, $val['slash'] ?? "", "", isset($_SERVER['HTTPS']));
+                setcookie($key, $value, $expiry, "/", "", isset($_SERVER['HTTPS']));
             }
         }
+        $data['cookies'] = $newCookies;
         \Classes\Ctrx::resetBackend();
         remove_single_thread();
         header('Content-Type: application/json');
