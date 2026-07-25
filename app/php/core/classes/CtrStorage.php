@@ -143,13 +143,13 @@ class CtrStorage
         $dir = $dir ?? $_GET['dir'] ?? "public";
         if (is_array($roles)) {
             if (!\Classes\Ctrx::has_user_roles(...$roles) && ! empty($roles)) {
-                echo json_encode(['success' => false, 'code'=>unauthorized_code, 'message' => "User doesn't have an access to delete image."]);
+                echo json_encode(['success' => false, 'code' => unauthorized_code, 'message' => "User doesn't have an access to delete image."]);
                 exit;
             }
         }
         $filename = $_GET['filename'] ?? null;
         if (! $filename) {
-            echo json_encode(['success' => false, 'code'=> 404, 'message' => "Filename not found.!"]);
+            echo json_encode(['success' => false, 'code' => 404, 'message' => "Filename not found.!"]);
             exit;
         }
         $filename = trim($filename, " /\\");
@@ -200,7 +200,7 @@ class CtrStorage
         $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
 
         if (!in_array($extension, $imageTypes)) {
-            echo json_encode(['success' => false, 'code'=>500, 'message' => 'Invalid image type']);
+            echo json_encode(['success' => false, 'code' => 500, 'message' => 'Invalid image type']);
             exit;
         }
 
@@ -237,51 +237,81 @@ class CtrStorage
         exit;
     }
 
-    public static function get_images($dir = null)
+    public static function get_images(...$dirs)
     {
-        $dir = $dir ?? $_GET['dir'] ?? "public";
-        $publicFolder = $dir;
-        $path =  "views/core/partials/storage/$publicFolder/";
-        $fullPath = $path;
-
-        if (!is_dir($fullPath)) {
-            echo json_encode(['images' => []]);
-            exit;
+        if (empty($dirs)) {
+            $dirs = [$_GET['dir'] ?? "public"];
         }
 
-        $images = [];
+        $dirs = is_array($dirs[0]) ? $dirs[0] : $dirs;
+
+        $allImages = [];
         $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($fullPath, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
+        foreach ($dirs as $dir) {
+            $includeSubfolders = false;
 
-        foreach ($iterator as $file) {
-            if ($file->isFile()) {
-                $extension = strtolower($file->getExtension());
-                if (in_array($extension, $imageTypes)) {
-                    $relativePath = str_replace(dirname(__DIR__) . '/', '', $file->getPathname());
-                    $relativePath = str_replace('\\', '/', $relativePath);
+            if (is_string($dir) && str_ends_with($dir, '/*')) {
+                $dir = rtrim($dir, '/*');
+                $includeSubfolders = true;
+            }
 
-                    $images[] = [
-                        'name' => $file->getFilename(),
-                        'path' => $relativePath,
-                        'url' => "/ctrstorage/$publicFolder/" . $file->getFilename(),
-                        'size' => $file->getSize(),
-                        'modified' => $file->getMTime(),
-                        'extension' => $extension,
-                        'type' => 'image'
-                    ];
+            $publicFolder = $dir;
+            $path = "views/core/partials/storage/$publicFolder/";
+            $fullPath = $path;
+
+            if (!is_dir($fullPath)) {
+                continue;
+            }
+
+            if ($includeSubfolders) {
+                $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($fullPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                );
+            } else {
+                $iterator = new \FilesystemIterator($fullPath, \FilesystemIterator::SKIP_DOTS);
+            }
+
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $extension = strtolower($file->getExtension());
+                    if (in_array($extension, $imageTypes)) {
+                        $relativePath = str_replace(dirname(__DIR__) . '/', '', $file->getPathname());
+                        $relativePath = str_replace('\\', '/', $relativePath);
+
+                        $subPath = '';
+                        if ($includeSubfolders) {
+                            $fullPathNormalized = rtrim(str_replace('\\', '/', $fullPath), '/');
+                            $filePathNormalized = str_replace('\\', '/', $file->getPath());
+                            $subPath = str_replace($fullPathNormalized, '', $filePathNormalized);
+                            $subPath = ltrim($subPath, '/');
+                            if ($subPath) {
+                                $subPath .= '/';
+                            }
+                        }
+
+                        $allImages[] = [
+                            'name' => $file->getFilename(),
+                            'path' => $relativePath,
+                            'url' => "/ctrstorage/$publicFolder/" . $subPath . $file->getFilename(),
+                            'size' => $file->getSize(),
+                            'modified' => $file->getMTime(),
+                            'extension' => $extension,
+                            'type' => 'image',
+                            'source_dir' => $publicFolder,
+                            'subfolder' => rtrim($subPath, '/') ?: null
+                        ];
+                    }
                 }
             }
         }
 
-        usort($images, function ($a, $b) {
+        usort($allImages, function ($a, $b) {
             return $b['modified'] - $a['modified'];
         });
 
-        echo json_encode(['images' => array_values($images)]);
+        echo json_encode(['images' => array_values($allImages)]);
         exit;
     }
 

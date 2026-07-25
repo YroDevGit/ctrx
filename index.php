@@ -23,6 +23,7 @@
  */
 require_once 'vendor/autoload.php';
 include_once "app/php/core/partials/envloader.php";
+include_once "views/core/partials/system/config_dir.php";
 
 /**
  * CTRX / CodeTazer Dev Server Router
