@@ -4,21 +4,26 @@ namespace Classes;
 
 class Ccookie
 {
-
-    //create a function here...
-
     public static function add(string $key, mixed $value, int|float $minute = 60): bool
     {
         include_once "app/php/core/partials/bin/basixs.php";
         $newHour = 60 * $minute;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
-            //setcookie($key, $val, time() + $newHour, "/", "", isset($_SERVER['HTTPS']));
+            unset($GLOBALS['_CTRX_COOKIES'][$key]);
+            $GLOBALS['_CTRX_COOKIES'][$key] = [
+                "value" => $val,
+                "expiry" => time() + $newHour,
+            ];
             $_COOKIE[$key] = $val;
             return true;
         } else {
             $val = encrypt($value);
-            //setcookie($key, $val, time() + $newHour, "/");
+            unset($GLOBALS['_CTRX_COOKIES'][$key]);
+            $GLOBALS['_CTRX_COOKIES'][$key] = [
+                "value" => $val,
+                "expiry" => time() + $newHour,
+            ];
             $_COOKIE[$key] = $val;
             return true;
         }
@@ -31,12 +36,23 @@ class Ccookie
         $year = intval(date("Y")) + 10;
         if (is_array($value)) {
             $val = encrypt(json_encode($value));
-            //setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/", "", isset($_SERVER['HTTPS']));
+            unset($GLOBALS['_CTRX_COOKIES'][$key]);
+            $GLOBALS['_CTRX_COOKIES'][$key] = [
+                "value" => $val,
+                "expiry" => strtotime("$year-12-31 23:59:59"),
+                "slash" => "/",
+                "space" => "",
+                "secure" => isset($_SERVER['HTTPS'])
+            ];
             $_COOKIE[$key] = $val;
             return true;
         } else {
             $val = encrypt($value);
-            //setcookie($key, $val, strtotime("$year-12-31 23:59:59"), "/");
+            unset($GLOBALS['_CTRX_COOKIES'][$key]);
+            $GLOBALS['_CTRX_COOKIES'][$key] = [
+                "value" => $val,
+                "expiry" => strtotime("$year-12-31 23:59:59"),
+            ];
             $_COOKIE[$key] = $val;
             return true;
         }
@@ -85,7 +101,10 @@ class Ccookie
         if ($key == "*") {
             return self::delete_more("*");
         }
-        setcookie($key, "", time() - 3600, "/", "", isset($_SERVER['HTTPS']));
+        unset($GLOBALS['_CTRX_COOKIES'][$key]);
+        $GLOBALS['_CTRX_COOKIES'][$key] = [
+            "delete" => "yes"
+        ];
         unset($_COOKIE[$key]);
         return true;
     }

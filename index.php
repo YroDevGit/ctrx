@@ -29,9 +29,7 @@ include_once "views/core/partials/system/config_dir.php";
  * CTRX / CodeTazer Dev Server Router
  * Made by CodeYRO
  */
-$_CTRX_COOKIES = [];
-$_CTRX_VARIABLES = [];
-$_CTRX_CONSTANTS = [];
+
 /**
  * URL parsing
  */
