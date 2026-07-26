@@ -23,6 +23,8 @@ class CImagePicker {
                 opacity: 0;
                 transition: opacity 0.3s ease;
                 padding: 20px;
+                max-height: 100%;
+                overflow-y: scroll;
             }
 
             .cimagepicker-overlay.cimagepicker-show {
