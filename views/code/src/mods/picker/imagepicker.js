@@ -30,6 +30,11 @@ class CImagePicker {
                 opacity: 1;
             }
 
+            .cimagepicker-btn-close{
+                display: none;
+                color: #212529;
+            }
+
             .cimagepicker-modal {
                 width: 95%;
                 max-width: 1100px;
@@ -63,15 +68,10 @@ class CImagePicker {
                 gap: 12px;
             }
 
-            .cimagepicker-btn-close{
-                display: none;
-                color: #212529;
-            }
-
             .cimagepicker-header-left {
                 display: flex;
                 align-items: center;
-                gap: 16px;
+                gap: 8px;
             }
 
             .cimagepicker-header h2 {
@@ -133,22 +133,20 @@ class CImagePicker {
 
             .cimagepicker-close {
                 border: none;
-                background: #e9ecef;
+                background: none;
                 border-radius: 50%;
-                width: 36px;
-                height: 36px;
-                font-size: 22px;
+                width: 40px;
+                height: 40px;
+                font-size: 35px;
                 cursor: pointer;
                 color: #495057;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                transition: all 0.2s ease;
-                line-height: 1;
             }
 
             .cimagepicker-close:hover {
-                background: #dee2e6;
+                background: none;
                 color: #212529;
                 transform: rotate(90deg);
             }
@@ -617,17 +615,18 @@ class CImagePicker {
                     border-radius: 0;
                 }
 
+                .cimagepicker-btn-close{
+                    display: inline-block;
+                    color: #212529;
+                    width: 50%;
+                }
+
                 .cimagepicker-btn-add{
                     width: 50%;
                 }
 
                 .cimagepicker-header{
                     flex-wrap: nowrap;
-                }
-
-                .cimagepicker-btn-close{
-                    display: inline-block;
-                    color: #212529;
                 }
 
                 .cimagepicker-close{
@@ -641,7 +640,7 @@ class CImagePicker {
                 }
 
                 .cimagepicker-header-left {
-                    flex-direction: column;
+                    flex-direction: row;
                     align-items: stretch;
                 }
 
@@ -890,6 +889,10 @@ class CImagePicker {
                     const header = document.createElement("div");
                     header.className = "cimagepicker-header cimagepicker-sensitive-load";
 
+                    const mainHead = document.createElement("div");
+                    mainHead.style.display = "grid";
+                    mainHead.style.gap = "10px";
+
                     const headerLeft = document.createElement("div");
                     headerLeft.className = "cimagepicker-header-left";
 
@@ -901,8 +904,16 @@ class CImagePicker {
                     addBtn.innerHTML = "➕ Add Image";
                     addBtn.addEventListener("click", () => this.toggleUpload());
 
-                    headerLeft.appendChild(title);
+                    const closeMe = document.createElement("button");
+                    closeMe.className = "cimagepicker-btn cimagepicker-btn-close";
+                    closeMe.textContent = "Close";
+                    closeMe.addEventListener("click", () => this.close());
+
+                    mainHead.appendChild(title);
                     headerLeft.appendChild(addBtn);
+                    headerLeft.appendChild(closeMe);
+                    
+                    mainHead.appendChild(headerLeft);
 
                     const headerActions = document.createElement("div");
                     headerActions.className = "cimagepicker-header-actions";
@@ -923,7 +934,7 @@ class CImagePicker {
 
                     headerActions.appendChild(search);
                     headerActions.appendChild(closeBtn);
-                    header.appendChild(headerLeft);
+                    header.appendChild(mainHead);
                     header.appendChild(headerActions);
 
                     const body = document.createElement("div");
@@ -1034,17 +1045,11 @@ class CImagePicker {
                         });
                     });
 
-                    const closeMe = document.createElement("button");
-                    closeMe.className = "cimagepicker-btn cimagepicker-btn-close";
-                    closeMe.textContent = "Close";
-                    closeMe.addEventListener("click", () => this.close());
-
                     const selectBtn = document.createElement("button");
                     selectBtn.className = "cimagepicker-btn cimagepicker-btn-select";
                     selectBtn.textContent = "Select";
                     selectBtn.addEventListener("click", () => this.confirmSelection());
 
-                    footerActions.appendChild(closeMe);
                     footerActions.appendChild(cancelBtn);
                     footerActions.appendChild(selectBtn);
                     footer.appendChild(info);
@@ -1254,7 +1259,7 @@ class CImagePicker {
                     }
 
                     try {
-                        let resDel = await CImagePicker.deleteImage(image.name, instanceConfig.path || "public");
+                        let resDel = await CImagePicker.deleteImage(image.name, image.source_dir || "public");
 
                         if (resDel.success) {
                             alert("Image deleted successfully");

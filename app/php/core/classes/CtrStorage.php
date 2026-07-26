@@ -281,6 +281,7 @@ class CtrStorage
                         $relativePath = str_replace('\\', '/', $relativePath);
 
                         $subPath = '';
+                        $newDir = $publicFolder;
                         if ($includeSubfolders) {
                             $fullPathNormalized = rtrim(str_replace('\\', '/', $fullPath), '/');
                             $filePathNormalized = str_replace('\\', '/', $file->getPath());
@@ -288,6 +289,8 @@ class CtrStorage
                             $subPath = ltrim($subPath, '/');
                             if ($subPath) {
                                 $subPath .= '/';
+                                $newDir = $publicFolder.($subPath ? "/".$subPath : "");
+                                $newDir = trim($newDir, " /\\");
                             }
                         }
 
@@ -299,7 +302,9 @@ class CtrStorage
                             'modified' => $file->getMTime(),
                             'extension' => $extension,
                             'type' => 'image',
-                            'source_dir' => $publicFolder,
+                            'source_dir' => $newDir,
+                            'relativePath' => $newDir."/".$file->getFilename(),
+                            'parentFolder' => $publicFolder,
                             'subfolder' => rtrim($subPath, '/') ?: null
                         ];
                     }
