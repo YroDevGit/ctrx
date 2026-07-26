@@ -801,4 +801,11 @@ class CtrStorage
     {
         self::$cache = [];
     }
+
+    public function getParentFolder(string $path){
+        $path = self::cleanPath($path);
+        $path = str_replace("\\", "/", $path);
+        $exp = explode("/", $path);
+        return $exp[0] ?? "";
+    }
 }
