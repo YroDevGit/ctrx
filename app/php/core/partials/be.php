@@ -2,6 +2,18 @@
 if (! function_exists('json_response')) {
     function json_response(array $data, int $status = 200)
     {
+        ctrx_save_cookies();   
+        \Classes\Ctrx::resetBackend();
+        remove_single_thread();
+        header('Content-Type: application/json');
+        http_response_code($status);
+        echo json_encode($data);
+        exit;
+    }
+}
+
+if(! function_exists("ctrx_save_cookies")){
+    function ctrx_save_cookies(){
         $newCookies = $GLOBALS['_CTRX_COOKIES'] ?? null;
         if ($newCookies) {
             foreach ($newCookies as $key => $val) {
@@ -17,13 +29,6 @@ if (! function_exists('json_response')) {
                 setcookie($key, $value, $expiry, "/", "", isset($_SERVER['HTTPS']));
             }
         }
-        $data['cookies'] = $newCookies;
-        \Classes\Ctrx::resetBackend();
-        remove_single_thread();
-        header('Content-Type: application/json');
-        http_response_code($status);
-        echo json_encode($data);
-        exit;
     }
 }
 

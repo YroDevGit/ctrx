@@ -1,17 +1,13 @@
 <?php
 include_once "app/php/core/partials/envloader.php";
-$dbname = env("database");
-if (!$dbname) {
-    die("❌ No Database found @ .env");
+
+define('DB_TYPE', 'sqlite');
+define('DB_PATH', 'app/php/db/ctrx.db');
+
+$dbDir = dirname(DB_PATH);
+if (!is_dir($dbDir)) {
+    mkdir($dbDir, 0755, true);
 }
-$host = env('dbhost') ?: 'localhost';
-define('DB_TYPE', env("dbdriver") ?? "mysql");
-define('DB_HOST', $host);
-define('DB_NAME', $dbname);
-define('DB_USER', env('dbuser') ?: 'root');
-define('DB_PASS', env('dbpass') ?: '');
-define('DB_CHARSET', env('dbcharset') ?: 'utf8mb4');
-define('DB_PORT', env('dbport') ?: ($dbdriver === 'pgsql' ? '5432' : '3306'));
 
 $activation_key = 'role_management_activated';
 $activation_requested = isset($_GET['activate']) && $_GET['activate'] === 'true';
@@ -27,61 +23,23 @@ class Database
     private $lastError = null;
     private function __construct()
     {
-        $this->dbType = DB_TYPE;
+        $this->dbType = 'sqlite';
         $this->connect();
     }
     private function connect()
     {
         try {
-            switch ($this->dbType) {
-                case 'mysql':
-                case 'mariadb':
-                    $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-                    $this->pdo = new PDO($dsn, DB_USER, DB_PASS);
-                    break;
-                case 'pgsql':
-                    $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
-                    $this->pdo = new PDO($dsn, DB_USER, DB_PASS);
-                    break;
-                case 'sqlite':
-                    if (!defined('DB_PATH')) {
-                        define('DB_PATH', __DIR__ . '/database.sqlite');
-                    }
-                    $this->pdo = new PDO("sqlite:" . DB_PATH);
-                    $this->pdo->exec("PRAGMA foreign_keys = ON");
-                    break;
-                default:
-                    throw new Exception("Unsupported database type: " . $this->dbType);
+            if (!defined('DB_PATH')) {
+                define('DB_PATH', 'app/php/db/ctrx.db');
             }
+            $this->pdo = new PDO("sqlite:" . DB_PATH);
+            $this->pdo->exec("PRAGMA foreign_keys = ON");
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            if ($this->dbType === 'pgsql') {
-                $this->pdo->exec("SET NAMES '" . DB_CHARSET . "'");
-            }
             $this->lastError = null;
         } catch (PDOException $e) {
             $this->lastError = $e->getMessage();
-            if (($this->dbType === 'mysql' || $this->dbType === 'mariadb') &&
-                strpos($e->getMessage(), 'Unknown database') !== false
-            ) {
-                $this->createDatabase();
-                $this->connect();
-            } else {
-                throw $e;
-            }
-        }
-    }
-    private function createDatabase()
-    {
-        try {
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";charset=" . DB_CHARSET;
-            $pdo = new PDO($dsn, DB_USER, DB_PASS);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $dbName = DB_NAME;
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET " . DB_CHARSET);
-            $pdo = null;
-        } catch (PDOException $e) {
-            throw new Exception("Failed to create database: " . $e->getMessage());
+            throw $e;
         }
     }
     public static function getInstance()
@@ -175,82 +133,28 @@ class SchemaManager
     }
     private function dropTable($tableName)
     {
-        switch ($this->dbType) {
-            case 'mysql':
-            case 'mariadb':
-                $sql = "DROP TABLE IF EXISTS `{$tableName}`";
-                break;
-            case 'pgsql':
-                $sql = "DROP TABLE IF EXISTS {$tableName} CASCADE";
-                break;
-            case 'sqlite':
-                $sql = "DROP TABLE IF EXISTS {$tableName}";
-                break;
-            default:
-                return;
-        }
+        $sql = "DROP TABLE IF EXISTS {$tableName}";
         $this->pdo->exec($sql);
     }
     private function tableExists($tableName)
     {
         try {
-            switch ($this->dbType) {
-                case 'mysql':
-                case 'mariadb':
-                    $stmt = $this->pdo->query("SHOW TABLES LIKE '{$tableName}'");
-                    return $stmt->rowCount() > 0;
-                case 'pgsql':
-                    $stmt = $this->pdo->prepare("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = ?)");
-                    $stmt->execute([$tableName]);
-                    return $stmt->fetchColumn() === 't' || $stmt->fetchColumn() === true;
-                case 'sqlite':
-                    $stmt = $this->pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
-                    $stmt->execute([$tableName]);
-                    return $stmt->fetch() !== false;
-                default:
-                    return false;
-            }
+            $stmt = $this->pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
+            $stmt->execute([$tableName]);
+            return $stmt->fetch() !== false;
         } catch (PDOException $e) {
             return false;
         }
     }
     private function createRolesTable()
     {
-        switch ($this->dbType) {
-            case 'mysql':
-            case 'mariadb':
-                $sql = "CREATE TABLE `ctrx_roles` (`id` int(11) NOT NULL AUTO_INCREMENT,`role_name` varchar(50) NOT NULL,`description` text,`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`),UNIQUE KEY `unique_role_name` (`role_name`)) ENGINE=InnoDB DEFAULT CHARSET=" . DB_CHARSET;
-                break;
-            case 'pgsql':
-                $sql = "CREATE TABLE ctrx_roles (id SERIAL PRIMARY KEY,role_name VARCHAR(50) NOT NULL UNIQUE,description TEXT,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)";
-                break;
-            case 'sqlite':
-                $sql = "CREATE TABLE ctrx_roles (id INTEGER PRIMARY KEY AUTOINCREMENT,role_name VARCHAR(50) NOT NULL UNIQUE,description TEXT,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)";
-                break;
-        }
+        $sql = "CREATE TABLE ctrx_roles (id INTEGER PRIMARY KEY AUTOINCREMENT,role_name VARCHAR(50) NOT NULL UNIQUE,description TEXT,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)";
         $this->pdo->exec($sql);
-        if ($this->dbType === 'pgsql') {
-            $this->pdo->exec("CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END; $$ language 'plpgsql'; CREATE TRIGGER update_ctrx_roles_updated_at BEFORE UPDATE ON ctrx_roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();");
-        }
     }
     private function createRolesAccessTable()
     {
-        switch ($this->dbType) {
-            case 'mysql':
-            case 'mariadb':
-                $sql = "CREATE TABLE `ctrx_roles_access` (`id` int(11) NOT NULL AUTO_INCREMENT,`role_id` int(11) NOT NULL,`route` varchar(255) NOT NULL,`has_access` tinyint(1) DEFAULT 0,`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`),UNIQUE KEY `unique_role_route` (`role_id`, `route`),KEY `role_id` (`role_id`),CONSTRAINT `ctrx_roles_access_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `ctrx_roles` (`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=" . DB_CHARSET;
-                break;
-            case 'pgsql':
-                $sql = "CREATE TABLE ctrx_roles_access (id SERIAL PRIMARY KEY,role_id INTEGER NOT NULL REFERENCES ctrx_roles(id) ON DELETE CASCADE,route VARCHAR(255) NOT NULL,has_access BOOLEAN DEFAULT FALSE,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(role_id, route))";
-                break;
-            case 'sqlite':
-                $sql = "CREATE TABLE ctrx_roles_access (id INTEGER PRIMARY KEY AUTOINCREMENT,role_id INTEGER NOT NULL,route VARCHAR(255) NOT NULL,has_access INTEGER DEFAULT 0,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(role_id, route),FOREIGN KEY (role_id) REFERENCES ctrx_roles(id) ON DELETE CASCADE)";
-                break;
-        }
+        $sql = "CREATE TABLE ctrx_roles_access (id INTEGER PRIMARY KEY AUTOINCREMENT,role_id INTEGER NOT NULL,route VARCHAR(255) NOT NULL,has_access INTEGER DEFAULT 0,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(role_id, route),FOREIGN KEY (role_id) REFERENCES ctrx_roles(id) ON DELETE CASCADE)";
         $this->pdo->exec($sql);
-        if ($this->dbType === 'pgsql') {
-            $this->pdo->exec("CREATE TRIGGER update_ctrx_roles_access_updated_at BEFORE UPDATE ON ctrx_roles_access FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();");
-        }
     }
     private function insertDefaultRoles()
     {
@@ -498,6 +402,85 @@ class RoleManager
             throw $e;
         }
     }
+
+    public function cleanupUnusedRoutes()
+    {
+        $routeScanner = new RouteScanner('views/pages/');
+        $all_routes = $routeScanner->getAllRoutes();
+        $existing_route_names = array_column($all_routes, 'route');
+
+        $stmt = $this->pdo->query("SELECT id, route FROM ctrx_roles_access");
+        $records = $stmt->fetchAll();
+
+        $deleted_count = 0;
+        foreach ($records as $record) {
+            if (!in_array($record['route'], $existing_route_names)) {
+                $delete_stmt = $this->pdo->prepare("DELETE FROM ctrx_roles_access WHERE id = ?");
+                $delete_stmt->execute([$record['id']]);
+                $deleted_count++;
+            }
+        }
+        return $deleted_count;
+    }
+
+    public function exportTables()
+    {
+        $export = [];
+
+        $stmt = $this->pdo->query("SELECT * FROM ctrx_roles");
+        $export['ctrx_roles'] = $stmt->fetchAll();
+
+        $stmt = $this->pdo->query("SELECT * FROM ctrx_roles_access");
+        $export['ctrx_roles_access'] = $stmt->fetchAll();
+
+        return $export;
+    }
+
+    public function importTables($data)
+    {
+        $this->pdo->beginTransaction();
+        try {
+            if (isset($data['ctrx_roles'])) {
+                $this->pdo->exec("DELETE FROM ctrx_roles");
+                $stmt = $this->pdo->prepare("INSERT INTO ctrx_roles (id, role_name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)");
+                foreach ($data['ctrx_roles'] as $row) {
+                    $stmt->execute([$row['id'], $row['role_name'], $row['description'], $row['created_at'], $row['updated_at']]);
+                }
+            }
+
+            if (isset($data['ctrx_roles_access'])) {
+                $this->pdo->exec("DELETE FROM ctrx_roles_access");
+                $stmt = $this->pdo->prepare("INSERT INTO ctrx_roles_access (id, role_id, route, has_access, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)");
+                foreach ($data['ctrx_roles_access'] as $row) {
+                    $stmt->execute([$row['id'], $row['role_id'], $row['route'], $row['has_access'], $row['created_at'], $row['updated_at']]);
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function countUnusedRoutes()
+    {
+        $routeScanner = new RouteScanner('views/pages/');
+        $all_routes = $routeScanner->getAllRoutes();
+        $existing_route_names = array_column($all_routes, 'route');
+
+        $stmt = $this->pdo->query("SELECT route FROM ctrx_roles_access");
+        $records = $stmt->fetchAll();
+
+        $unused_count = 0;
+        foreach ($records as $record) {
+            if (!in_array($record['route'], $existing_route_names)) {
+                $unused_count++;
+            }
+        }
+        return $unused_count;
+    }
 }
 
 $schemaManager = new SchemaManager($pdo, $dbType);
@@ -538,6 +521,8 @@ $routeScanner = new RouteScanner('views/pages/');
 $message = '';
 $message_type = '';
 
+$unused_routes_count = $is_activated ? $roleManager->countUnusedRoutes() : 0;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($is_activated) {
         try {
@@ -576,6 +561,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $message_type = 'success';
                         }
                         break;
+                    case 'export_tables':
+                        $export_data = $roleManager->exportTables();
+                        header('Content-Type: application/json');
+                        header('Content-Disposition: attachment; filename="ctrx_export_' . date('Y-m-d_H-i-s') . '.json"');
+                        echo json_encode($export_data, JSON_PRETTY_PRINT);
+                        exit;
+                        break;
+                    case 'import_tables':
+                        if (isset($_FILES['import_file']) && $_FILES['import_file']['error'] === UPLOAD_ERR_OK) {
+                            $json = file_get_contents($_FILES['import_file']['tmp_name']);
+                            $data = json_decode($json, true);
+                            if ($data) {
+                                $roleManager->importTables($data);
+                                $message = 'Tables imported successfully!';
+                                $message_type = 'success';
+                            } else {
+                                throw new Exception("Invalid JSON file.");
+                            }
+                        }
+                        break;
+                    case 'cleanup_routes':
+                        $deleted = $roleManager->cleanupUnusedRoutes();
+                        $message = "Unused routes cleaned up!";
+                        $message_type = 'success';
+                        $unused_routes_count = 0;
+                        break;
                 }
             }
         } catch (Exception $e) {
@@ -612,7 +623,6 @@ if ($is_activated) {
     $selected_role_id = 0;
 }
 
-$prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1296,6 +1306,47 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
             vertical-align: middle
         }
 
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        .toolbar .btn {
+            margin: 0;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .btn .badge-light {
+            background: white;
+            color: #dc3545;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
         @media (max-width:768px) {
             .container-fluid {
                 flex-direction: column
@@ -1390,6 +1441,11 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
             .legend-colors {
                 max-height: 100px;
                 overflow-y: scroll;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
     </style>
@@ -1496,6 +1552,26 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
 
                 <div style="margin-bottom:15px;" align='right'>
                     <a href="?deactivate=true" class="deactivate-btn" onclick="return confirm('Are you sure you want to deactivate? This will delete all role tables and data.')">🗑️ Deactivate (Delete Tables)</a>
+                </div>
+
+                <div class="toolbar">
+                    <form method="POST" style="display:inline-block;margin:0;">
+                        <input type="hidden" name="action" value="export_tables">
+                        <button type="submit" class="btn btn-success">📤 Export Tables</button>
+                    </form>
+                    <form method="POST" style="display:inline-block;margin:0;" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="import_tables">
+                        <div class="file-input-wrapper" style="display:inline-block;">
+                            <button type="button" class="btn btn-primary">📥 Import Tables</button>
+                            <input type="file" name="import_file" accept=".json" onchange="this.form.submit()">
+                        </div>
+                    </form>
+                    <form method="POST" style="display:inline-block;margin:0;">
+                        <input type="hidden" name="action" value="cleanup_routes">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to clean up <?= $unused_routes_count ?> unused routes? This will remove entries for pages that no longer exist.')">
+                            🧹 Clear Unused Pages <?php if ($unused_routes_count > 0): ?><span class="badge badge-light" style="background:white;color:#dc3545;margin-left:5px;"><?= $unused_routes_count ?></span><?php endif; ?>
+                        </button>
+                    </form>
                 </div>
 
                 <?php if ($selected_role): ?>
@@ -1618,11 +1694,7 @@ $prev_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';
 
                 <div class="mt-4">
                     <small class="text-muted">
-                        🗄️ Database: <?= strtoupper($dbType) ?> |
-                        Host: <?= DB_HOST ?>:<?= DB_PORT ?> |
-                        Tables: ctrx_roles, ctrx_roles_access |
-                        Directory: <?= htmlspecialchars($display_name) ?> |
-                        Routes: <?= count($all_routes) ?>
+                        🗄️ CTRX - Role management
                     </small>
                 </div>
             <?php endif; ?>

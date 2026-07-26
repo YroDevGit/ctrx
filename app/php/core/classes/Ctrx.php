@@ -460,7 +460,7 @@ class Ctrx
         if (str_starts_with($currPage, "ctrxtools")) {
             return;
         }
-        if (! \Classes\DB::tableExists("ctrx_roles")) {
+        if (! \Classes\SQLite::tableExists("ctrx_roles")) {
             return;
         }
         if (! $role) {
@@ -468,10 +468,10 @@ class Ctrx
         }
 
         if (! str_contains($currPage, "/") && ! self::has_user_data()) {
-            $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
+            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
             $param = [$role, $currPage];
-            $result = \Classes\DB::query($query, $param);
-
+            $stmt = \Classes\SQLite::query($query, $param);
+            $result = $stmt->fetchAll();
             if ($result) {
                 if (is_null($execute)) {
                     if (self::has_user_data()) {
@@ -484,10 +484,11 @@ class Ctrx
                 }
             }
         } else {
-            $query = "SELECT r.role_name, r.`description`, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
+            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
             $param = [$role, $currPage];
-            $result = \Classes\DB::query($query, $param);
-
+            $stmt = \Classes\SQLite::query($query, $param);
+            $result = $stmt->fetchAll();
+            //print_r($result);exit;
             if (! $result) {
                 if (is_null($execute)) {
                     if (self::has_user_data()) {

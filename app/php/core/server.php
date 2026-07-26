@@ -275,6 +275,7 @@ if (str_starts_with($req, "api/")) {
             $page = $_GET['page'] ?? \Classes\Ctrx::get_logout_page() ?? $lgt ?? "/";
             \Classes\Ctrx::delete_user_data();
             \Classes\Ccookie::delete("ctrx_user_logout_page");
+            ctrx_save_cookies();
             redirect($page);
         }
         /**
