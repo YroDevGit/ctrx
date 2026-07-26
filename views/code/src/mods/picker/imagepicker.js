@@ -697,9 +697,9 @@ class CImagePicker {
         document.head.appendChild(style);
     }
 
-    static async fetchImages(path = "public") {
+    static async fetchImages(path = "public", action = "0") {
         try {
-            const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=list&dir=${encodeURIComponent(path)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=${action}&dir=${encodeURIComponent(path)}`);
             if (!response.ok) throw new Error("Failed to fetch images");
             const data = await response.json();
             return data.images || [];
@@ -709,14 +709,14 @@ class CImagePicker {
         }
     }
 
-    static async uploadImage(file, path = "public", onProgress = null) {
+    static async uploadImage(file, path = "public", onProgress = null, action = "0") {
         const formData = new FormData();
         formData.append("image", file);
         formData.append("path", path);
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/ctrx.yro.ctrstorage.images/uploadHere?action=upload&dir=" + path);
+            xhr.open("POST", `/ctrx.yro.ctrstorage.images/uploadHere?action=${action}&dir=` + path);
 
             if (onProgress && typeof onProgress === "function") {
                 xhr.upload.addEventListener("progress", (e) => {
@@ -745,9 +745,9 @@ class CImagePicker {
         });
     }
 
-    static async deleteImage(filename, path = "public") {
+    static async deleteImage(filename, path = "public", action = "0") {
         try {
-            const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=delete&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=${action}&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
             if (!response.ok) throw new Error("Failed to delete image");
             const data = await response.json();
             return data;
@@ -1228,7 +1228,8 @@ class CImagePicker {
                             instanceConfig.path || "public",
                             (percent) => {
                                 this.progressBar.style.width = percent + "%";
-                            }
+                            },
+                            instanceConfig.action
                         );
 
                         if (result.success && result.image) {
@@ -1269,7 +1270,7 @@ class CImagePicker {
                     }
 
                     try {
-                        let resDel = await CImagePicker.deleteImage(image.name, image.source_dir || "public");
+                        let resDel = await CImagePicker.deleteImage(image.name, image.source_dir || "public", instanceConfig.action);
 
                         if (resDel.success) {
                             alert("Image deleted successfully");
@@ -1519,7 +1520,7 @@ class CImagePicker {
                 },
 
                 async loadImages() {
-                    this.images = await CImagePicker.fetchImages(instanceConfig.path || "public");
+                    this.images = await CImagePicker.fetchImages(instanceConfig.path || "public", instanceConfig.action);
 
                     if (instanceConfig.type && instanceConfig.type !== "*") {
                         const allowed = instanceConfig.type.split("|").map(t => t.trim().toLowerCase());
