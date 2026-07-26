@@ -904,7 +904,13 @@ class CImagePicker {
                     const addBtn = document.createElement("button");
                     addBtn.className = "cimagepicker-btn-add";
                     addBtn.innerHTML = "➕ Add Image";
-                    addBtn.addEventListener("click", () => this.toggleUpload());
+                    addBtn.addEventListener("click", () => {
+                        this.toggleUpload();
+                        body.scrollTo({
+                            top: "0",
+                            behavior: "smooth"
+                        });
+                    });
 
                     const closeMe = document.createElement("button");
                     closeMe.className = "cimagepicker-btn cimagepicker-btn-close";
@@ -941,6 +947,7 @@ class CImagePicker {
 
                     const body = document.createElement("div");
                     body.className = "cimagepicker-body";
+                    body.id = "cimagepicker-body-id";
 
                     const uploadArea = document.createElement("div");
                     uploadArea.className = "cimagepicker-upload-area";
