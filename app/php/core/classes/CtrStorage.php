@@ -809,7 +809,7 @@ class CtrStorage
         return $exp[0] ?? "";
     }
 
-    public static function buildPath(...$folders){
+    public static function buildPath(string ...$folders){
         $filt = [];
         foreach($folders as $k => $v){
             $v = self::cleanPath($v);
