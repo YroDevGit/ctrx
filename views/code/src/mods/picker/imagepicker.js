@@ -656,6 +656,7 @@ class CImagePicker {
 
                 .cimagepicker-body {
                     padding: 12px;
+                    max-height: 420px;
                 }
 
                 .cimagepicker-grid {
@@ -690,6 +691,10 @@ class CImagePicker {
                 .cimagepicker-current-image-item {
                     width: 60px;
                     height: 60px;
+                }
+                .cimagepicker-body {
+                    padding: 9px;
+                    max-height: 400px;
                 }
             }
         `;
