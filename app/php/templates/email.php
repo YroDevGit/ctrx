@@ -31,16 +31,8 @@
                     </tr>
 
                     <tr>
-                        <td>
-                            <div align="center" style="font-size:14px;font-weight:300;margin:0;line-height:1.5;color:white;">
-                                <?= $email_to ?>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
                         <td style="padding:40px 40px 30px 40px;">
-                            <?= $text ?>
+                            <?= $text ?? "No message" ?>
                         </td>
                     </tr>
 

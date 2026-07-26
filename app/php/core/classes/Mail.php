@@ -14,16 +14,40 @@ class Mail
 
     private array $email_details = [];
 
-    public function __construct(string $var = null)
+    public function __construct(string|array $var = null)
     {
         $this->email_details['to'] = $var;
+        return $this;
     }
 
-    public static function to(string $receiver)
+    public static function to(string ...$receiver)
     {
-        return new self($receiver);
+        $rec = [];
+        foreach ($receiver as $k => $v) {
+            $rec[] = $v;
+        }
+        return new self($rec);
     }
 
+    public function cc(string ...$cc)
+    {
+        $rec = [];
+        foreach ($cc as $k => $v) {
+            $rec[] = $v;
+        }
+        $this->email_details['cc'] = $rec;
+        return $this;
+    }
+
+    public function bcc(string ...$bcc)
+    {
+        $rec = [];
+        foreach ($bcc as $k => $v) {
+            $rec[] = $v;
+        }
+        $this->email_details['bcc'] = $rec;
+        return $this;
+    }
     public function message(array|string $message)
     {
         if (is_array($message)) {
@@ -75,14 +99,15 @@ class Mail
         $message = $data['message'] ?? [];
         $message = ["text" => "CTRX FRAMEWORK", "email_to" => $data['to'], ...$message];
         $template = $data['template'] ?? "email";
-        $message = $this->email_template($template, $message ?? []);
-
+        $message = $this->email_template($template, $message);
         return $this->send_email(
             $data['to'],
             $data['subject'] ?? env("app_name"),
             $message,
             $data['from'] ?? env("app_name"),
-            $data['fromEmail'] ?? "ctrx@outlook.com"
+            $data['fromEmail'] ?? "ctrx@outlook.com",
+            $data['cc'] ?? null,
+            $data['bcc'] ?? null
         );
     }
 
@@ -126,11 +151,13 @@ class Mail
             $mail['subject'],
             $mail['message'] ?? $mail['msg'],
             $mail['sender'] ?? $mail['from'] ?? null,
-            $mail['senderemail'] ?? $mail['myemail'] ?? null
+            $mail['senderemail'] ?? $mail['myemail'] ?? null,
+            $mail['cc'] ?? null,
+            $mail['bcc'] ?? null
         );
     }
 
-    public static function send_email(string|array $to, string $subject, $message, string|null $sender = null, string|null $sender_email = null)
+    public static function send_email(string|array|null $to, string $subject, $message, string|null $sender = null, string|null $sender_email = null, string|array|null $cc = null, string|array|null $bcc = null)
     {
         if (!function_exists('has_internet_connection') || !has_internet_connection()) {
             throw new Exception("No Internet Connection");
@@ -152,12 +179,37 @@ class Mail
         $e_sendemail = $sender_email ?? env("sender_email") ?? "codetazer@test.com";
 
         $mail->setFrom($e_sendemail, $e_sender);
+        if(! $to){
+            return true;
+        }
         if (is_string($to)) {
             $mail->addAddress($to);
         }
         if (is_array($to)) {
             foreach ($to as $t) {
                 $mail->addAddress($t);
+            }
+        }
+
+        if ($cc) {
+            if (is_string($cc)) {
+                $mail->addCC($cc);
+            }
+            if (is_array($cc)) {
+                foreach ($cc as $k => $v) {
+                    $mail->addCC($v);
+                }
+            }
+        }
+
+        if ($bcc) {
+            if (is_string($bcc)) {
+                $mail->addBCC($bcc);
+            }
+            if (is_array($bcc)) {
+                foreach ($bcc as $k => $v) {
+                    $mail->addBCC($v);
+                }
             }
         }
 

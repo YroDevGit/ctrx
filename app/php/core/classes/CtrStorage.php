@@ -13,6 +13,7 @@ class CtrStorage
     protected static $fulluploads = [];
 
     private static $last_uploaded_files = [];
+    private static $cache = [];
 
     public static function auto_changename(bool $changename)
     {
@@ -289,7 +290,7 @@ class CtrStorage
                             $subPath = ltrim($subPath, '/');
                             if ($subPath) {
                                 $subPath .= '/';
-                                $newDir = $publicFolder.($subPath ? "/".$subPath : "");
+                                $newDir = $publicFolder . ($subPath ? "/" . $subPath : "");
                                 $newDir = trim($newDir, " /\\");
                             }
                         }
@@ -303,7 +304,7 @@ class CtrStorage
                             'extension' => $extension,
                             'type' => 'image',
                             'source_dir' => $newDir,
-                            'relativePath' => $newDir."/".$file->getFilename(),
+                            'relativePath' => $newDir . "/" . $file->getFilename(),
                             'parentFolder' => $publicFolder,
                             'subfolder' => rtrim($subPath, '/') ?: null
                         ];
@@ -513,5 +514,291 @@ class CtrStorage
                 "storage" => $pp
             ];
         }
+    }
+
+    public static function cleanPath(string $path)
+    {
+        $path = trim($path, "*");
+        $path = trim($path, " /\\");
+        $path = trim($path, "//");
+        $path = trim($path, "\\\\");
+        return $path;
+    }
+
+    /**
+     * Main method: Get directory size with human-readable formatting
+     * 
+     * @param string $path Directory path
+     * @param int $precision Number of decimal places (default: 2)
+     * @return string|false Formatted size or false on error
+     */
+    public static function getSize($path, $precision = 2)
+    {
+        $path = self::cleanPath($path);
+        $bytes = self::getSizeBytes($path);
+        if ($bytes === false) {
+            return false;
+        }
+        return self::formatBytes($bytes, $precision);
+    }
+
+    /**
+     * Get directory size in bytes only
+     * 
+     * @param string $path Directory path
+     * @return int|false Size in bytes or false on error
+     */
+    public static function getSizeBytes($path)
+    {
+        $path = self::cleanPath($path);
+        if (!is_dir($path)) {
+            return false;
+        }
+
+        $totalSize = 0;
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)
+            );
+
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $totalSize += $file->getSize();
+                }
+            }
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return $totalSize;
+    }
+
+    /**
+     * Format bytes to human-readable format
+     * 
+     * @param int $bytes Size in bytes
+     * @param int $precision Number of decimal places (default: 2)
+     * @return string Formatted size (e.g., "2.45 MB")
+     */
+    public static function formatBytes($bytes, $precision = 2)
+    {
+        if (!is_numeric($bytes) || $bytes < 0) {
+            return '0 B';
+        }
+
+        if ($bytes == 0) {
+            return '0 B';
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
+        $i = floor(log($bytes, 1024));
+
+        // Limit to available units
+        $i = min($i, count($units) - 1);
+
+        $size = $bytes / pow(1024, $i);
+        return number_format($size, $precision) . ' ' . $units[$i];
+    }
+
+    /**
+     * Get directory size using system commands (Linux/Unix only) - Faster
+     * 
+     * @param string $path Directory path
+     * @param int $precision Number of decimal places (default: 2)
+     * @return string|false Formatted size or false on error
+     */
+    public static function getSizeFast($path, $precision = 2)
+    {
+        $path = self::cleanPath($path);
+        if (!is_dir($path)) {
+            return false;
+        }
+
+        $output = shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
+        if (!$output || !preg_match('/^(\d+)/', $output, $matches)) {
+            return false;
+        }
+
+        $bytes = (int)$matches[1];
+        return self::formatBytes($bytes, $precision);
+    }
+
+    /**
+     * Get directory size with caching for multiple calls
+     * 
+     * @param string $path Directory path
+     * @param int $precision Number of decimal places (default: 2)
+     * @param int $cacheTime Cache lifetime in seconds (default: 300)
+     * @return string|false Formatted size or false on error
+     */
+    public static function getSizeCached($path, $precision = 2, $cacheTime = 300)
+    {
+        $realPath = realpath($path);
+        if ($realPath === false) {
+            return false;
+        }
+
+        $cacheKey = md5($realPath);
+
+        // Check cache
+        if (isset(self::$cache[$cacheKey])) {
+            list($size, $time) = self::$cache[$cacheKey];
+            if (time() - $time < $cacheTime) {
+                return $size;
+            }
+        }
+
+        // Calculate size
+        $size = self::getSize($path, $precision);
+
+        // Store in cache
+        self::$cache[$cacheKey] = [$size, time()];
+
+        return $size;
+    }
+
+    /**
+     * Check if directory size exceeds a limit
+     * 
+     * @param string $path Directory path
+     * @param int $limit Size limit
+     * @param string $unit Unit (B, KB, MB, GB, TB)
+     * @return bool|array Returns array with details or false on error
+     */
+    public static function isExceeded($path, $limit, $unit = 'MB')
+    {
+        $bytes = self::getSizeBytes($path);
+        if ($bytes === false) {
+            return false;
+        }
+
+        $limitBytes = self::convertToBytes($limit, $unit);
+        $exceeded = $bytes > $limitBytes;
+
+        return [
+            'exceeded' => $exceeded,
+            'current_size' => self::formatBytes($bytes),
+            'current_bytes' => $bytes,
+            'limit' => $limit . ' ' . $unit,
+            'limit_bytes' => $limitBytes,
+            'difference' => self::formatBytes(abs($bytes - $limitBytes)),
+            'percentage' => round(($bytes / $limitBytes) * 100, 2)
+        ];
+    }
+
+    /**
+     * Convert human-readable size to bytes
+     * 
+     * @param int $value Size value
+     * @param string $unit Unit (B, KB, MB, GB, TB)
+     * @return int|false Bytes or false on error
+     */
+    public static function convertToBytes($value, $unit = 'MB')
+    {
+        $units = [
+            'B' => 1,
+            'KB' => 1024,
+            'MB' => 1048576,
+            'GB' => 1073741824,
+            'TB' => 1099511627776
+        ];
+
+        $unit = strtoupper($unit);
+        if (!isset($units[$unit])) {
+            return false;
+        }
+
+        return $value * $units[$unit];
+    }
+
+    /**
+     * Get detailed information about a directory
+     * 
+     * @param string $path Directory path
+     * @return array|false Array with details or false on error
+     */
+    public static function getInfo($path)
+    {
+        if (!is_dir($path)) {
+            return false;
+        }
+
+        $bytes = self::getSizeBytes($path);
+        if ($bytes === false) {
+            return false;
+        }
+
+        // Count files and directories
+        $fileCount = 0;
+        $dirCount = 0;
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            if ($item->isFile()) {
+                $fileCount++;
+            } elseif ($item->isDir()) {
+                $dirCount++;
+            }
+        }
+
+        return [
+            'path' => $path,
+            'size_bytes' => $bytes,
+            'size_formatted' => self::formatBytes($bytes),
+            'file_count' => $fileCount,
+            'directory_count' => $dirCount,
+            'total_items' => $fileCount + $dirCount,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'permissions' => substr(sprintf('%o', fileperms($path)), -4),
+            'owner' => function_exists('posix_getpwuid') ? posix_getpwuid(fileowner($path))['name'] : fileowner($path)
+        ];
+    }
+
+    /**
+     * Get size of multiple directories
+     * 
+     * @param array $paths Array of directory paths
+     * @param int $precision Number of decimal places (default: 2)
+     * @return array Array of results
+     */
+    public static function getMultipleSizes($paths, $precision = 2)
+    {
+        $results = [];
+        foreach ($paths as $path) {
+            $size = self::getSize($path, $precision);
+            $results[$path] = $size === false ? 'ERROR' : $size;
+        }
+        return $results;
+    }
+
+    /**
+     * Get total size of multiple directories
+     * 
+     * @param array $paths Array of directory paths
+     * @param int $precision Number of decimal places (default: 2)
+     * @return string|false Total formatted size or false on error
+     */
+    public static function getTotalSize($paths, $precision = 2)
+    {
+        $totalBytes = 0;
+        foreach ($paths as $path) {
+            $bytes = self::getSizeBytes($path);
+            if ($bytes === false) {
+                return false;
+            }
+            $totalBytes += $bytes;
+        }
+        return self::formatBytes($totalBytes, $precision);
+    }
+
+    /**
+     * Clear the cache
+     */
+    public static function clearCache()
+    {
+        self::$cache = [];
     }
 }
