@@ -692,10 +692,6 @@ class CImagePicker {
                     width: 60px;
                     height: 60px;
                 }
-                .cimagepicker-body {
-                    padding: 9px;
-                    max-height: 400px;
-                }
             }
         `;
         document.head.appendChild(style);
