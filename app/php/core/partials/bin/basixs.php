@@ -71,21 +71,37 @@ function decrypt($encrypted_data, string $key = null)
 }
 
 
-function load_auto(string ...$auto){
+function load_auto(string ...$auto)
+{
     $ep = ctrx_endpoint();
     $path = "app/auto/";
-    if($ep == "FE") $path = "views/app/auto/";
-    foreach($auto as $k=>$v){
+    if ($ep == "FE") $path = "views/app/auto/";
+    foreach ($auto as $k => $v) {
         $vv = append_php($v);
-        include_once $path.$vv;
+        include_once $path . $vv;
     }
 }
 
-function load_php(string ...$auto){
-    foreach($auto as $k=>$v){
+function load_php(string ...$auto)
+{
+    foreach ($auto as $k => $v) {
         $vv = append_php($v);
-        include_once "views/app/php/".$vv;
+        include_once "views/app/php/" . $vv;
     }
+}
+
+function role_has_access(string $route, $role = null)
+{
+    return \Classes\Ctrx::role_has_access($route, $role);
+}
+
+function cleanPath(string $path)
+{
+    $path = trim($path, "*");
+    $path = trim($path, " /\\");
+    $path = trim($path, "//");
+    $path = trim($path, "\\\\");
+    return $path;
 }
 
 function BasixsErrorException($e, $bee, string $errorcode = "backend_error_code")

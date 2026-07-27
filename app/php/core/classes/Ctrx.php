@@ -488,7 +488,6 @@ class Ctrx
             $param = [$role, $currPage];
             $stmt = \Classes\SQLite::query($query, $param);
             $result = $stmt->fetchAll();
-            //print_r($result);exit;
             if (! $result) {
                 if (is_null($execute)) {
                     if (self::has_user_data()) {
@@ -502,6 +501,55 @@ class Ctrx
             }
         }
         return true;
+    }
+
+    public static function role_has_access(string $route, $role = null)
+    {
+        $role = $role ?? self::get_user_role() ?? "public";
+        $route = str_replace("\\", "/", $route);
+        $route = cleanPath($route);
+        if (! \Classes\SQLite::tableExists("ctrx_roles")) {
+            return true;
+        }
+        if (! env('database')) {
+            return true;
+        }
+        if ($role == "admin") {
+            return true;
+        }
+        if ($route == "ctrx/logout") {
+            return true;
+        }
+        if (str_starts_with($route, "ctrxtools")) {
+            return true;
+        }
+        $roleFilt = fe_config("role_filtering");
+        if ($roleFilt != "yes" || $roleFilt == null) {
+            return true;
+        }
+
+        if (! str_contains($route, "/")) {
+            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
+            $param = [$role, $route];
+            $stmt = \Classes\SQLite::query($query, $param);
+            $result = $stmt->fetchAll();
+            if ($result) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
+            $param = [$role, $route];
+            $stmt = \Classes\SQLite::query($query, $param);
+            $result = $stmt->fetchAll();
+            if ($result) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 
     public static function has_user_data(): bool

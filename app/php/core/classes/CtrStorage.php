@@ -518,11 +518,7 @@ class CtrStorage
 
     public static function cleanPath(string $path)
     {
-        $path = trim($path, "*");
-        $path = trim($path, " /\\");
-        $path = trim($path, "//");
-        $path = trim($path, "\\\\");
-        return $path;
+        return cleanPath($path);
     }
 
     /**
