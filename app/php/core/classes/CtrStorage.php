@@ -808,9 +808,12 @@ class CtrStorage
     public static function buildPath(string ...$folders){
         $filt = [];
         foreach($folders as $k => $v){
-            $v = self::cleanPath($v);
+            if($v != "*"){
+                $v = self::cleanPath($v);
+            }
             $filt[] = $v;
         }
-        return implode("/", $filt);
+        $ret = implode("/", $filt);
+        return trim($ret, " /\\");
     }
 }
