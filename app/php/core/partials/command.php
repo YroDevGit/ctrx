@@ -194,24 +194,81 @@ if ($route == "run" || $route == "server") {
     echo "Test-DB url @: $root/testdb\n\n";
 
     exit;
-} else if ($route == "generate:htaccess") {
-    //for deployment
-    //for routing
-    $filename = ".htaccess";
-    $content = <<<EOT
-    RewriteEngine On
-
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-
-    RewriteRule ^ index.php [L,QSA]
-    EOT;
-
-    if (file_put_contents($filename, $content) !== false) {
-        echo "\n✅ .htaccess has been created.\n\n";
-    } else {
-        echo "\n❌ Failed to create Route file.\n\n";
+} else if ($route == "generate:docker") {
+    echo "\n";
+    if (! file_exists(".htaccess")) {
+        copy(
+            'app/php/core/support/.htaccess',
+            '.htaccess'
+        );
     }
+    echo "✅ Generated .htaccess\n";
+
+    if (! file_exists("Dockerfile")) {
+        copy(
+            'app/php/core/support/Dockerfile',
+            'Dockerfile'
+        );
+    }
+    echo "✅ Generated Dockerfile\n";
+
+    if (! file_exists("compose.yml")) {
+        copy(
+            'app/php/core/support/compose.yml',
+            'compose.yml'
+        );
+        echo "✅ Generated compose.yml\n";
+    }
+
+    if (! file_exists(".gitignore")) {
+        copy(
+            'app/php/core/support/.gitignore',
+            '.gitignore'
+        );
+        echo "✅ Generated .gitignore\n\n";
+    }
+    exit;
+} else if ($route == "generate:htaccess") {
+    if (! file_exists(".htaccess")) {
+        copy(
+            'app/php/core/support/.htaccess',
+            '.htaccess'
+        );
+    }
+    echo "\n✅ Generated .htaccess\n\n";
+    exit;
+} else if ($route == "generate:required") {
+    echo "\n";
+    if (! file_exists(".htaccess")) {
+        copy(
+            'app/php/core/support/.htaccess',
+            '.htaccess'
+        );
+    }
+    echo "✅ Generated .htaccess\n";
+    if (! file_exists(".gitignore")) {
+        copy(
+            'app/php/core/support/.gitignore',
+            '.gitignore'
+        );
+        echo "✅ Generated .gitignore\n";
+    }
+    echo "\n";
+    exit;
+} else if ($route == "reset:dev") {
+    if (file_exists(".gitignore")) {
+        unlink(".gitignore");
+    }
+    if (file_exists(".htaccess")) {
+        unlink(".htaccess");
+    }
+    if (file_exists("compose.yml")) {
+        unlink("compose.yml");
+    }
+    if (file_exists("Dockerfile")) {
+        unlink("Dockerfile");
+    }
+    echo "\n\n✅ Done\n\n";
     exit;
 } else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
     if ($filename == "") {

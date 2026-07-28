@@ -1,0 +1,88 @@
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: ctrx_app
+
+    ports:
+      - "8081:80"
+
+    volumes:
+      - .:/var/www/html
+
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.11
+
+    container_name: ctrx_db
+
+    restart: unless-stopped
+
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+
+    ports:
+      - "3309:3306"
+
+    volumes:
+      - ctrx_db_data:/var/lib/mysql
+
+volumes:
+  ctrx_db_data:
+
+
+  #>> Build and start the CTRX app
+  #>> docker compose up --build
+
+  #>> Start the CTRX app in the background
+  #>> docker compose up -d
+
+  #>> Stop and remove running containers
+  #>> docker compose down
+
+  #>> Restart the CTRX app container
+  #>> docker compose restart app
+
+  #>> Open a shell inside the CTRX app container
+  #>> docker compose exec app bash
+
+  #>> Run CTRX database loader
+  #>> docker compose exec app php cli db:load
+
+  #>> Run CTRX database migration
+  #>> docker compose exec app php cli db:migrate
+
+  #>> Run CTRX database seeder
+  #>> docker compose exec app php cli db:seed
+
+  #>> Delete a database
+  #>> docker compose exec db mariadb -u root -ppassword -e "DROP DATABASE IF EXISTS dbname;"
+
+  #>> Create a database
+  #>> docker compose exec db mariadb -u root -ppassword -e "CREATE DATABASE dbname CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+
+  #>> Show all databases
+  #>> docker compose exec db mariadb -u root -ppassword -e "SHOW DATABASES;"
+
+  #>> Clear Docker build cache
+  #>> docker builder prune -af
+
+  #>> View running containers
+  #>> docker compose ps
+
+  #>> View CTRX app logs
+  #>> docker compose logs -f app
+
+  #>> View MariaDB logs
+  #>> docker compose logs -f db
+
+  #>> Rebuild CTRX app without using Docker cache
+  #>> docker compose build --no-cache app
+
+  #>> Stop and remove containers, networks, and database volume
+  #>> docker compose down -v
