@@ -270,6 +270,15 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n\n✅ Done\n\n";
     exit;
+}else if ($route == "reset:docker") {
+    if (file_exists("compose.yml")) {
+        unlink("compose.yml");
+    }
+    if (file_exists("Dockerfile")) {
+        unlink("Dockerfile");
+    }
+    echo "\n\n✅ Done\n\n";
+    exit;
 } else if ($route == "+controller" || $route == "+ctrl" || $route == "+c") {
     if ($filename == "") {
         echo "❌ Please provide a filename for the controller.\n";
