@@ -145,7 +145,10 @@ if (!function_exists("import_script")) {
                 $flx = current_page();
             }
             $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
-            echo '<script type="module" src="' . htmlspecialchars(codepath('script/' . $fl), ENT_QUOTES) . '"></script>' . PHP_EOL;
+            $value = htmlspecialchars(codepath('script/' . $fl), ENT_QUOTES);
+            if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {
+                $GLOBALS['ctrx_js_includes_1993664_yro'][] = $value;
+            }
         }
     }
 }
@@ -169,7 +172,10 @@ if (!function_exists("js")) {
             } else {
                 $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
             }
-            echo '<script type="module" src="' . htmlspecialchars('/views/js/' . $fl, ENT_QUOTES) . '"></script>' . PHP_EOL;
+            $value = htmlspecialchars('/views/js/' . $fl, ENT_QUOTES);
+            if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {
+                $GLOBALS['ctrx_js_includes_1993664_yro'][] = $value;
+            }
         }
     }
 }
