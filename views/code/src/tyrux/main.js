@@ -240,7 +240,21 @@ const tyrax = { // tyrux default config :: CodeTazeR
             });
         });
     },
-
+     paginate_offset(page = 1, limit = 10) {
+        page = Math.max(1, parseInt(page) || 1);
+        limit = Math.max(1, parseInt(limit) || 1);
+    
+        return (page - 1) * limit;
+    },
+     db_paginate(page = 1, limit = 10) {
+        page = Math.max(1, parseInt(page) || 1);
+        limit = Math.max(1, parseInt(limit) || 1);
+    
+        return {
+            limit: limit,
+            offset: this.paginate_offset(page, limit)
+        };
+    },
     ctrql(option = { ...opt, method: "POST", param: undefined, encodeImages: undefined, extra: undefined, accept: undefined, columns: undefined, update: undefined, query: undefined, validation: undefined, validationType: "default", unique: undefined, function: undefined, realtime: undefined }) {
         option.url = "ctrx_x_ctrql_request_authorized_ql";
         let par = option?.param ?? option?.where ?? option.request ?? option.data ?? undefined;

@@ -440,15 +440,30 @@ class BaseTable
         $offset = null;
         $page = 1;
 
-        if (is_numeric($extra)) $limit = (int)$extra;
-        elseif (is_array($extra)) {
-            if (isset($extra['limit'])) {
+        if (is_numeric($extra)) {
+            $limit = (int)$extra;
+        } elseif (is_array($extra)) {
+            if (isset($extra['offset'])) {
+                $offset = (int)$extra['offset'];
+                if (isset($extra['limit'])) {
+                    $limit = (int)$extra['limit'];
+                    if ($limit > 0) {
+                        $page = floor($offset / $limit) + 1;
+                    }
+                }
+            }
+            if (isset($extra['limit']) && !isset($extra['offset'])) {
                 $limit = (int)$extra['limit'];
                 if (isset($extra['page'])) {
                     $page = max(1, (int)$extra['page']);
                     $offset = ($page - 1) * $limit;
                 }
             }
+
+            if (isset($extra['limit']) && !isset($extra['offset']) && !isset($extra['page'])) {
+                $limit = (int)$extra['limit'];
+            }
+
             if (isset($extra['group by'])) $sql .= " GROUP BY " . $extra['group by'];
             if (isset($extra['having'])) $sql .= " HAVING " . $extra['having'];
             if (isset($extra['order by'])) $sql .= " ORDER BY " . $extra['order by'];
@@ -483,6 +498,37 @@ class BaseTable
         self::$currentPage = $page;
 
         return $rc > 0 ? array_map([$self, 'hydrate'], $rows) : [];
+    }
+
+    public static function paginatedFind(array $where, int $perPage = 10, int $page = 1, array|int|null $extra = null): array
+    {
+        $page = max(1, $page);
+
+        $params = [];
+        if (is_array($extra)) {
+            $params = $extra;
+        } elseif (is_numeric($extra)) {
+            $perPage = (int)$extra;
+        }
+
+        $params['limit'] = $perPage;
+        $params['page'] = $page;
+
+        $results = self::find($where, $params);
+
+        return [
+            'data' => $results,
+            'pagination' => [
+                'current_page' => self::$currentPage,
+                'per_page' => $perPage,
+                'total_records' => self::$totalRecords,
+                'total_pages' => self::$totalPages,
+                'has_previous' => self::$currentPage > 1,
+                'has_next' => self::$currentPage < self::$totalPages,
+                'first_page' => 1,
+                'last_page' => self::$totalPages
+            ]
+        ];
     }
 
     protected function buildWhere(array $where, string $glue = "AND", &$bindings = [], &$paramIndex = 0): array
