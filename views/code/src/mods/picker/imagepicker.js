@@ -700,8 +700,8 @@ class CImagePicker {
     static async fetchImages(path = "public", action = "0") {
         try {
             const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=${action}&dir=${encodeURIComponent(path)}`);
-            if (!response.ok) throw new Error("Failed to fetch images");
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message ?? "Failed to fetch images");
             return data.images || [];
         } catch (error) {
             console.error("CImagePicker: Error fetching images", error);
@@ -736,7 +736,8 @@ class CImagePicker {
                         reject(new Error("Invalid response"));
                     }
                 } else {
-                    reject(new Error("Upload failed"));
+                    const data = JSON.parse(xhr.responseText);
+                    reject(new Error(data.message ?? "Upload failed"));
                 }
             };
 
@@ -748,8 +749,8 @@ class CImagePicker {
     static async deleteImage(filename, path = "public", action = "0") {
         try {
             const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=${action}&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
-            if (!response.ok) throw new Error("Failed to delete image");
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message ?? "Failed to delete image");
             return data;
         } catch (error) {
             console.error("CImagePicker: Error deleting image", error);
@@ -921,7 +922,7 @@ class CImagePicker {
                     mainHead.appendChild(title);
                     headerLeft.appendChild(addBtn);
                     headerLeft.appendChild(closeMe);
-                    
+
                     mainHead.appendChild(headerLeft);
 
                     const headerActions = document.createElement("div");
@@ -1252,6 +1253,7 @@ class CImagePicker {
                             alert(result.message ?? "Failed to upload image");
                         }
                     } catch (error) {
+                        this.progressBar.parentElement.classList.remove("cimagepicker-show");
                         alert("Upload failed: " + error.message);
                     }
 
