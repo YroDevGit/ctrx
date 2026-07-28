@@ -225,8 +225,9 @@ if ($route == "run" || $route == "server") {
             'app/php/core/support/.gitignore',
             '.gitignore'
         );
-        echo "✅ Generated .gitignore\n\n";
+        echo "✅ Generated .gitignore\n";
     }
+    echo "\n";
     exit;
 } else if ($route == "generate:htaccess") {
     if (! file_exists(".htaccess")) {
@@ -268,7 +269,7 @@ if ($route == "run" || $route == "server") {
     if (file_exists("Dockerfile")) {
         unlink("Dockerfile");
     }
-    echo "\n\n✅ Done\n\n";
+    echo "\n✅ Done\n\n";
     exit;
 }else if ($route == "reset:docker") {
     if (file_exists("compose.yml")) {
