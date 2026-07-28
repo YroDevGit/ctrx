@@ -422,7 +422,8 @@ if (! function_exists("set_sql_batch")) {
 if (! function_exists("current_be")) {
     function current_be(bool $php_exention = false): string
     {
-        $filename =  $_SESSION['basixs_current_be_ctrx'] ?? "Page not set";
+        $filename =  $_SESSION['basixs_current_be_ctrx'] ?? null;
+        if(! $filename) return null;
         if (! $php_exention) {
             $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;
             return $filename;

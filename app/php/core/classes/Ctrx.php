@@ -199,6 +199,7 @@ class Ctrx
                 'error'       => 'Request limit exceeded',
                 'limit'       => $limit,
                 'window'      => $window,
+                'success'     => false,
                 'retry_after' => max(0, $window - (time() - $data['start']))
             ]);
             exit;

@@ -82,16 +82,19 @@ if (str_starts_with($req, "ctrxtools/game")) {
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/getall") {
+    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/getall";
     include "app/picker/images_config.php";
     exit;
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/uploadHere") {
+    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/uploadHere";
     include "app/picker/upload_config.php";
     exit;
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/deleteImg") {
+    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/deleteImg";
     include "app/picker/remove_config.php";
     exit;
 }

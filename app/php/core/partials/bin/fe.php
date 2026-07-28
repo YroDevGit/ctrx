@@ -254,6 +254,7 @@ if (! function_exists("current_page")) {
     function current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
     {
         $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
+        if(! $filename) return "/";
         if (! str_starts_with($filename, "/") && $startsWithSlash) {
             $filename = "/" . $filename;
         }
@@ -676,7 +677,7 @@ if (! function_exists("ctrx_endpoint")) {
     function ctrx_endpoint()
     {
         $param = ctrx_param;
-        if (str_starts_with($param, "api/")) {
+        if (str_starts_with($param, "api/") || str_starts_with($param, "ctrx.yro.ctrstorage.images/")) {
             return "BE";
         }
         return "FE";
