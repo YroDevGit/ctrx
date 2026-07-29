@@ -1,6 +1,4 @@
 <?php
-include_once "app/php/core/partials/envloader.php";
-
 define('DB_TYPE', 'sqlite');
 define('DB_PATH', 'app/php/db/ctrx.db');
 
@@ -1557,12 +1555,12 @@ if ($is_activated) {
                 <div class="toolbar">
                     <form method="POST" style="display:inline-block;margin:0;">
                         <input type="hidden" name="action" value="export_tables">
-                        <button type="submit" class="btn btn-success">📤 Export Tables</button>
+                        <button type="submit" class="btn btn-success">📤 Export Config</button>
                     </form>
                     <form method="POST" style="display:inline-block;margin:0;" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="import_tables">
                         <div class="file-input-wrapper" style="display:inline-block;">
-                            <button type="button" class="btn btn-primary">📥 Import Tables</button>
+                            <button type="button" class="btn btn-primary">📥 Import Config</button>
                             <input type="file" name="import_file" accept=".json" onchange="this.form.submit()">
                         </div>
                     </form>

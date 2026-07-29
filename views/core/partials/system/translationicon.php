@@ -1,14 +1,20 @@
 <?php
-include_once "app/php/core/partials/backend.php";
+use Classes\SQLite;
+
 $data = [];
 $emessage = "";
 $success = false;
+
 try {
-  $data = \Classes\DB::query("select * from translations group by lang");
-  $success = true;
+    $pdo = SQLite::connect();
+
+    $stmt = $pdo->query("SELECT DISTINCT lang, name FROM translations ORDER BY lang");
+    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $success = true;
 } catch (Exception $e) {
-  $data = [];
-  $emessage = $e->getMessage();
+    $data = [];
+    $emessage = $e->getMessage();
 }
 ?>
 

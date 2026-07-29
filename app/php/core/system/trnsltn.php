@@ -1,85 +1,40 @@
 <?php
-include_once "app/php/core/partials/envloader.php";
+use Classes\SQLite;
 
-$dbname = env("database");
-if (!$dbname) {
-    die("❌ No Database found @ .env");
-}
-
-include_once "app/php/core/partials/be.php";
-include_once "app/php/core/partials/backend.php";
-
-$pdo = pdo($dbname);
-$driver = env('dbdriver') ?: 'mysql';
+$pdo = SQLite::connect();
+$driver = 'sqlite';
 $message = "";
 $tableName = "translations";
-
-ctrx_force_save_previous_pages(previous_page());
+$editRecord = null;
 
 function quoteIdentifier($identifier, $driver = null)
 {
-    global $driver;
-    $driver = $driver ?? $GLOBALS['driver'] ?? 'mysql';
-
-    if ($driver === 'pgsql' || $driver === 'sqlite') {
-        return '"' . str_replace('"', '""', $identifier) . '"';
-    }
-    return '`' . str_replace('`', '``', $identifier) . '`';
+    return '"' . str_replace('"', '""', $identifier) . '"';
 }
 
 function tableExists($pdo, $table, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->prepare("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = :table)");
-        $stmt->execute(['table' => $table]);
-        return $stmt->fetchColumn() === 't' || $stmt->fetchColumn() === true;
-    } elseif ($driver === 'sqlite') {
-        $stmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = :table");
-        $stmt->execute(['table' => $table]);
-        return $stmt->fetchColumn() !== false;
-    } else {
-        $stmt = $pdo->prepare("SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
-        $stmt->execute([$table]);
-        return $stmt->rowCount() > 0;
-    }
+    $stmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = :table");
+    $stmt->execute(['table' => $table]);
+    return $stmt->fetchColumn() !== false;
 }
 
 function getTableColumns($pdo, $table, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = :table");
-        $stmt->execute(['table' => $table]);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
-    } elseif ($driver === 'sqlite') {
-        $stmt = $pdo->prepare("PRAGMA table_info(" . quoteIdentifier($table, 'sqlite') . ")");
-        $stmt->execute();
-        $columns = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $columns[] = $row['name'];
-        }
-        return $columns;
-    } else {
-        $stmt = $pdo->query("SHOW COLUMNS FROM " . quoteIdentifier($table, 'mysql'));
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $stmt = $pdo->prepare("PRAGMA table_info(" . quoteIdentifier($table, 'sqlite') . ")");
+    $stmt->execute();
+    $columns = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $columns[] = $row['name'];
     }
+    return $columns;
 }
 
 function addColumnIfNotExists($pdo, $table, $column, $definition, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns 
-                               WHERE table_name = :table AND column_name = :column");
-        $stmt->execute(['table' => $table, 'column' => $column]);
-        if (!$stmt->fetch()) {
-            $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'pgsql') . " ADD COLUMN " . quoteIdentifier($column, 'pgsql') . " $definition");
-        }
-    } elseif ($driver === 'sqlite') {
-        $columns = getTableColumns($pdo, $table, 'sqlite');
-        if (!in_array($column, $columns)) {
-            $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'sqlite') . " ADD COLUMN " . quoteIdentifier($column, 'sqlite') . " $definition");
-        }
-    } else {
-        $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'mysql') . " ADD COLUMN IF NOT EXISTS " . quoteIdentifier($column, 'mysql') . " $definition");
+    $columns = getTableColumns($pdo, $table, 'sqlite');
+    if (!in_array($column, $columns)) {
+        $pdo->exec("ALTER TABLE " . quoteIdentifier($table, 'sqlite') . " ADD COLUMN " . quoteIdentifier($column, 'sqlite') . " $definition");
     }
 }
 
@@ -89,56 +44,19 @@ $tableExists = $check;
 $activationSuccess = false;
 if (isset($_POST['activate_table']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest' && isset($_POST['action']) && $_POST['action'] == 'activate_table')) {
     try {
-        if ($driver === 'pgsql') {
-            $pdo->exec("CREATE TABLE IF NOT EXISTS " . quoteIdentifier($tableName, 'pgsql') . " (
-                id SERIAL PRIMARY KEY,
-                lang TEXT,
-                name VARCHAR(255),
-                en TEXT,
-                str TEXT,
-                active INT DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS " . quoteIdentifier($tableName, 'sqlite') . " (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lang TEXT NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            en TEXT NOT NULL,
+            str TEXT NOT NULL,
+            active INTEGER DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(lang, en)
+        )");
 
-            $pdo->exec("CREATE OR REPLACE FUNCTION update_updated_at_column()
-                        RETURNS TRIGGER AS $$
-                        BEGIN
-                            NEW.updated_at = CURRENT_TIMESTAMP;
-                            RETURN NEW;
-                        END;
-                        $$ language 'plpgsql'");
-
-            $pdo->exec("DROP TRIGGER IF EXISTS update_translations_updated_at ON " . quoteIdentifier($tableName, 'pgsql'));
-            $pdo->exec("CREATE TRIGGER update_translations_updated_at 
-                        BEFORE UPDATE ON " . quoteIdentifier($tableName, 'pgsql') . "
-                        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()");
-        } elseif ($driver === 'sqlite') {
-            $pdo->exec("CREATE TABLE IF NOT EXISTS " . quoteIdentifier($tableName, 'sqlite') . " (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lang TEXT,
-                name VARCHAR(255),
-                en TEXT,
-                str TEXT,
-                active INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )");
-        } else {
-            $pdo->exec("CREATE TABLE IF NOT EXISTS `$tableName` (
-                `id` INT NOT NULL AUTO_INCREMENT,
-                `lang` TEXT,
-                `name` VARCHAR(255),
-                `en` TEXT,
-                `str` TEXT,
-                `active` INT DEFAULT 1,
-                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY (`id`)
-            )");
-        }
-
-        addColumnIfNotExists($pdo, $tableName, 'active', 'INT DEFAULT 1', $driver);
+        addColumnIfNotExists($pdo, $tableName, 'active', 'INTEGER DEFAULT 1', $driver);
 
         $activationSuccess = true;
         $tableExists = true;
@@ -160,7 +78,7 @@ if (isset($_POST['activate_table']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
 }
 
 if ($tableExists) {
-    addColumnIfNotExists($pdo, $tableName, 'active', 'INT DEFAULT 1', $driver);
+    addColumnIfNotExists($pdo, $tableName, 'active', 'INTEGER DEFAULT 1', $driver);
 
     function exportAsCSV($langCode, $langName, $data)
     {
@@ -431,7 +349,7 @@ if ($tableExists) {
                         $stmt->execute([$langCode]);
                         $message = "🗑️ Existing data for language '{$langCode}' cleared. ";
                     } else {
-                        $pdo->exec("TRUNCATE TABLE " . quoteIdentifier($tableName));
+                        $pdo->exec("DELETE FROM " . quoteIdentifier($tableName));
                         $message = "🗑️ All existing data cleared. ";
                     }
                 }
@@ -453,20 +371,29 @@ if ($tableExists) {
                     $active = isset($row['active']) ? (int)$row['active'] : 1;
 
                     if ($importMode === 'skip') {
+                        $found = false;
+
                         if (!empty($row['id']) && is_numeric($row['id'])) {
                             $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE id = ?");
                             $checkStmt->execute([$row['id']]);
                             if ($checkStmt->fetch()) {
                                 $skipped++;
+                                $found = true;
                                 continue;
                             }
                         }
-                        $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ? AND " . quoteIdentifier('en') . " = ?");
-                        $checkStmt->execute([$currentLang, $row['en']]);
-                        if ($checkStmt->fetch()) {
-                            $skipped++;
-                            continue;
+
+                        if (!$found) {
+                            $checkStmt = $pdo->prepare("SELECT id FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('lang') . " = ? AND " . quoteIdentifier('en') . " = ?");
+                            $checkStmt->execute([$currentLang, $row['en']]);
+                            if ($checkStmt->fetch()) {
+                                $skipped++;
+                                $found = true;
+                                continue;
+                            }
                         }
+
+                        if ($found) continue;
                     }
 
                     if ($importMode === 'update') {
@@ -500,9 +427,15 @@ if ($tableExists) {
                         }
                     }
 
-                    $insertStmt = $pdo->prepare("INSERT INTO " . quoteIdentifier($tableName) . " (" . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . ") VALUES (?, ?, ?, ?, ?)");
-                    $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
-                    $inserted++;
+                    if ($importMode === 'replace_all' || $importMode === 'update') {
+                        $insertStmt = $pdo->prepare("INSERT OR REPLACE INTO " . quoteIdentifier($tableName) . " (" . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . ") VALUES (?, ?, ?, ?, ?)");
+                        $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
+                        $inserted++;
+                    } else {
+                        $insertStmt = $pdo->prepare("INSERT INTO " . quoteIdentifier($tableName) . " (" . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . ", " . quoteIdentifier('en') . ", " . quoteIdentifier('str') . ", " . quoteIdentifier('active') . ") VALUES (?, ?, ?, ?, ?)");
+                        $insertStmt->execute([$currentLang, $currentLangName, $row['en'], $row['str'], $active]);
+                        $inserted++;
+                    }
                 }
 
                 if (!empty($errors)) {

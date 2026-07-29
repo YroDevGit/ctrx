@@ -254,7 +254,7 @@ if (! function_exists("current_page")) {
     function current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
     {
         $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
-        if(! $filename) return "/";
+        if (! $filename) return "/";
         if (! str_starts_with($filename, "/") && $startsWithSlash) {
             $filename = "/" . $filename;
         }
@@ -797,21 +797,24 @@ if (! function_exists("t")) {
         }
         if (isset($_SESSION['ctrx_translate']) && is_string($_SESSION['ctrx_translate'])) {
             $lang = $_SESSION['ctrx_translate'];
-            if (! $lang) return $string;
+            if (!$lang) return $string;
             try {
                 include_once "app/php/core/partials/backend.php";
                 $dbname = env("database");
                 if (!$dbname) {
                     throw new Exception("database not found @ .env file");
                 }
-                $pdo = pdo($dbname);
-                $param = [$lang, $string];
-                $hasTableTrsnltn = \Classes\DB::query("select * from translations where lang = ? and en = ? and active = 1 order by updated_at desc limit 1", $param);
-                if (! $hasTableTrsnltn) {
+
+                $pdo = \Classes\SQLite::connect($dbname);
+
+                $stmt = $pdo->prepare("SELECT * FROM translations WHERE lang = ? AND en = ? AND active = 1 ORDER BY updated_at DESC LIMIT 1");
+                $stmt->execute([$lang, $string]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$row) {
                     return $string;
                 }
 
-                $row = $hasTableTrsnltn[0];
                 $rowstr = strtolower($row['str'] ?? '');
 
                 $finalName = null;
@@ -838,7 +841,7 @@ if (! function_exists("t")) {
                     } elseif ($string === ucfirst($string)) {
                         $finalName = ucfirst($rowstr);
                     } else {
-                        $finalName = $row['str'] ?? '';
+                        $finalName = $row['str'] ?? $string;
                     }
                 }
                 return $finalName ?? $string;
