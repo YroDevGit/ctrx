@@ -468,7 +468,7 @@ class Ctrx
             $role = $UserRole ?? "public";
         }
 
-        if (! str_contains($currPage, "/") && ! self::has_user_data()) {
+        if (! str_contains($currPage, "/")) {
             $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
             $param = [$role, $currPage];
             $stmt = \Classes\SQLite::query($query, $param);

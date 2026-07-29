@@ -1,7 +1,7 @@
 <?php
 if(! function_exists("private_loadAllJsFiles")){
     function private_loadAllJsFiles(){
-        $glob = $GLOBALS['ctrx_js_includes_1993664_yro'];
+        $glob = $GLOBALS['ctrx_js_includes_1993664_yro'] ?? null;
         if (is_array($glob)) {
             $jsnencdctrx = json_encode($glob);
             ?>
