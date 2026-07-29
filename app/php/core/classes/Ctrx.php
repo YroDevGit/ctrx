@@ -932,7 +932,7 @@ class Ctrx
     {
         $lang = $_SESSION['ctrx_translate'] ?? 'en';
 
-        if (isset($GLOBALS['translations'][$lang])) {
+        if (isset($GLOBALS['ctrx_translations'][$lang])) {
             return;
         }
 
