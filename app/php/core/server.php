@@ -395,7 +395,7 @@ if (str_starts_with($req, "api/")) {
             \Classes\Ctrx::page404($errorpage, false);
             exit;
         }
-
+        \Classes\Ctrx::loadTranslations();
         include $fullpath;
         private_loadAllJsFiles();
         if (env('debugger') == "yes") {

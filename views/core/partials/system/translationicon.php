@@ -1,20 +1,36 @@
 <?php
 use Classes\SQLite;
-
 $data = [];
 $emessage = "";
 $success = false;
 
 try {
-    $pdo = SQLite::connect();
+  $cacheDir = 'views/core/partials/cache/';
+  $manifestFile = $cacheDir . 'manifest.json';
 
+  if (file_exists($manifestFile)) {
+    $manifest = json_decode(file_get_contents($manifestFile), true);
+    if (isset($manifest['languages']) && is_array($manifest['languages'])) {
+      $data = [];
+      foreach ($manifest['languages'] as $lang) {
+        $data[] = [
+          'lang' => $lang['lang'],
+          'name' => $lang['lang']
+        ];
+      }
+      $success = true;
+    } else {
+      throw new Exception("Invalid manifest format");
+    }
+  } else {
+    $pdo = SQLite::connect();
     $stmt = $pdo->query("SELECT DISTINCT lang, name FROM translations ORDER BY lang");
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
     $success = true;
+  }
 } catch (Exception $e) {
-    $data = [];
-    $emessage = $e->getMessage();
+  $data = [];
+  $emessage = $e->getMessage();
 }
 ?>
 
@@ -91,13 +107,13 @@ try {
     <div style="padding: 16px 18px 20px; max-height: 360px; overflow-y: auto; background: rgba(10, 10, 14, 0.5);">
       <?php if ($success): ?>
         <?php
-          $backg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
-          if(! isset($_SESSION['ctrx_translate']) || ! $_SESSION['ctrx_translate']){
-            $backg_col = " background: #efefb2; color: black;";
-          }
-          ?>
+        $backg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
+        if (! isset($_SESSION['ctrx_translate']) || ! $_SESSION['ctrx_translate']) {
+          $backg_col = " background: #efefb2; color: black;";
+        }
+        ?>
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=> ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?=$backg_col?>">
+          <a href="<?= array_as_param([...$_GET, 'ctrx_translate' => '']) ?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?= $backg_col ?>">
             <span style="font-size: 1.2rem;"></span>
             <span style="flex:1;">Default</span>
             <span style="opacity:0.6;">→</span>
@@ -106,17 +122,17 @@ try {
             <?php
             $name = $val['name'] ?? $val['lang'] ?? "Unknown";
             $lang = $val['lang'] ?? null;
-              $bg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
-              if($lang && is_string($lang) && isset($_SESSION['ctrx_translate'])){
-                if($lang == $_SESSION['ctrx_translate']){
-                  $bg_col = " background: #efefb2; color: black;";
-                }
+            $bg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
+            if ($lang && is_string($lang) && isset($_SESSION['ctrx_translate'])) {
+              if ($lang == $_SESSION['ctrx_translate']) {
+                $bg_col = " background: #efefb2; color: black;";
               }
-            if($name == "" || $name == null){
+            }
+            if ($name == "" || $name == null) {
               $name = $val['lang'] ?? "Unknown";
             }
             ?>
-            <a href="<?= array_as_param([...$_GET, 'ctrx_translate'=>$val['lang'] ?? ''])?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?=$bg_col?>">
+            <a href="<?= array_as_param([...$_GET, 'ctrx_translate' => $val['lang'] ?? '']) ?>" class="transItem" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;<?= $bg_col ?>">
               <span style="font-size: 1.2rem;"></span>
               <span style="flex:1;"><?= $name ?? "Unknown" ?></span>
               <span style="opacity:0.6;">→</span>
@@ -147,9 +163,12 @@ try {
     var isOpen = false;
     var isCircleDragging = false;
     var isPanelDragging = false;
-    var dragStartX = 0, dragStartY = 0;
-    var panelDragOffsetX = 0, panelDragOffsetY = 0;
-    var startLeft = 0, startTop = 0;
+    var dragStartX = 0,
+      dragStartY = 0;
+    var panelDragOffsetX = 0,
+      panelDragOffsetY = 0;
+    var startLeft = 0,
+      startTop = 0;
     var touchStartTime = 0;
     var STORAGE_KEY = 'ctrx_trans_float_widget_tyroneleeemz';
 
@@ -172,7 +191,10 @@ try {
       } else {
         top = winHeight - circleSize - padding;
       }
-      return { left: left, top: top };
+      return {
+        left: left,
+        top: top
+      };
     }
 
     function loadSavedPosition() {
@@ -195,7 +217,7 @@ try {
             widgetContainer.style.bottom = 'auto';
             return;
           }
-        } catch(e) {}
+        } catch (e) {}
       }
       left = winWidth - circleSize - padding;
       top = winHeight - circleSize - padding;
@@ -254,9 +276,15 @@ try {
 
     function getClientPoint(e) {
       if (e.touches) {
-        return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        return {
+          clientX: e.touches[0].clientX,
+          clientY: e.touches[0].clientY
+        };
       }
-      return { clientX: e.clientX, clientY: e.clientY };
+      return {
+        clientX: e.clientX,
+        clientY: e.clientY
+      };
     }
 
     function onCircleTouchStart(e) {
@@ -272,7 +300,9 @@ try {
       isCircleDragging = true;
       document.body.style.userSelect = 'none';
       document.body.style.webkitUserSelect = 'none';
-      document.addEventListener('touchmove', onCircleTouchMove, { passive: false });
+      document.addEventListener('touchmove', onCircleTouchMove, {
+        passive: false
+      });
       document.addEventListener('touchend', onCircleTouchEnd);
     }
 
@@ -387,7 +417,9 @@ try {
       document.body.style.webkitUserSelect = 'none';
       document.addEventListener('mousemove', onPanelDragMove);
       document.addEventListener('mouseup', onPanelDragEnd);
-      document.addEventListener('touchmove', onPanelDragMove, { passive: false });
+      document.addEventListener('touchmove', onPanelDragMove, {
+        passive: false
+      });
       document.addEventListener('touchend', onPanelDragEnd);
     }
 
@@ -431,7 +463,9 @@ try {
       e.stopPropagation();
     });
 
-    circleBtn.addEventListener('touchstart', onCircleTouchStart, { passive: false });
+    circleBtn.addEventListener('touchstart', onCircleTouchStart, {
+      passive: false
+    });
     circleBtn.addEventListener('mousedown', onCircleMouseDown);
 
     collapseBtn.addEventListener('click', function(e) {
@@ -446,7 +480,9 @@ try {
     });
 
     dragHandle.addEventListener('mousedown', onPanelDragStart);
-    dragHandle.addEventListener('touchstart', onPanelDragStart, { passive: false });
+    dragHandle.addEventListener('touchstart', onPanelDragStart, {
+      passive: false
+    });
 
     document.addEventListener('click', handleOutsideClick);
 

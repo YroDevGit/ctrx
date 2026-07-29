@@ -795,62 +795,57 @@ if (! function_exists("t")) {
                 $string = trim($string ?? "");
             }
         }
-        if (isset($_SESSION['ctrx_translate']) && is_string($_SESSION['ctrx_translate'])) {
-            $lang = $_SESSION['ctrx_translate'];
-            if (!$lang) return $string;
-            try {
-                include_once "app/php/core/partials/backend.php";
-                $dbname = env("database");
-                if (!$dbname) {
-                    throw new Exception("database not found @ .env file");
-                }
 
-                $pdo = \Classes\SQLite::connect($dbname);
-
-                $stmt = $pdo->prepare("SELECT * FROM translations WHERE lang = ? AND en = ? AND active = 1 ORDER BY updated_at DESC LIMIT 1");
-                $stmt->execute([$lang, $string]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if (!$row) {
-                    return $string;
-                }
-
-                $rowstr = strtolower($row['str'] ?? '');
-
-                $finalName = null;
-
-                if ($transform && is_string($transform)) {
-                    if ($transform == "uc") {
-                        $finalName = ucfirst($rowstr ?? '');
-                    } else if ($transform == "l") {
-                        $finalName = $rowstr;
-                    } else if ($transform == "u") {
-                        $finalName = strtoupper($rowstr ?? '');
-                    } else if ($transform == "uw") {
-                        $finalName = ucwords($rowstr ?? '');
-                    } else {
-                        $finalName = $rowstr;
-                    }
-                } else {
-                    if ($string === strtoupper($string)) {
-                        $finalName = strtoupper($rowstr);
-                    } elseif ($string === strtolower($string)) {
-                        $finalName = strtolower($rowstr);
-                    } elseif ($string === ucwords($string)) {
-                        $finalName = ucwords($rowstr);
-                    } elseif ($string === ucfirst($string)) {
-                        $finalName = ucfirst($rowstr);
-                    } else {
-                        $finalName = $row['str'] ?? $string;
-                    }
-                }
-                return $finalName ?? $string;
-            } catch (Exception $e) {
-                return $string;
-            }
-        } else {
+        if (empty($string)) {
             return $string;
         }
+
+        if (!isset($_SESSION['ctrx_translate']) || !is_string($_SESSION['ctrx_translate'])) {
+            return $string;
+        }
+
+        $lang = $_SESSION['ctrx_translate'];
+        if (!$lang) return $string;
+
+        if (!isset($GLOBALS['ctrx_translations_loaded'])) {
+            \Classes\Ctrx::loadTranslations();
+        }
+
+        $translated = $GLOBALS['ctrx_translations'][$lang][$string] ?? null;
+
+        if ($translated === null) {
+            return $string;
+        }
+
+        $rowstr = strtolower($translated);
+        $finalName = null;
+
+        if ($transform && is_string($transform)) {
+            if ($transform == "uc") {
+                $finalName = ucfirst($rowstr ?? '');
+            } else if ($transform == "l") {
+                $finalName = $rowstr;
+            } else if ($transform == "u") {
+                $finalName = strtoupper($rowstr ?? '');
+            } else if ($transform == "uw") {
+                $finalName = ucwords($rowstr ?? '');
+            } else {
+                $finalName = $rowstr;
+            }
+        } else {
+            if ($string === strtoupper($string)) {
+                $finalName = strtoupper($rowstr);
+            } elseif ($string === strtolower($string)) {
+                $finalName = strtolower($rowstr);
+            } elseif ($string === ucwords($string)) {
+                $finalName = ucwords($rowstr);
+            } elseif ($string === ucfirst($string)) {
+                $finalName = ucfirst($rowstr);
+            } else {
+                $finalName = $translated;
+            }
+        }
+        return $finalName ?? $string;
     }
 }
 

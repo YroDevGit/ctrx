@@ -38,6 +38,50 @@ function addColumnIfNotExists($pdo, $table, $column, $definition, $driver)
     }
 }
 
+function clearTranslationCache()
+{
+    $cacheDir = 'views/core/partials/cache/';
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0755, true);
+    }
+    $files = glob($cacheDir . "translations_*.json");
+    foreach ($files as $file) {
+        unlink($file);
+    }
+    return true;
+}
+
+function generateTranslationCache($tableName)
+{
+    $cacheDir ="views/core/partials/cache/";
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0755, true);
+    }
+    $files = glob($cacheDir . "translations_*.json");
+    foreach ($files as $file) {
+        unlink($file);
+    }
+    $stmt = SQLite::query("SELECT DISTINCT lang, name FROM " . quoteIdentifier($tableName) . " WHERE active = 1");
+    $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $generated = [];
+    $total = 0;
+    foreach ($languages as $lang) {
+        $langCode = $lang['lang'];
+        $stmt = SQLite::query("SELECT en, str FROM " . quoteIdentifier($tableName) . " WHERE lang = ? AND active = 1", [$langCode]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $translations = [];
+        foreach ($rows as $row) {
+            $translations[$row['en']] = $row['str'];
+        }
+        $jsonFile = $cacheDir . "translations_{$langCode}.json";
+        file_put_contents($jsonFile, json_encode($translations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $generated[] = ['lang' => $langCode, 'count' => count($translations)];
+        $total += count($translations);
+    }
+    file_put_contents($cacheDir . 'manifest.json', json_encode(['generated_at' => date('Y-m-d H:i:s'), 'languages' => $generated, 'total' => $total], JSON_PRETTY_PRINT));
+    return ['success' => true, 'message' => "✅ Generated {$total} translations for " . count($languages) . " languages"];
+}
+
 $check = tableExists($pdo, $tableName, $driver);
 $tableExists = $check;
 
@@ -75,6 +119,12 @@ if (isset($_POST['activate_table']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
         }
         $message = "❌ Failed to create table: " . $e->getMessage();
     }
+}
+
+if (isset($_POST['clear_cache'])) {
+    clearTranslationCache();
+    $result = generateTranslationCache($tableName);
+    $message = $result['message'];
 }
 
 if ($tableExists) {
@@ -452,6 +502,9 @@ if ($tableExists) {
 
                 $langStmt = $pdo->query("SELECT DISTINCT " . quoteIdentifier('lang') . ", " . quoteIdentifier('name') . " FROM " . quoteIdentifier($tableName) . " ORDER BY " . quoteIdentifier('lang'));
                 $availableLanguages = $langStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                clearTranslationCache();
+                generateTranslationCache($tableName);
             }
         } catch (Throwable $e) {
             $message = "❌ " . $e->getMessage();
@@ -465,6 +518,8 @@ if ($tableExists) {
                 $stmt = $pdo->prepare("DELETE FROM " . quoteIdentifier($tableName) . " WHERE " . quoteIdentifier('id') . " = ?");
                 $stmt->execute([$id]);
                 $message = "✅ Record ID {$id} deleted successfully.";
+                clearTranslationCache();
+                generateTranslationCache($tableName);
             }
         } catch (Throwable $e) {
             $message = "❌ Failed to delete: " . $e->getMessage();
@@ -483,6 +538,8 @@ if ($tableExists) {
                 $stmt = $pdo->prepare("UPDATE " . quoteIdentifier($tableName) . " SET " . quoteIdentifier('lang') . " = ?, " . quoteIdentifier('name') . " = ?, " . quoteIdentifier('en') . " = ?, " . quoteIdentifier('str') . " = ? WHERE " . quoteIdentifier('id') . " = ?");
                 $stmt->execute([$lang, $name, $en, $str, $id]);
                 $message = "✅ Record ID {$id} updated successfully.";
+                clearTranslationCache();
+                generateTranslationCache($tableName);
             } else {
                 $message = "❌ Please fill all required fields.";
             }
@@ -539,7 +596,6 @@ if ($tableExists) {
 }
 ?>
 
-<!-- HTML remains exactly the same -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -548,7 +604,6 @@ if ($tableExists) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Translation Manager</title>
     <style>
-        /* ... (keep your existing styles, they're fine) ... */
         * {
             margin: 0;
             padding: 0;
@@ -1155,6 +1210,21 @@ if ($tableExists) {
             flex-wrap: wrap;
         }
 
+        .cache-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .cache-actions .btn {
+            padding: 8px 20px;
+        }
+
         .back-link {
             display: block;
             text-align: center;
@@ -1244,6 +1314,10 @@ if ($tableExists) {
                 padding: 20px;
                 margin: 10px;
             }
+
+            .cache-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -1302,6 +1376,14 @@ if ($tableExists) {
                         <?php if (empty($availableLanguages)) echo "—"; ?>
                     </div>
                 </div>
+            </div>
+
+            <div class="cache-actions">
+                <form method="POST" style="display:inline;">
+                    <button type="submit" name="clear_cache" class="btn-warning" style="padding:6px 16px; font-size:13px;">
+                        🔄 Clear cache
+                    </button>
+                </form>
             </div>
 
             <div class="tabs">

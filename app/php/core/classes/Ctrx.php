@@ -927,4 +927,28 @@ class Ctrx
 
         return $content;
     }
+
+    public static function loadTranslations()
+    {
+        $lang = $_SESSION['ctrx_translate'] ?? 'en';
+
+        if (isset($GLOBALS['translations'][$lang])) {
+            return;
+        }
+
+        $cacheDir = 'views/core/partials/cache/';
+        $jsonFile = $cacheDir . "translations_{$lang}.json";
+
+        if (file_exists($jsonFile)) {
+            $translations = json_decode(file_get_contents($jsonFile), true);
+            if (is_array($translations)) {
+                $GLOBALS['ctrx_translations'][$lang] = $translations;
+                $GLOBALS['ctrx_translations_loaded'] = true;
+                return;
+            }
+        }
+
+        $GLOBALS['ctrx_translations'][$lang] = [];
+        $GLOBALS['ctrx_translations_loaded'] = true;
+    }
 }
