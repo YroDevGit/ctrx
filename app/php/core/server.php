@@ -27,10 +27,6 @@ $rooth = trim($rooth, "/");
 $b_all = $basixserver . "/" . $req;
 $subdomain = env("subdomain") ?? null;
 $subdomain = trim($subdomain, "/");
-$trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
-if (isset($_GET['ctrx_translate'])) {
-    $_SESSION['ctrx_translate'] = $trnsltn;
-}
 if ($subdomain) {
     if (str_starts_with($req, $subdomain) && $req) {
         $expl = explode($subdomain, $req);
@@ -207,6 +203,10 @@ if (str_starts_with($req, "api/")) {
     }
     exit;
 } else {
+    $trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
+    if (isset($_GET['ctrx_translate'])) {
+        $_SESSION['ctrx_translate'] = $trnsltn;
+    }
     $_SESSION['ctrx_endpoint'] = "FE";
     $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
@@ -395,7 +395,9 @@ if (str_starts_with($req, "api/")) {
             \Classes\Ctrx::page404($errorpage, false);
             exit;
         }
-        \Classes\Ctrx::loadTranslations();
+        if (isset($_SESSION['ctrx_translate']) && $_SESSION['ctrx_translate'] != "") {
+            \Classes\Ctrx::loadTranslations();
+        }
         include $fullpath;
         private_loadAllJsFiles();
         if (env('debugger') == "yes") {
