@@ -230,6 +230,7 @@ if (str_starts_with($req, "api/")) {
     });
 
     try {
+        include "views/core/partials/system/jsloader.php";
         $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
         $mainpage = $view_config['main_page'] ?? "main";
