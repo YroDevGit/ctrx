@@ -34,12 +34,17 @@ include_once "views/core/partials/system/config_dir.php";
  * URL parsing
  */
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-
+$uri = str_replace("\\", "/", $uri);
 /**
  * Load javascript without extensions (in javascript import)
  * This load javascript from frontend (js) folder (views/js)
  */
-if (str_starts_with($uri, "\\views\js\\") || str_starts_with($uri, "/views/js/")) {
+
+if (str_starts_with($uri, "/views/core/partials/storage/public/")) {
+    return false;
+}
+
+if (str_starts_with($uri, "/views/js/")) {
     if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css")) {
         $uri = $uri . ".js";
         $uri = trim($uri, "/");
@@ -56,7 +61,7 @@ if (str_starts_with($uri, "\\views\js\\") || str_starts_with($uri, "/views/js/")
  * Load javascript without extensions (in javascript import)
  * This load javascript from frontend (js) folder (views/code/*)
  */
-if (str_starts_with($uri, "\\views\code\src\\") || str_starts_with($uri, "/views/code/src/") || str_starts_with($uri, "/views/code/script/")) {
+if (str_starts_with($uri, "/views/code/src/") || str_starts_with($uri, "/views/code/script/")) {
     if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css")) {
         $uri = $uri . ".js";
         $uri = trim($uri, "/");
@@ -126,7 +131,7 @@ foreach ($blocked as $path) {
     if (strpos($uri, $path) === 0) {
         http_response_code(403);
 
-        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
+        $forbidden = 'views/core/errors/forbidden.php';
 
         if (\Classes\Ctrx::file_exists_strict($forbidden)) {
             include $forbidden;
@@ -185,9 +190,12 @@ if (
     if ($ext === 'php') {
         http_response_code(403);
 
-        $forbidden = __DIR__ . '/views/core/errors/forbidden.php';
+        $forbidden = 'views/core/errors/forbidden.php';
 
         if (\Classes\Ctrx::file_exists_strict($forbidden)) {
+            extract([
+                "backpage" => "/"
+            ]);
             include $forbidden;
         } else {
             echo "403 Forbidden";

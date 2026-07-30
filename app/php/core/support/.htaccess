@@ -1,5 +1,38 @@
 RewriteEngine On
 
+# ==========================================
+# CTRX - PROTECTION LAYER
+# ==========================================
+
+RewriteRule ^views/core/partials/storage/public/ - [L]
+RewriteRule ^views/core/partials/storage/ - [F,L]
+
+RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+RewriteRule \.php$ - [F,L,NC]
+
+RewriteRule (^|/)\.git/ - [F,L,NC]
+RewriteRule (^|/)\.gitignore$ - [F,L,NC]
+RewriteRule (^|/)\.gitattributes$ - [F,L,NC]
+RewriteRule (^|/)\.ht(access|passwd) - [F,L,NC]
+RewriteRule (^|/)\.env$ - [F,L,NC]
+RewriteRule \.log$ - [F,L,NC]
+RewriteRule \.json$ - [F,L,NC]
+RewriteRule \.(sql|bak|backup|old|orig|tmp)$ - [F,L,NC]
+RewriteRule \.tar\.gz$ - [F,L,NC]
+
+RewriteRule ^views/pages/ - [F,L]
+RewriteRule ^views/includes/ - [F,L]
+RewriteRule ^views/core/ - [F,L]
+RewriteRule ^views/app/ - [F,L]
+
+RewriteRule ^app/_controller/ - [F,L]
+RewriteRule ^app/_routes/ - [F,L]
+RewriteRule ^app/_auto/ - [F,L]
+RewriteRule ^app/php/core/ - [F,L]
+
+RewriteRule ^vendor/ - [F,L]
+RewriteRule ^composer\.(json|lock)$ - [F,L,NC]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 

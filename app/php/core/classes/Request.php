@@ -107,27 +107,13 @@ class Request
             }
 
             $nm = $file['name'] ?? null;
-
+            
             if (!$nm) {
                 return null;
             }
 
             if (is_array(($nm))) {
-                $newarr = [];
-                $ret = [];
-                $count = 0;
-                foreach ($nm as $n) {
-                    $newarr['name'] = $file['name'][$count];
-                    $newarr['error'] = $file['error'][$count];
-                    $newarr['full_path'] = $file['full_path'][$count];
-                    $newarr['size'] = $file['size'][$count];
-                    $newarr['tmp_name'] = $file['tmp_name'][$count];
-                    $newarr['type'] = $file['type'][$count];
-                    $fer = self::file($newarr, $type, 1);
-                    $ret[$count] = $fer;
-                    $count++;
-                }
-                return $ret;
+                return $file;
             }
 
             switch ($type) {

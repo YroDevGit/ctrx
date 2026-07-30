@@ -74,7 +74,7 @@ class CtrStorage
 
     //Pag gamit $upload =  Storage::upload_file($file)
     // $path = $upload['path'];
-    static function upload_file($file, bool|string $storagePath = true, string|null $path = "public")
+    static function upload_file($file, string|null $path = "public", bool|string $storagePath = true)
     {
         if (! $file) {
             return null;
@@ -82,22 +82,28 @@ class CtrStorage
         if (is_string(($storagePath))) {
             $path = $storagePath;
         }
-        $pathname = self::storagepath();
+        $pathname = "views/core/partials/storage/";
         if (! is_dir($pathname)) {
-            mkdir($pathname);
+            @mkdir($pathname, 0777, true);
         }
         if ($path) {
-            $path = str_replace("/", "\\", $path);
-            $pathname = $pathname . $path . "\\";
+            $path = str_replace("\\", "/", $path);
+            $pathname = $pathname . $path . "/";
         }
         if (!is_dir($pathname)) {
             @mkdir($pathname, 0777, true);
         }
 
         if (is_string($file)) {
-            $file = Request::file($file);
+            if (! isset($_FILES[$file])) {
+                return null;
+            }
+            if (is_string($_FILES[$file]['name'])) {
+                $file = Request::file($file);
+            } else if (is_array($_FILES[$file]['name'])) {
+                $file = Request::files($file);
+            }
         }
-
         if ($storagePath) {
             $data = self::upd($file, $pathname, $path);
             self::$last_uploaded_files[] = [
@@ -107,9 +113,9 @@ class CtrStorage
             if (is_string($storagePath)) {
                 $storagePath = trim($storagePath, "/");
                 $storagePath = trim($storagePath, "\\");
-                return isset($data['file']) ? "/ctrstorage/" . $storagePath . "/" . $data['file'] : null;
+                return $data['path'] ?? null;
             }
-            return isset($data['file']) ? "/ctrstorage/" . $data['file'] : null;
+            return $data['path'] ?? null;
         }
         $data = self::upd($file, $pathname, $path);
         self::$last_uploaded_files[] = [
@@ -212,10 +218,15 @@ class CtrStorage
             $relativePath = str_replace(dirname(__DIR__) . '/', '', $filePath);
             $relativePath = str_replace('\\', '/', $relativePath);
 
+            $newUrl = "/ctrstorage/$dir/" . $filename;
+            if ($dir == "public") {
+                $newUrl = "/views/core/partials/storage/public/$filename";
+            }
+
             $imageData = [
                 'name' => $filename,
                 'path' => $relativePath,
-                'url' => "/ctrstorage/$dir/" . $filename,
+                'url' => $newUrl,
                 'size' => $file['size'],
                 'modified' => time(),
                 'extension' => $extension,
@@ -295,10 +306,15 @@ class CtrStorage
                             }
                         }
 
+                        $newUrl = "/ctrstorage/$publicFolder/" . $subPath . $file->getFilename();
+                        if ($newDir == "public") {
+                            $newUrl = "/views/core/partials/storage/public/" . $file->getFilename();
+                        }
+
                         $allImages[] = [
                             'name' => $file->getFilename(),
                             'path' => $relativePath,
-                            'url' => "/ctrstorage/$publicFolder/" . $subPath . $file->getFilename(),
+                            'url' => $newUrl,
                             'size' => $file->getSize(),
                             'modified' => $file->getMTime(),
                             'extension' => $extension,
@@ -425,10 +441,13 @@ class CtrStorage
 
     protected static function upd($file, $dir, $path)
     {
-        $path = is_null($path) ? "" : $path . "\\";
+        $path = is_null($path) ? "" : $path . "/";
         $files = $file;
         $uploadDir = $dir;
         $single = false;
+        if (! $files) {
+            return null;
+        }
         if (!is_array($files['name'])) {
             $single = true;
             foreach ($files as $k => $v) {
@@ -447,9 +466,15 @@ class CtrStorage
                 $newfilename = Random::text(17);
                 $targetFile = $uploadDir . $newfilename . "." . $extension;
                 if (move_uploaded_file($tmpName, $targetFile)) {
+                    $newPath = $path . $newfilename . "." . $extension;
+                    if ($path == "public" || str_starts_with($path, "public/")) {
+                        $newPath = "/views/core/partials/storage/public/" . $newfilename . "." . $extension;
+                    } else {
+                        $newPath = "/ctrstorage/$path/" . $newfilename . "." . $extension;
+                    }
                     $fp[] = $targetFile;
                     $ff[] = $newfilename . "." . $extension;
-                    $pt[] = $path . $newfilename . "." . $extension;
+                    $pt[] = $newPath;
                     $pp[] = self::relativepath() . $path . $newfilename . "." . $extension;
                 } else {
                     throw new Exception("File not uploaded. (" . $fileName . ")");
@@ -798,17 +823,19 @@ class CtrStorage
         self::$cache = [];
     }
 
-    public static function getParentFolder(string $path){
+    public static function getParentFolder(string $path)
+    {
         $path = self::cleanPath($path);
         $path = str_replace("\\", "/", $path);
         $exp = explode("/", $path);
         return $exp[0] ?? "";
     }
 
-    public static function buildPath(string ...$folders){
+    public static function buildPath(string ...$folders)
+    {
         $filt = [];
-        foreach($folders as $k => $v){
-            if($v != "*"){
+        foreach ($folders as $k => $v) {
+            if ($v != "*") {
                 $v = self::cleanPath($v);
             }
             $filt[] = $v;
