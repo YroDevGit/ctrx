@@ -301,8 +301,9 @@ class TModal {
             }
 
             .tmodal-footer{
-                padding: 16px 18px;
-                flex-direction: column-reverse;
+                padding: 10px 2px;
+                display:grid;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .tmodal-btn{
