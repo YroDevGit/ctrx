@@ -14,9 +14,9 @@ services:
       - .:/var/www/html
 
     depends_on:
-      - db
+      - docker_db
 
-  db:
+  docker_db:
     image: mariadb:10.11
 
     container_name: ctrx_db

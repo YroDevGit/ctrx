@@ -55,6 +55,10 @@ if (! function_exists("pdo")) {
             }
             return $pdo;
         } catch (PDOException $e) {
+            include_once "app/php/core/partials/bin/fe.php";
+            if (ctrx_endpoint() == "FE") {
+                throw new Exception($e->getMessage());
+            }
             add_sql_log($e->getMessage(), "error");
             error_response(["code" => env("error_code"), "status" => "PDO exception error", "message" => $e->getMessage()]);
         }

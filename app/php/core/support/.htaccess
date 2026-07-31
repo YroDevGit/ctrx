@@ -3,6 +3,7 @@ RewriteEngine On
 # ==========================================
 # CTRX - PROTECTION LAYER
 # ==========================================
+
 RewriteRule ^app/php/db/ctrx\.db$ - [F,L,NC]
 RewriteRule ^views/core/partials/storage/public/ - [L]
 RewriteRule ^views/core/partials/storage/ - [F,L]
