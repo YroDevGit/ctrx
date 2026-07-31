@@ -3,7 +3,7 @@ RewriteEngine On
 # ==========================================
 # CTRX - PROTECTION LAYER
 # ==========================================
-
+RewriteRule ^app/php/db/ctrx\.db$ - [F,L,NC]
 RewriteRule ^views/core/partials/storage/public/ - [L]
 RewriteRule ^views/core/partials/storage/ - [F,L]
 
@@ -19,6 +19,7 @@ RewriteRule \.log$ - [F,L,NC]
 RewriteRule \.json$ - [F,L,NC]
 RewriteRule \.(sql|bak|backup|old|orig|tmp)$ - [F,L,NC]
 RewriteRule \.tar\.gz$ - [F,L,NC]
+RewriteRule \.db$ - [F,L,NC]
 
 RewriteRule ^views/pages/ - [F,L]
 RewriteRule ^views/includes/ - [F,L]

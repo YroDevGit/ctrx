@@ -78,11 +78,7 @@ if (is_dir($full_path) && is_readable($full_path)) {
     }
     closedir($dir);
 
-    usort($items, function ($a, $b) {
-        if ($a['is_dir'] && !$b['is_dir']) return -1;
-        if (!$a['is_dir'] && $b['is_dir']) return 1;
-        return strcasecmp($a['name'], $b['name']);
-    });
+    usort($items, fn($a, $b) => $b['modified'] <=> $a['modified']);
 }
 
 function formatSize($bytes)
@@ -657,7 +653,6 @@ $size = folderSize('app/php/logs');
                             <td colspan="4" class="empty-message">📂 This directory is empty</td>
                         </tr>
                     <?php else: ?>
-                        <?php $items = array_reverse($items); ?>
                         <?php foreach ($items as $item): ?>
                             <?php if (isset($item['name']) && str_starts_with($item['name'], ".git")) continue; ?>
                             <tr data-name="<?php echo strtolower(htmlspecialchars($item['name'])); ?>">
