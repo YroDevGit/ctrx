@@ -16,8 +16,13 @@ if (! function_exists("pdo")) {
                 $dbport = $db['port'] ?? "3306";
                 $charSet = $db['charset'] ?? env('dbcharset') ?? "utf8mb4";
                 if (! $dbname) {
-                    add_sql_log("No database found. please check DB()", "be_errors");
-                    error_response(["code" => "404", "status" => "notfound", "message" => "No database found. please check DB() "]);
+                    $ms = "No database found. please check DB()";
+                    include_once "app/php/core/partials/cbe.php";
+                    if (cbe_ctrx_endpoint() == "FE") {
+                        throw new Exception($ms);
+                    }
+                    add_sql_log($ms, "be_errors");
+                    error_response(["code" => "404", "status" => "notfound", "message" => $ms]);
                 }
 
                 if ($pdo == null) {
@@ -37,8 +42,13 @@ if (! function_exists("pdo")) {
             $charSet = env('dbcharset') ?? "utf8mb4";
             $dbname = $db == null ? env('database') : $db;
             if ($dbname == "" || $dbname == null) {
-                add_sql_log("No database found. please check .env file", "be_errors");
-                error_response(["code" => "404", "status" => "notfound", "message" => "No database found. please check .env file"]);
+                $ms = "No database found. please check .env file";
+                include_once "app/php/core/partials/cbe.php";
+                if (cbe_ctrx_endpoint() == "FE") {
+                    throw new Exception($ms);
+                }
+                add_sql_log($ms, "be_errors");
+                error_response(["code" => "404", "status" => "notfound", "message" => $ms]);
             }
             if ($pdo == null) {
                 $dbdriver = env("dbdriver") == null ? "mysql" : env("dbdriver");
@@ -55,8 +65,8 @@ if (! function_exists("pdo")) {
             }
             return $pdo;
         } catch (PDOException $e) {
-            include_once "app/php/core/partials/bin/fe.php";
-            if (ctrx_endpoint() == "FE") {
+            include_once "app/php/core/partials/cbe.php";
+            if (cbe_ctrx_endpoint() == "FE") {
                 throw new Exception($e->getMessage());
             }
             add_sql_log($e->getMessage(), "error");
