@@ -71,7 +71,7 @@ function generateTranslationCache($tableName)
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $translations = [];
         foreach ($rows as $row) {
-            $translations[$row['en']] = $row['str'];
+            $translations[strtolower($row['en'])] = $row['str'];
         }
         $jsonFile = $cacheDir . "translations_{$langCode}.json";
         file_put_contents($jsonFile, json_encode($translations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));

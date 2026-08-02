@@ -811,7 +811,8 @@ if (! function_exists("t")) {
             \Classes\Ctrx::loadTranslations();
         }
 
-        $translated = $GLOBALS['ctrx_translations'][$lang][$string] ?? null;
+        $smallString = strtolower($string);
+        $translated = $GLOBALS['ctrx_translations'][$lang][$smallString] ?? null;
 
         if ($translated === null) {
             return $string;
