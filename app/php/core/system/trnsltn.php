@@ -67,6 +67,7 @@ function generateTranslationCache($tableName)
     $total = 0;
     foreach ($languages as $lang) {
         $langCode = $lang['lang'];
+        $langName = $lang['name'];
         $stmt = SQLite::query("SELECT en, str FROM " . quoteIdentifier($tableName) . " WHERE lang = ? AND active = 1", [$langCode]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $translations = [];
@@ -75,7 +76,7 @@ function generateTranslationCache($tableName)
         }
         $jsonFile = $cacheDir . "translations_{$langCode}.json";
         file_put_contents($jsonFile, json_encode($translations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        $generated[] = ['lang' => $langCode, 'count' => count($translations)];
+        $generated[] = ['lang' => $langCode, 'name'=>$langName, 'count' => count($translations)];
         $total += count($translations);
     }
     file_put_contents($cacheDir . 'manifest.json', json_encode(['generated_at' => date('Y-m-d H:i:s'), 'languages' => $generated, 'total' => $total], JSON_PRETTY_PRINT));

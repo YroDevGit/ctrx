@@ -15,7 +15,7 @@ try {
       foreach ($manifest['languages'] as $lang) {
         $data[] = [
           'lang' => $lang['lang'],
-          'name' => $lang['lang']
+          'name' => $lang['name']
         ];
       }
       $success = true;
