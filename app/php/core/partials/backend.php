@@ -15,6 +15,7 @@ if (! function_exists("pdo")) {
                 $dbname = $db['database'];
                 $dbport = $db['port'] ?? "3306";
                 $charSet = $db['charset'] ?? env('dbcharset') ?? "utf8mb4";
+                $pdoDriver = ($driver === 'mariadb') ? 'mysql' : $driver;
                 if (! $dbname) {
                     $ms = "No database found. please check DB()";
                     include_once "app/php/core/partials/cbe.php";
@@ -26,7 +27,7 @@ if (! function_exists("pdo")) {
                 }
 
                 if ($pdo == null) {
-                    $pdo = new PDO("$driver:host=$host;port=$dbport;dbname=$dbname;charset=$charSet;", "$user", "$pass", [
+                    $pdo = new PDO("$pdoDriver:host=$host;port=$dbport;dbname=$dbname;charset=$charSet;", "$user", "$pass", [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                         PDO::ATTR_EMULATE_PREPARES => false,
@@ -52,11 +53,12 @@ if (! function_exists("pdo")) {
             }
             if ($pdo == null) {
                 $dbdriver = env("dbdriver") == null ? "mysql" : env("dbdriver");
+                $pdoDriver = ($dbdriver === 'mariadb') ? 'mysql' : $dbdriver;
                 $ddb = "dbname=$dbname";
                 if ($no_database) {
                     $ddb = "";
                 }
-                $pdo = new PDO("$dbdriver:host=$host;port=$port;$ddb;charset=$charSet;", "$user", "$pass", [
+                $pdo = new PDO("$pdoDriver:host=$host;port=$port;$ddb;charset=$charSet;", "$user", "$pass", [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
@@ -147,18 +149,16 @@ if (! function_exists("execute_get")) {
         $stmt = null;
 
         try {
-            $pdo = pdo(); // your own PDO instance
+            $pdo = pdo();
 
-            // Handle column selection
             if (is_array($columns)) {
                 $columnList = implode(', ', $columns);
             } else {
-                $columnList = $columns; // allow raw string like '*'
+                $columnList = $columns;
             }
 
             $query = "SELECT {$columnList} FROM {$table}";
 
-            // Build WHERE clause
             $params = [];
             if (!empty($where)) {
                 $whereClause = [];

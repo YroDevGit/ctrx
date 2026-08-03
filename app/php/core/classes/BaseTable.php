@@ -61,6 +61,12 @@ class BaseTable
         return in_array(self::$driver, ['mysql', 'mariadb']);
     }
 
+    protected function isMariaDB(): bool
+    {
+        $version = $this->pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
+        return strpos(strtolower($version), 'mariadb') !== false;
+    }
+
     protected function quoteIdentifier(string $identifier): string
     {
         $identifier = trim($identifier, '`"');
@@ -85,6 +91,52 @@ class BaseTable
             }
             return $sql . " LIMIT {$limit}";
         }
+    }
+
+    protected function getJsonExtract(string $column, string $path): string
+    {
+        if ($this->isMariaDB()) {
+            return "JSON_EXTRACT({$this->quoteIdentifier($column)}, '$.{$path}')";
+        }
+        return "{$this->quoteIdentifier($column)}->>'$.{$path}'";
+    }
+
+    protected function getJsonContains(string $column, string $value, string $path = null): string
+    {
+        if ($this->isMariaDB()) {
+            if ($path) {
+                return "JSON_EXTRACT({$this->quoteIdentifier($column)}, '$.{$path}') = '{$value}'";
+            }
+            return "JSON_EXTRACT({$this->quoteIdentifier($column)}, '$') = '{$value}'";
+        }
+        if ($path) {
+            return "JSON_CONTAINS({$this->quoteIdentifier($column)}, '\"{$value}\"', '$.{$path}')";
+        }
+        return "JSON_CONTAINS({$this->quoteIdentifier($column)}, '\"{$value}\"')";
+    }
+
+    protected function getIfNull(string $column, string $default): string
+    {
+        if ($this->isMariaDB()) {
+            return "NVL({$this->quoteIdentifier($column)}, '{$default}')";
+        }
+        return "IFNULL({$this->quoteIdentifier($column)}, '{$default}')";
+    }
+
+    protected function getRegexp(string $column, string $pattern): string
+    {
+        if ($this->isMariaDB()) {
+            return "{$this->quoteIdentifier($column)} REGEXP '{$pattern}'";
+        }
+        return "{$this->quoteIdentifier($column)} REGEXP '{$pattern}'";
+    }
+
+    protected function getFullTextSearch(string $column, string $search): string
+    {
+        if ($this->isMariaDB()) {
+            return "MATCH({$this->quoteIdentifier($column)}) AGAINST('{$search}' IN BOOLEAN MODE)";
+        }
+        return "MATCH({$this->quoteIdentifier($column)}) AGAINST('{$search}' IN BOOLEAN MODE)";
     }
 
     public function __get($key)
@@ -293,6 +345,7 @@ class BaseTable
         $bindings = [];
         $clauses = [];
         $isPostgres = $self->isPostgres();
+        $isMaria = $self->isMariaDB();
 
         foreach ($where as $column => $value) {
             $keywords = preg_split('/\s+/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
@@ -306,6 +359,10 @@ class BaseTable
                 if ($isPostgres) {
                     $parts[] = "(" . $self->quoteIdentifier($column) . " LIKE $likeParam OR " .
                         "metaphone(" . $self->quoteIdentifier($column) . ", 4) = metaphone($soundParam, 4))";
+                } elseif ($isMaria) {
+                    $parts[] = "(" . $self->quoteIdentifier($column) . " LIKE $likeParam OR " .
+                        "SOUNDEX(REPLACE(" . $self->quoteIdentifier($column) . ", ' ','')) = " .
+                        "SOUNDEX(REPLACE($soundParam, ' ','')))";
                 } else {
                     $parts[] = "(" . $self->quoteIdentifier($column) . " LIKE $likeParam OR " .
                         "SOUNDEX(REPLACE(" . $self->quoteIdentifier($column) . ", ' ','')) = " .

@@ -98,7 +98,6 @@ $size = folderSize('app/php/logs');
       transition: all 0.2s;
     }
 
-    /* headings – Bootstrap-ish */
     .page-title {
       font-size: 2rem;
       font-weight: 500;
@@ -111,14 +110,12 @@ $size = folderSize('app/php/logs');
 
     .page-title i {
       color: #0d6efd;
-      /* Bootstrap primary blue */
     }
 
     .subhead {
       color: #6c757d;
-      /* Bootstrap text-muted */
       font-size: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       padding-bottom: 0.5rem;
       border-bottom: 1px solid #e9ecef;
       display: flex;
@@ -131,7 +128,79 @@ $size = folderSize('app/php/logs');
       opacity: 0.7;
     }
 
-    /* ----- TOOL GRID (Bootstrap row/col like) ----- */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fff;
+      border: 1px solid #ced4da;
+      padding: 0.5rem 1.2rem 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #212529;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8f9fa;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .back-btn i {
+      color: #0d6efd;
+      transition: transform 0.2s;
+    }
+
+    .back-btn:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .back-btn:hover i {
+      transform: translateX(-4px);
+    }
+
+    .back-btn:active {
+      transform: scale(0.96);
+      background: #dee2e6;
+    }
+
+    .execute-btn {
+      background: #fff;
+      border: 1px solid #0d6efd;
+      color: #0d6efd;
+      padding: 0.3rem 1.2rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #f0f7ff;
+    }
+
+    .execute-btn:hover {
+      background: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
+    }
+
+    .execute-btn i {
+      font-size: 0.8rem;
+    }
+
     .tool-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -139,7 +208,6 @@ $size = folderSize('app/php/logs');
       margin: 1rem 0 1.8rem;
     }
 
-    /* tool card – pure Bootstrap card style */
     .tool-item {
       background: #fff;
       border: 1px solid #dee2e6;
@@ -169,7 +237,6 @@ $size = folderSize('app/php/logs');
       border-color: #0d6efd;
     }
 
-    /* icon – like Bootstrap icon circle */
     .tool-icon {
       width: 72px;
       height: 72px;
@@ -203,7 +270,6 @@ $size = folderSize('app/php/logs');
       margin-bottom: 0.6rem;
     }
 
-    /* badge like Bootstrap badge */
     .click-badge {
       display: inline-block;
       background: #e9ecef;
@@ -220,7 +286,6 @@ $size = folderSize('app/php/logs');
       color: #0d6efd;
     }
 
-    /* small hint arrow – subtle */
     .tool-item::after {
       content: "↗";
       position: absolute;
@@ -237,7 +302,6 @@ $size = folderSize('app/php/logs');
       color: #0d6efd;
     }
 
-    /* ----- BACK BUTTON (Bootstrap button style) ----- */
     .back-section {
       display: flex;
       align-items: center;
@@ -247,44 +311,6 @@ $size = folderSize('app/php/logs');
       margin-top: 0.8rem;
       padding-top: 1.2rem;
       border-top: 1px solid #e9ecef;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: #fff;
-      border: 1px solid #ced4da;
-      padding: 0.5rem 1.2rem 0.5rem 1rem;
-      border-radius: 0.375rem;
-      /* Bootstrap btn radius */
-      font-size: 1rem;
-      font-weight: 500;
-      color: #212529;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: #f8f9fa;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-    }
-
-    .back-btn i {
-      color: #0d6efd;
-      transition: transform 0.2s;
-    }
-
-    .back-btn:hover {
-      background: #e9ecef;
-      border-color: #adb5bd;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    }
-
-    .back-btn:hover i {
-      transform: translateX(-4px);
-    }
-
-    .back-btn:active {
-      transform: scale(0.96);
-      background: #dee2e6;
     }
 
     .back-hint {
@@ -300,7 +326,6 @@ $size = folderSize('app/php/logs');
       opacity: 0.6;
     }
 
-    /* footer note */
     .footer-note {
       margin-top: 1.2rem;
       font-size: 0.8rem;
@@ -334,34 +359,6 @@ $size = folderSize('app/php/logs');
       flex-wrap: wrap;
     }
 
-    .execute-btn {
-      background: #fff;
-      border: 1px solid #0d6efd;
-      color: #0d6efd;
-      padding: 0.3rem 1.2rem;
-      border-radius: 2rem;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: #f0f7ff;
-    }
-
-    .execute-btn:hover {
-      background: #0d6efd;
-      color: #fff;
-      border-color: #0d6efd;
-      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
-    }
-
-    .execute-btn i {
-      font-size: 0.8rem;
-    }
-
-    /* modal overlay */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -472,7 +469,6 @@ $size = folderSize('app/php/logs');
       box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
     }
 
-    /* responsive touches */
     @media (max-width: 576px) {
       .tools-container {
         padding: 1.25rem;
@@ -501,13 +497,18 @@ $size = folderSize('app/php/logs');
         font-size: 0.75rem;
       }
 
-      .back-section {
+      .top-bar {
         flex-direction: column;
         align-items: stretch;
       }
 
       .back-btn {
         justify-content: center;
+      }
+
+      .back-section {
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .back-hint {
@@ -537,18 +538,28 @@ $size = folderSize('app/php/logs');
 
 <body>
   <div class="tools-container">
-    <!-- header -->
     <div class="page-title">
       <i class="fas fa-toolbox"></i> CTRX-Tools
     </div>
     <div class="subhead">
       <i class="fas fa-mouse-pointer"></i> click a tool · you control the destination
     </div>
+
+    <div class="top-bar">
+      <button class="back-btn" id="backButton" aria-label="Go back">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <button class="execute-btn" id="executeButton" type="button">
+        <i class="fas fa-refresh"></i> Update
+      </button>
+    </div>
+
     <?php if (file_exists("views/pages/testdb.php")): ?>
       <div style="color:red;">
         ⚠️ WARNING: <a href="/testdb" style="text-decoration: none;" target="_blank"><b>testdb</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testdb">Delete testdb.php?</a>
       </div>
     <?php endif; ?>
+
     <div class="tool-grid">
       <div class="tool-item" data-tool="database" data-destination="/ctrxtools/database">
         <div class="tool-icon"><i class="fas fa-database"></i></div>
@@ -580,12 +591,9 @@ $size = folderSize('app/php/logs');
     </div>
 
     <div class="back-section">
-      <button class="back-btn" id="backButton" aria-label="Go back">
-        <i class="fas fa-arrow-left"></i> Back
-      </button>
-      <button class="execute-btn" id="executeButton" type="button">
-        <i class="fas fa-refresh"></i> Update
-      </button>
+      <div class="back-hint">
+        <i class="fas fa-arrow-left"></i> Use the Back button above to return
+      </div>
     </div>
 
     <div class="footer-note">
@@ -596,7 +604,6 @@ $size = folderSize('app/php/logs');
     </div>
   </div>
 
-  <!-- Modal -->
   <div class="modal-overlay" id="executeModal">
     <div class="modal-box">
       <h3><i class="fas fa-refresh" style="color:#0d6efd; margin-right:8px;"></i> Update</h3>

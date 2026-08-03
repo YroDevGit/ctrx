@@ -68,6 +68,11 @@ class DB
         return $driver === 'mysql' || $driver === 'mariadb';
     }
 
+    private static function isMariaDB(): bool
+    {
+        return self::getDriver() === 'mariadb';
+    }
+
     private static function quoteIdentifier(string $identifier): string
     {
         if (self::isMySQL()) {
@@ -75,6 +80,46 @@ class DB
         }
 
         return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    private static function getJsonExtract(string $column, string $path): string
+    {
+        if (self::isMariaDB()) {
+            return "JSON_EXTRACT(" . self::quoteIdentifier($column) . ", '$.{$path}')";
+        }
+        return self::quoteIdentifier($column) . "->>'$.{$path}'";
+    }
+
+    private static function getJsonContains(string $column, string $value, string $path = null): string
+    {
+        if (self::isMariaDB()) {
+            if ($path) {
+                return "JSON_EXTRACT(" . self::quoteIdentifier($column) . ", '$.{$path}') = '{$value}'";
+            }
+            return "JSON_EXTRACT(" . self::quoteIdentifier($column) . ", '$') = '{$value}'";
+        }
+        if ($path) {
+            return "JSON_CONTAINS(" . self::quoteIdentifier($column) . ", '\"{$value}\"', '$.{$path}')";
+        }
+        return "JSON_CONTAINS(" . self::quoteIdentifier($column) . ", '\"{$value}\"')";
+    }
+
+    private static function getIfNull(string $column, string $default): string
+    {
+        if (self::isMariaDB()) {
+            return "NVL(" . self::quoteIdentifier($column) . ", '{$default}')";
+        }
+        return "IFNULL(" . self::quoteIdentifier($column) . ", '{$default}')";
+    }
+
+    private static function getRegexp(string $column, string $pattern): string
+    {
+        return self::quoteIdentifier($column) . " REGEXP '{$pattern}'";
+    }
+
+    private static function getFullTextSearch(string $column, string $search): string
+    {
+        return "MATCH(" . self::quoteIdentifier($column) . ") AGAINST('{$search}' IN BOOLEAN MODE)";
     }
 
     public static function interface(array $columns)
@@ -394,7 +439,7 @@ class DB
                     $bindings[$likeParam]  = "%{$keyword}%";
                     $bindings[$soundParam] = "%{$keyword}%";
                 } else {
-                    $parts[] = "(`$column` LIKE $likeParam OR SOUNDEX(REPLACE(`$column`, ' ','')) = SOUNDEX(REPLACE($soundParam, ' ','')))";
+                    $parts[] = "(" . self::quoteIdentifier($column) . " LIKE $likeParam OR SOUNDEX(REPLACE(" . self::quoteIdentifier($column) . ", ' ','')) = SOUNDEX(REPLACE($soundParam, ' ','')))";
                     $bindings[$likeParam]  = "%{$keyword}%";
                     $bindings[$soundParam] = $keyword;
                 }

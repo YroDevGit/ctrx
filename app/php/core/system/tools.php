@@ -408,7 +408,6 @@ if (isset($_POST['import_table'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>CTRX Lightning | Database Pulse Tool</title>
     <style>
-        /* ... (keep your existing styles, they're fine) ... */
         * {
             margin: 0;
             padding: 0;
@@ -436,6 +435,51 @@ if (isset($_POST['import_table'])) {
             transition: all 0.3s ease;
             position: relative;
             z-index: 2;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
+            padding: 0.6rem 1.2rem 0.6rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8fafc;
+            text-decoration: none;
+        }
+
+        .back-btn i {
+            color: #0f172a;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+        }
+
+        .back-btn:hover i {
+            transform: translateX(-4px);
+        }
+
+        .back-btn:active {
+            transform: scale(0.96);
         }
 
         h2 {
@@ -761,6 +805,31 @@ if (isset($_POST['import_table'])) {
             cursor: pointer;
         }
 
+        .back-link {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link a:hover {
+            color: #0f172a;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #94a3b8;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         @media (max-width: 550px) {
             body {
                 padding: 1rem;
@@ -788,25 +857,15 @@ if (isset($_POST['import_table'])) {
                 flex-direction: column;
                 gap: 0.4rem;
             }
-        }
 
-        footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: #94a3b8;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
 
-        a {
-            color: #475569;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        a:hover {
-            color: #0f172a;
+            .back-btn {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -814,6 +873,12 @@ if (isset($_POST['import_table'])) {
 <body>
 
     <div class="container">
+        <div class="top-bar">
+            <a href="<?= prev_page ?>" class="back-btn">
+                <i>←</i> Back
+            </a>
+        </div>
+
         <div class="maintitle">
             <h2>
                 ⚡CTRX LIGHTNING CORE
@@ -920,7 +985,7 @@ if (isset($_POST['import_table'])) {
             <div class="inline-hint">CSV/Excel: Row1 ColA = table name, Row2 = headers, then data. JSON: requires 'table' and 'data' fields.</div>
         </div>
 
-        <div style="margin-top: 1.5rem; font-size: 0.95rem; text-align: center;">
+        <div class="back-link">
             <a href="<?= prev_page ?>">← Previous page</a>
         </div>
 
