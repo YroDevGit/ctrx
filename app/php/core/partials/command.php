@@ -895,6 +895,54 @@ if ($route == "update") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
+}else if($route == "dl:bootstrap"){
+    $targetDir = 'views/assets/_bootstrap/';
+    
+    if (!is_dir($targetDir)) {
+        if (!mkdir($targetDir, 0755, true)) {
+            die("Failed to create directory: " . $targetDir);
+        }
+    }
+    
+    $files = [
+        'bootstrap.css' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/bootstrap.css',
+        'bootstrap.js' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/bootstrap.js'
+    ];
+    
+    $successCount = 0;
+    $errors = [];
+    
+    foreach ($files as $filename => $url) {
+        $filePath = $targetDir . $filename;
+        
+        $fileContent = @file_get_contents($url);
+        
+        if ($fileContent === false) {
+            $errors[] = "Failed to download: " . $filename;
+            continue;
+        }
+        
+        if (file_put_contents($filePath, $fileContent) === false) {
+            $errors[] = "Failed to save: " . $filename;
+            continue;
+        }
+        
+        $successCount++;
+    }
+    
+    echo "\n\nBootstrap Download Results\n";
+    echo "\n✅ Successfully downloaded: " . $successCount . " out of " . count($files) . " files\n";
+    
+    if (!empty($errors)) {
+        echo "Errors:";
+        echo "\n";
+        foreach ($errors as $error) {
+            echo "" . htmlspecialchars($error) . "\n";
+        }
+    } else {
+        echo "✅ All files downloaded successfully to: views/assets_bootstrap/\n\n";
+    }
+    exit;
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "❌ Please provide a filename for Library.\n";

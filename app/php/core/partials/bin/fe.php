@@ -897,4 +897,24 @@ if (! function_exists("ctrx_tools")) {
     }
 }
 
+if(! function_exists("_bootstrap_css")){
+    function _bootstrap_css(bool $tag = true){
+        $asset = assets("_bootstrap/bootstrap.css");
+        if($tag){
+            return "<link rel='stylesheet' href='$asset'>";
+        }
+        return $asset;
+    }
+}
+
+if(! function_exists("_bootstrap_js")){
+    function _bootstrap_js(bool $tag = true){
+        $asset = assets("_bootstrap/bootstrap.js");
+        if($tag){
+            return "<script src='$asset'></script>";
+        }
+        return $asset;
+    }
+}
+
 define('page', page(""));
