@@ -322,6 +322,9 @@ if(! function_exists("assets_css")){
         if(! $tag){
             return $asset;
         }
+        if(! str_ends_with($asset,".css")){
+            $asset .= ".css";
+        }
         return "<link rel='stylesheet' href='$asset'>";
     }
 }
@@ -331,6 +334,9 @@ if(! function_exists("assets_js")){
         $asset = assets($path);
         if(! $tag){
             return $asset;
+        }
+        if(! str_ends_with($asset,".js")){
+            $asset .= ".js";
         }
         return "<script src='$asset'></script>";
     }
