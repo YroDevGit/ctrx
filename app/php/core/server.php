@@ -233,6 +233,9 @@ if (str_starts_with($req, "api/")) {
         include "views/core/partials/system/jsloader.php";
         $view_config = file_get_contents("views/fe_config.json");
         $view_config = json_decode($view_config, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $GLOBALS['ctrx_views_conf_a_vars'] = $view_config;
+        }
         $mainpage = $view_config['main_page'] ?? "main";
         $mainpage = append_php($mainpage);
         $mainnophp = rem_php($mainpage);
