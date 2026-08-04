@@ -299,7 +299,7 @@ if (! function_exists('_backend')) {
     }
 }
 if (! function_exists('assets')) {
-    function assets(string $path = "")
+    function assets(string|null $path = "")
     {
         if ($path == "" || $path == null) {
             return assets;
@@ -313,6 +313,26 @@ if (! function_exists('assets')) {
             }
             return assets . "/" . $path;
         }
+    }
+}
+
+if(! function_exists("assets_css")){
+    function assets_css(string|null $path, bool $tag = true){
+        $asset = assets($path);
+        if(! $tag){
+            return $asset;
+        }
+        return "<link rel='stylesheet' href='$asset'>";
+    }
+}
+
+if(! function_exists("assets_js")){
+    function assets_js(string|null $path, bool $tag = true){
+        $asset = assets($path);
+        if(! $tag){
+            return $asset;
+        }
+        return "<script src='$asset'></script>";
     }
 }
 
