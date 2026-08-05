@@ -863,7 +863,29 @@ if ($route == "update") {
         echo "❌ " . $e->getMessage();
         exit;
     }
-} else if ($route == "sync:tables" || $route == "db:sync") {
+}else if($route == "-"){
+    $newArr = [];
+    if(! $arguments){
+        echo "No args found.!";exit;
+    }
+    foreach($arguments as $k=>$v){
+        if($k == 0 || $k == 1) continue;
+        $newArr[] = $v;
+    }
+
+    if(! $newArr){
+        echo "No commands found.!";exit;
+    }
+
+    $comm = implode(" ",$newArr);
+    
+    $res = exec("docker compose exec app php cli $comm", $output);
+    foreach($output as $kk=>$vv){
+        if(! $vv || $vv == "" || $vv == null) echo "\n";
+        echo $vv;
+    }
+    exit;
+}else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
     $dbname = env("database");
     if (! $dbname) {
