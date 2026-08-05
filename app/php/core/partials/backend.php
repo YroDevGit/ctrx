@@ -54,11 +54,11 @@ if (! function_exists("pdo")) {
             if ($pdo == null) {
                 $dbdriver = env("dbdriver") == null ? "mysql" : env("dbdriver");
                 $pdoDriver = ($dbdriver === 'mariadb') ? 'mysql' : $dbdriver;
-                $ddb = "dbname=$dbname";
+                $ddb = "dbname=$dbname;";
                 if ($no_database) {
                     $ddb = "";
                 }
-                $pdo = new PDO("$pdoDriver:host=$host;port=$port;$ddb;charset=$charSet;", "$user", "$pass", [
+                $pdo = new PDO("$pdoDriver:host=$host;port=$port;".$ddb."charset=$charSet;", "$user", "$pass", [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
