@@ -655,6 +655,13 @@ class TModal {
                     "tmodal-textarea " + (field.class || "");
             }
 
+            if(tag == "div" || tag == "span" || tag == "section" || tag == "label"){
+                input.className = field.class ?? "";
+                if(field.innerHTML){
+                    input.innerHTML = field.innerHTML;
+                }
+            }
+
             /* select */
             /*
             ussage:
