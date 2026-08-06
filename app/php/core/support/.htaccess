@@ -1,7 +1,7 @@
 RewriteEngine On
 
 # ==========================================
-# CTRX - PROTECTION LAYER
+# CTRX - PROTECTION LAYER - By CodeYro
 # ==========================================
 
 RewriteRule ^app/php/db/ctrx\.db$ - [F,L,NC]
@@ -34,6 +34,25 @@ RewriteRule ^app/php/core/ - [F,L]
 
 RewriteRule ^vendor/ - [F,L]
 RewriteRule ^composer\.(json|lock)$ - [F,L,NC]
+
+# Ctrx Javascript
+RewriteCond %{REQUEST_URI} ^/(views/js/|views/code/src/|views/code/script/) [NC]
+RewriteCond %{REQUEST_URI} !\.(js|css)$ [NC]
+RewriteCond %{REQUEST_FILENAME}.js -f
+RewriteRule ^(.*)$ $1.js [L,T=application/javascript]
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+</IfModule>
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
