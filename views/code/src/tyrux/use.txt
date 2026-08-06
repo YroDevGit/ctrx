@@ -1,6 +1,8 @@
 <?=import_tyrux()?>
 
-terser tyrux.js -o tyrux.min.js -c -m
+
+cd views\code\src\tyrux\lib\    
+npx terser tyrux.js -o tyrux.min.js -c -m
 
 <script type="module">
     tyrux({

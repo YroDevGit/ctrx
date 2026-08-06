@@ -863,7 +863,7 @@ if ($route == "update") {
         echo "❌ " . $e->getMessage();
         exit;
     }
-}else if($route == "-"){
+}else if($route == "-" || $route == "@d" || $route == "@docker"){
     $newArr = [];
     if(! $arguments){
         echo "No args found.!";exit;
@@ -882,7 +882,7 @@ if ($route == "update") {
     $res = exec("docker compose exec app php cli $comm", $output);
     foreach($output as $kk=>$vv){
         if(! $vv || $vv == "" || $vv == null) echo "\n";
-        echo $vv;
+        echo $vv."\n";
     }
     exit;
 }else if ($route == "sync:tables" || $route == "db:sync") {
