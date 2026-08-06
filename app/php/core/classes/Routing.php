@@ -71,6 +71,7 @@ class Routing
                 self::route_filtering(ctr_get_routes($parent), $func, $included);
                 continue;
             }
+            $r = trim($r, " /\\");
             $path = substr($r, -4) == ".php" ? $r : $r . ".php";
             if (! \Classes\Ctrx::file_exists_strict("app/controller/$path")) {
                 Response::code(notfound_code)->message("In group route, backend route $r not found.!")->send(notfound_code);
@@ -117,7 +118,8 @@ class Routing
                 $parent = $exp[0];
                 return self::group_page(ctrx_get_routes($parent), ...$args);
             }
-            $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";
+            $pages = trim($pages, " /\\");
+            $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";        
             if (! \Classes\Ctrx::file_exists_strict("views/pages/$path")) {
                 throw new Exception("Group page error: $pages not exist");
             }
