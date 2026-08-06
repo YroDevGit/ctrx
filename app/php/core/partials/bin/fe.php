@@ -559,12 +559,13 @@ if (! function_exists("write_sql_error")) {
 if (! function_exists("view_page")) {
     function view_page(string $page, array $variables = [])
     {
+        $page = trim($page, " /\\");
         $page = substr($page, -4) == ".php" ? $page : $page . ".php";
-        if (\Classes\Ctrx::file_exists_strict("_frontend/pages/$page")) {
+        if (\Classes\Ctrx::file_exists_strict("views/pages/$page")) {
             if (!empty($variables)) {
                 extract($variables);
             }
-            include "_frontend/pages/$page";
+            include "views/pages/$page";
         } else {
             echo "<b style='color:red;background:black;padding:5px;font-weight:bold;'>Page $page doesn't exist.! Please check _frontend/pages/$page</b>";
         }
@@ -574,6 +575,7 @@ if (! function_exists("view_page")) {
 if (! function_exists("include_page")) {
     function include_page(string $page, array $variables = [])
     {
+        $page = trim($page, " /\\");
         $page = substr($page, -4) == ".php" ? $page : $page . ".php";
         if (\Classes\Ctrx::file_exists_strict("views/includes/$page")) {
             if (!empty($variables)) {
