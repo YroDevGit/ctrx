@@ -118,7 +118,7 @@ class Routing
                 return self::group_page(ctrx_get_routes($parent), ...$args);
             }
             $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";
-            if (! \Classes\Ctrx::file_exists_strict("_frontend/pages/$path")) {
+            if (! \Classes\Ctrx::file_exists_strict("views/pages/$path")) {
                 throw new Exception("Group page error: $pages not exist");
             }
             $current = current_page();
