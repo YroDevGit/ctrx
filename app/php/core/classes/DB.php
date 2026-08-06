@@ -281,7 +281,7 @@ class DB
                 'total_records' => self::$totalRecords,
                 'total_pages' => self::$totalPages,
                 'has_previous' => self::$currentPage > 1,
-                'has_next' => self::$currentPage < self::$totalPages,
+                'has_next' => (self::$currentPage < self::$totalPages) ? 1 : 0,
                 'first_page' => 1,
                 'last_page' => self::$totalPages
             ]
