@@ -557,7 +557,7 @@ class BaseTable
         return $rc > 0 ? array_map([$self, 'hydrate'], $rows) : [];
     }
 
-    public static function paginatedFind(array $where, int $perPage = 10, int $page = 1, array|int|null $extra = null): array
+    public static function paginatedFind(array $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
     {
         $page = max(1, $page);
 
@@ -581,7 +581,7 @@ class BaseTable
                 'total_records' => self::$totalRecords,
                 'total_pages' => self::$totalPages,
                 'has_previous' => self::$currentPage > 1,
-                'has_next' => self::$currentPage < self::$totalPages,
+                'has_next' => (self::$currentPage < self::$totalPages) ? 1 : 0,
                 'first_page' => 1,
                 'last_page' => self::$totalPages
             ]

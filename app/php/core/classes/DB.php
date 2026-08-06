@@ -257,7 +257,7 @@ class DB
         return $rc > 0 ? $rows : [];
     }
 
-    public static function paginatedFind(string $table, array $where, int $perPage = 10, int $page = 1, array|int|null $extra = null): array
+    public static function paginatedFind(string $table, array $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
     {
         $page = max(1, $page);
 
