@@ -33,12 +33,12 @@ class Router
         return new self($key);
     }
 
-    public function run(callable $function)
+    public function run(callable $callable)
     {
         $key = $this->arr;
         $current = current_be();
         if ($this->hasRoute($key, $current)) {
-            $function();
+            $callable();
         }
     }
 
