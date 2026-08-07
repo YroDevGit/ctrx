@@ -277,6 +277,7 @@ if (! function_exists("add_sql_log")) {
             "error"    => ["env" => "sql_errors", "dir" => "app/php/logs/sql_errors", "prefix" => "ERROR"],
             "query"    => ["env" => "query_logs", "dir" => "app/php/logs/query_logs", "prefix" => $intro],
             "be_errors" => ["env" => "be_errors",  "dir" => "app/php/logs/be_errors",  "prefix" => $intro],
+            "server_errors" => ["env" => "be_errors",  "dir" => "app/php/logs/server_errors",  "prefix" => $intro],
         ];
 
         if (!isset($logConfig[$type])) {

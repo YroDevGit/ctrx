@@ -332,15 +332,20 @@ class Ctrx
 
     public static function get_user_role(): null|int|string
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if (! $ctrxdata) {
-            return null;
-        } else {
-            if (isset($ctrxdata['ctrx_user_role'])) {
-                return $ctrxdata['ctrx_user_role'] ?? null;
+        try {
+            $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+            if (! $ctrxdata) {
+                return null;
+            } else {
+                if (isset($ctrxdata['ctrx_user_role'])) {
+                    return $ctrxdata['ctrx_user_role'] ?? null;
+                }
             }
+            return null;
+        } catch (Throwable $e) {
+            add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
+            return null;
         }
-        return null;
     }
 
     public static function has_user_roles(string ...$roles)
@@ -438,12 +443,17 @@ class Ctrx
 
     public static function get_user_data(string|int $key = "*")
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
-        if (! $ctrxdata) return null;
-        if ($key == "*") {
-            return $ctrxdata;
+        try {
+            $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+            if (! $ctrxdata) return null;
+            if ($key == "*") {
+                return $ctrxdata;
+            }
+            return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
+        } catch (Throwable $e) {
+            add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
+            return null;
         }
-        return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
     }
 
     public static function role_filtering(callable|null $execute = null)
@@ -561,10 +571,15 @@ class Ctrx
 
     public static function has_user_data(): bool
     {
-        if (\Classes\Ccookie::get("ctrx_user_data")) {
-            return true;
+        try {
+            if (\Classes\Ccookie::get("ctrx_user_data")) {
+                return true;
+            }
+            return false;
+        } catch (Throwable $e) {
+            add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
+            return false;
         }
-        return false;
     }
 
     public static function use_db_tools(string|null $backpage = null, $exit = true)
