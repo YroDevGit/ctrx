@@ -965,6 +965,9 @@ if ($route == "update") {
         echo "✅ All files downloaded successfully to: views/assets_bootstrap/\n\n";
     }
     exit;
+}else if($route == "reset:xrate" || $route == "reset:throttle"){
+    $res = \Classes\Ctrx::remove_xrates();
+    echo "\n✅ Done\n\n"; exit;
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "❌ Please provide a filename for Library.\n";

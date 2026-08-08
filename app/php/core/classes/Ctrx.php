@@ -582,6 +582,48 @@ class Ctrx
         }
     }
 
+    public static function deleteDirectory(string $directory): bool
+    {
+        if (!is_dir($directory)) {
+            return false;
+        }
+
+        $items = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                $directory,
+                \FilesystemIterator::SKIP_DOTS
+            ),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($items as $item) {
+            if ($item->isDir()) {
+                rmdir($item->getRealPath());
+            } else {
+                unlink($item->getRealPath());
+            }
+        }
+
+        return rmdir($directory);
+    }
+
+    public static function remove_xrates(){
+        try{
+            $arr = [
+                "app/php/core/partials/dir",
+                "app/php/core/partials/fe_limit",
+                "app/php/core/partials/be_limit",
+            ];
+    
+            foreach($arr as $k=>$v){
+                self::deleteDirectory($v);
+            }
+            return true;
+        }catch(Throwable $e){
+            throw new Exception($e->getMessage());
+        }
+    }
+
     public static function use_db_tools(string|null $backpage = null, $exit = true)
     {
         $backRoute = $backpage ?? previous_page();
