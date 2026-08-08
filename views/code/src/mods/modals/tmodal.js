@@ -678,40 +678,38 @@ class TModal {
             if (tag === "select") {
                 input.className =
                     "tmodal-select " + (field.class || "");
-                if (Array.isArray(field.options)) {
-                    let placeholder = field.placeholder ?? field.index ?? "Select item";
-                    if (placeholder && !field.multiple) {
-                        let orgData = field.options;
-                        orgData.unshift({ value: "", label: placeholder ?? "Select Item" });
-                        field.options = orgData;
-                    }
+                    let opts = field.options;
+                if (Array.isArray(opts)) {
                     if (field.config) {
                         let conf = field.config;
                         let value = conf.value ?? "value";
                         let label = conf.label ?? "label";
                         let spl = [];
-                        let opt = field.options;
-                        for (let op in opt) {
+                        let optx = opts;
+                        for (let op in optx) {
                             let separator = conf.separator ?? "";
                             let lbl = "";
                             let lblarr = [];
-                            let labl = opt[op][label];
+                            let labl = optx[op][label];
                             if (Array.isArray(label)) {
                                 for (let l in label) {
-                                    lblarr = [...lblarr, opt[op][label[l]]];
+                                    lblarr = [...lblarr, optx[op][label[l]]];
                                 }
                                 lbl = lblarr.join(separator);
                             } else {
                                 lbl = labl;
                             }
-                            spl[op] = { value: opt[op][value], label: lbl };
+                            spl[op] = { value: optx[op][value], label: lbl };
                         }
                         if (typeof field?.config.index && field?.config.index == false) {
-                            field.options = spl;
+                            opts = spl;
                         } else {
-                            field.options = [{ value: "", label: `${field?.config?.index ?? "Select Item"}` }, ...spl];
+                            if(field.multiple){
+                                opts = spl;
+                            }else{
+                                opts = [{ value: "", label: `${field?.config?.index ?? "Select Item"}` }, ...spl];
+                            }
                         }
-
                     }
 
                     const onchange = field.onchange ?? field.onChange ?? undefined;
@@ -735,16 +733,16 @@ class TModal {
                         });
                     }
 
-                    field.options.forEach((opt) => {
-                        const option = document.createElement("option");
-                        if (typeof opt === "object") {
-                            option.value = opt.value;
-                            option.innerHTML = opt.label;
+                    opts.forEach((optk) => {
+                        const option_c = document.createElement("option");
+                        if (typeof optk === "object") {
+                            option_c.value = optk.value;
+                            option_c.innerHTML = optk.label;
                         } else {
-                            option.value = opt;
-                            option.innerHTML = opt;
+                            option_c.value = optk;
+                            option_c.innerHTML = optk;
                         }
-                        input.appendChild(option);
+                        input.appendChild(option_c);
                     });
                     let vval = field.value ?? field.default ?? undefined;
                     if (field.value) {
@@ -752,6 +750,7 @@ class TModal {
                     }
                     if (field.multiple) {
                         input.setAttribute("multiple", "");
+                        input.value = "";
                     }
                 }
             }
