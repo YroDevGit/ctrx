@@ -101,15 +101,15 @@ class TModal {
         }
 
         .tmodal-close{
+            background: none;
             border: none;
-            background: #f5f5f5;
             border-radius: 50%;
             width: 32px;
             height: 32px;
-            font-size: 20px;
+            font-size: 27px;
             cursor: pointer;
             color: #666;
-            display: none;
+            display: block;
             align-items: center;
             justify-content: center;
             transition: all .2s ease;
@@ -117,8 +117,6 @@ class TModal {
         }
 
         .tmodal-close:hover{
-            background: #e8e8e8;
-            transform: rotate(90deg);
             color: #1a1a1a;
         }
 
@@ -707,7 +705,12 @@ class TModal {
                             if(field.multiple){
                                 opts = spl;
                             }else{
-                                opts = [{ value: "", label: `${field?.config?.index ?? "Select Item"}` }, ...spl];
+                                const ind = field?.config?.index ?? field?.index ?? undefined;
+                                if(typeof ind == "string"){
+                                    opts = [{ value: "", label: `${ind ?? "Select Item"}` }, ...spl];
+                                }else if(typeof ind == "object"){
+                                    opts = [ind, ...spl];
+                                }
                             }
                         }
                     }
@@ -806,13 +809,12 @@ class TModal {
         cancelBtn.className =
             "tmodal-btn tmodal-btn-cancel";
 
-        cancelBtn.innerText = "Cancel";
+        cancelBtn.innerText = "Reset";
+        cancelBtn.setAttribute("type", "reset");
 
         cancelBtn.onclick = () => {
-            if (typeof instance._cancelCallback === "function") {
-                instance._cancelCallback(instance);
-            }
-            instance.hide();
+            this.resetErrorStr();
+            this.clearFieldErrors();
         };
 
         const submitBtn = document.createElement("button");
