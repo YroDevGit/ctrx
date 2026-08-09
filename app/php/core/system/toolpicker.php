@@ -15,6 +15,13 @@ if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testdb") {
   }
 }
 
+if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testmemory") {
+  if (file_exists("views/pages/testmemory.php")) {
+    @unlink("views/pages/testmemory.php");
+    reload_page(false);
+  }
+}
+
 function folderSize($folder)
 {
   $size = 0;
@@ -557,6 +564,12 @@ $size = folderSize('app/php/logs');
     <?php if (file_exists("views/pages/testdb.php")): ?>
       <div style="color:red;">
         ⚠️ WARNING: <a href="/testdb" style="text-decoration: none;" target="_blank"><b>testdb</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testdb">Delete testdb.php?</a>
+      </div>
+    <?php endif; ?>
+
+    <?php if (file_exists("views/pages/testmemory.php")): ?>
+      <div style="color:red;">
+        ⚠️ WARNING: <a href="/testmemory" style="text-decoration: none;" target="_blank"><b>testmemory</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testmemory">Delete testmemory.php?</a>
       </div>
     <?php endif; ?>
 

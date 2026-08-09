@@ -917,6 +917,60 @@ if ($route == "update") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
+}else if($route == "dl:testmemory"){
+    $targetDir = 'views/pages/';
+    
+    if (!is_dir($targetDir)) {
+        if (!mkdir($targetDir, 0755, true)) {
+            die("Failed to create directory: " . $targetDir);
+        }
+    }
+
+    if(file_exists("views/pages/testmemory.php")){
+        echo "\n❌ File conflict with views/pages/testmemory.php\n\n";
+        exit;
+    }
+    
+    $files = [
+        'testmemory.php' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/memory.php',
+    ];
+    
+    $successCount = 0;
+    $errors = [];
+    
+    include_once "app/php/core/partials/envloader.php";
+    foreach ($files as $filename => $url) {
+        $filePath = $targetDir . $filename;
+        
+        $fileContent = @file_get_contents($url);
+        
+        if ($fileContent === false) {
+            $errors[] = "Failed to download: " . $filename;
+            continue;
+        }
+        
+        if (file_put_contents($filePath, $fileContent) === false) {
+            $errors[] = "Failed to save: " . $filename;
+            continue;
+        }
+        
+        $successCount++;
+    }
+    
+    echo "\nMemory Download Results\n";
+    echo "\n✅ Successfully downloaded: " . $successCount . " out of " . count($files) . " files\n";
+    
+    if (!empty($errors)) {
+        echo "Errors:";
+        echo "\n";
+        foreach ($errors as $error) {
+            echo "" . htmlspecialchars($error) . "\n";
+        }
+    } else {
+        $en = env("rootpath");
+        echo "✅ Memory DB has been downloaded: $en/testmemory\n\n";
+    }
+    exit;
 }else if($route == "dl:bootstrap"){
     $targetDir = 'views/assets/_bootstrap/';
     
@@ -963,6 +1017,37 @@ if ($route == "update") {
         }
     } else {
         echo "✅ All files downloaded successfully to: views/assets_bootstrap/\n\n";
+    }
+    exit;
+}else if($route == "reset:memory" || $route == "reset:sqlite"){
+    try{
+        \Classes\SQLite::dropAllTables();
+        echo "✅ Done";
+    }catch(Throwable $e){
+        echo "❌ ".$e->getMessage();
+    }
+    exit;
+}else if($route == "reset:role" || $route == "reset:role_management"){
+    try{
+        \Classes\SQLite::dropTables("ctrx_roles", "ctrx_roles_access");
+        echo "✅ Done";
+    }catch(Throwable $e){
+        echo "❌ ".$e->getMessage();
+    }
+    exit;
+}else if($route == "grant:public" || $route == "make:public"){
+    if(! $filename){
+        echo "❌ Please input page name/route";
+        exit;
+    }
+    $filename = trim($filename, " /\\");
+    include_once "app/php/core/partials/envloader.php";
+    try{
+        \Classes\SQLite::delete("ctrx_roles_access", "role_id = 1 and `route` = '$filename'");
+        \Classes\SQLite::insert("ctrx_roles_access", ["role_id"=> 1, "route" => $filename, "has_access"=>1]);
+        echo "✅ Done";
+    }catch(Throwable $e){
+        echo "❌ ".$e->getMessage();
     }
     exit;
 }else if($route == "reset:xrate" || $route == "reset:throttle"){

@@ -1,5 +1,7 @@
 <?php
+
 namespace Classes;
+
 use PDO;
 
 class SQLite
@@ -71,6 +73,30 @@ class SQLite
     }
 
     /**
+     * Delete all tables in the database
+     */
+    public static function dropAllTables(): int
+    {
+        $tables = self::tables();
+        $count = 0;
+
+        // Disable foreign key checks temporarily
+        self::connect()->exec('PRAGMA foreign_keys = OFF');
+
+        try {
+            foreach ($tables as $table) {
+                self::connect()->exec("DROP TABLE IF EXISTS {$table['name']}");
+                $count++;
+            }
+        } finally {
+            // Re-enable foreign key checks
+            self::connect()->exec('PRAGMA foreign_keys = ON');
+        }
+
+        return $count;
+    }
+
+    /**
      * Get one row
      */
     public static function first(
@@ -133,6 +159,29 @@ class SQLite
 
         return (int) self::connect()
             ->lastInsertId();
+    }
+
+    /**
+     * Drop specific tables
+     */
+    public static function dropTables(string ...$tables): int
+    {
+        $count = 0;
+
+        self::connect()->exec('PRAGMA foreign_keys = OFF');
+
+        try {
+            foreach ($tables as $table) {
+                if (self::tableExists($table)) {
+                    self::connect()->exec("DROP TABLE IF EXISTS {$table}");
+                    $count++;
+                }
+            }
+        } finally {
+            self::connect()->exec('PRAGMA foreign_keys = ON');
+        }
+
+        return $count;
     }
 
     /**
