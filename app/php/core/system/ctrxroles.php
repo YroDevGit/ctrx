@@ -1498,7 +1498,7 @@ if ($is_activated) {
                     <p style="font-size:13px;color:#6c757d;">This will create the necessary tables (ctrx_roles, ctrx_roles_access) and a default 'public' role with access to all root pages.</p>
                     <div class="btn-group">
                         <a href="?activate=true" class="btn btn-primary">Yes, Activate</a>
-                        <a href="<?= htmlspecialchars($prev_page) ?>" class="btn btn-outline-secondary">No, Skip</a>
+                        <a href="<?= htmlspecialchars(prev_page) ?>" class="btn btn-outline-secondary">No, Skip</a>
                     </div>
                 </div>
             <?php elseif ($activation_requested && !$is_activated): ?>
