@@ -117,6 +117,11 @@ class Ctrx
         }
     }
 
+    public static function page_rate_limit(int $limit, $seconds = 60, $route = null){
+        $newRoute = $route ?? current_page();
+        self::save_temp_file_limit("page_limit", $limit, $seconds, $route = $newRoute);
+    }
+
     private static function save_temp_file_limit($directory = "dir", $limit = 100, $seconds = 60, $route = "")
     {
         try {
@@ -613,6 +618,7 @@ class Ctrx
                 "app/php/core/partials/dir",
                 "app/php/core/partials/fe_limit",
                 "app/php/core/partials/be_limit",
+                "app/php/core/partials/page_limit",
             ];
     
             foreach($arr as $k=>$v){
