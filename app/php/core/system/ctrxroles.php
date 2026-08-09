@@ -597,7 +597,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($is_activated) {
     $roles = $roleManager->getRoles();
     $directories = $routeScanner->getDirectories();
-    $selected_directory = isset($_GET['dir']) ? $_GET['dir'] : 'root';
+    $selected_directory = isset($_GET['dir']) ? $_GET['dir'] : 'all';
     $all_routes = $routeScanner->getRoutesByDirectory($selected_directory);
     $selected_role_id = isset($_GET['role_id']) ? (int)$_GET['role_id'] : (isset($roles[0]) ? $roles[0]['id'] : 0);
     $selected_role = $selected_role_id ? $roleManager->getRole($selected_role_id) : null;
@@ -1642,7 +1642,7 @@ if ($is_activated) {
                                 <?php else: ?>
                                     <?php foreach ($all_routes as $route): ?>
                                         <?php $has_access = isset($role_access[$route['route']]) ? $role_access[$route['route']] : 0;
-                                        if (isset($route['route']) && (! str_contains($route['route'], "/") && ! isset($role_access[$route['route']]))) {
+                                        if (isset($route['route']) && ! isset($role_access[$route['route']])) {
                                             $routeN = $route['route'];
                                             $roleId = $_GET['role_id'] ?? 1;
                                             $stm = $pdo->prepare("INSERT INTO ctrx_roles_access (role_id, route, has_access) VALUES('$roleId', '$routeN', 1)");

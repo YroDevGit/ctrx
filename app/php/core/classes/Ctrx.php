@@ -473,9 +473,6 @@ class Ctrx
         if (! env('database')) {
             return;
         }
-        if ($UserRole == "admin") {
-            return;
-        }
         if ($currPage == "ctrx/logout") {
             return;
         }
@@ -506,11 +503,11 @@ class Ctrx
                 }
             }
         } else {
-            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 1";
+            $query = "SELECT r.role_name, r.description, r.created_at, r.updated_at, a.route, a.role_id FROM ctrx_roles r, ctrx_roles_access a WHERE r.id = a.role_id AND r.role_name = ? and a.route = ? and a.has_access = 0";
             $param = [$role, $currPage];
             $stmt = \Classes\SQLite::query($query, $param);
             $result = $stmt->fetchAll();
-            if (! $result) {
+            if ($result) {
                 if (is_null($execute)) {
                     if (self::has_user_data()) {
                         self::forbidden_page();

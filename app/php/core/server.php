@@ -384,7 +384,7 @@ if (str_starts_with($req, "api/")) {
                 redirect($logoutPage, "page", 2);
                 return;
             }
-            $userTools = \Classes\Ctrx::get_access_tools();;
+            $userTools = \Classes\Ctrx::get_access_tools();
             if (empty($userTools)) {
                 \Classes\Ctrx::forbidden_page();
             }
