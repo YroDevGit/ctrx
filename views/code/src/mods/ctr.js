@@ -941,6 +941,12 @@ class CtrClass {
         }
     }
 
+    trimChars(str, chars) {
+        const escaped = chars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`^[${escaped}]+|[${escaped}]+$`, 'g');
+        return str.replace(regex, '');
+    }
+
     errStrSet(str = null, value, errorString = "err_") {
         try {
             if (str && typeof str == "string") {

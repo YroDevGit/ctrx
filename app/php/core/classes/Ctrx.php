@@ -494,8 +494,13 @@ class Ctrx
 
     public static function get_logout_page(): null|int|string
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_logout_page") ?? null;
-        return $ctrxdata;
+        try{
+            $ctrxdata = \Classes\Ccookie::get("ctrx_user_logout_page") ?? null;
+            return $ctrxdata;
+        }catch(Throwable $e){
+            add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
+            return null;
+        }
     }
 
     public static function get_user_role(): null|int|string
