@@ -1,3 +1,14 @@
 <?php
-include  "app/php/core/partials/command.php";
 
+/**
+ * This is CTRX CLI
+ */
+
+//Load Database from env: php cli db:load
+//Load Database from env (DOCKER): php cli - db:load
+//Create controller: php cli +controller user/add
+
+/**
+ * Go to CTRX command documentation for more...
+ */
+include  "app/php/core/partials/command.php";
