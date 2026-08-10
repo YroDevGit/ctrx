@@ -117,7 +117,8 @@ class Ctrx
         }
     }
 
-    public static function page_rate_limit(int $limit, $seconds = 60, $route = null){
+    public static function page_rate_limit(int $limit, $seconds = 60, $route = null)
+    {
         $newRoute = $route ?? current_page();
         self::save_temp_file_limit("page_limit", $limit, $seconds, $route = $newRoute);
     }
@@ -125,106 +126,264 @@ class Ctrx
     private static function save_temp_file_limit($directory = "dir", $limit = 100, $seconds = 60, $route = "")
     {
         try {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-            $dir = "app/php/core/partials/$directory";
-
-            if (!is_dir($dir)) {
-                mkdir($dir, 0777, true);
-            }
+            $signal = implode('_', [
+                $_SERVER['REMOTE_ADDR'] ?? '',
+                $_SERVER['HTTP_USER_AGENT'] ?? '',
+                $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
+            ]);
 
             $window = (int) $seconds;
             $org = $route;
             $route = empty($route) ? current_be() : "ctzr_" . $route;
-            $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
 
-            if (mt_rand(1, 50) === 5) {
-                foreach (glob($dir . '/ratelimit_*') as $f) {
-                    if (@filemtime($f) + $window < time()) {
-                        @unlink($f);
-                    }
+            $redis = self::getRedisConnection();
+            $redisAvailable = ($redis !== null);
+
+            if ($redisAvailable) {
+                return self::saveRedisRateLimit($redis, $route, $signal, $limit, $window, $org);
+            } else {
+                return self::saveFileRateLimit($directory, $route, $signal, $limit, $window, $org);
+            }
+        } catch (Throwable $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * Get Redis connection if available
+     */
+    private static function getRedisConnection()
+    {
+        include_once "app/php/core/partials/envloader.php";
+        try {
+            $redisHost = env('REDIS_HOST');
+            if (!$redisHost) {
+                return null;
+            }
+
+            if (!class_exists('Redis')) {
+                return null;
+            }
+
+            $redisPort = env('REDIS_PORT') ?? 6379;
+            $redisPassword = env('REDIS_PASSWORD') ?? null;
+            $redisDatabase = env('REDIS_DATABASE') ?? 0;
+            $redisTimeout = env('REDIS_TIMEOUT') ?? 0.2;
+
+            $redis = new \Redis();
+
+            $connected = $redis->connect($redisHost, $redisPort, $redisTimeout);
+
+            if (!$connected) {
+                throw new Exception("Redis connection failed to {$redisHost}:{$redisPort} (timeout: {$redisTimeout}s)");
+            }
+
+            if ($redisPassword) {
+                if (!$redis->auth($redisPassword)) {
+                    throw new Exception("Redis authentication failed - invalid password");
                 }
             }
 
-            $fp = fopen($file, 'c+');
-
-            if (!$fp) {
-                return false;
-            }
-
-            flock($fp, LOCK_EX);
-
-            rewind($fp);
-            $contents = stream_get_contents($fp);
-
-            $data = json_decode($contents, true);
-
-            if (!is_array($data)) {
-                $data = [
-                    'count' => 0,
-                    'start' => time()
-                ];
-            }
-
-            if ((time() - $data['start']) > $window) {
-                $data = [
-                    'count' => 0,
-                    'start' => time()
-                ];
-            }
-
-            $data['route'] = $org;
-            $data['ctr'] = $route;
-            $data['count']++;
-            $data['left'] = max(0, $limit - $data['count']);
-            $data['limit'] = $limit;
-            $data['seconds'] = $window;
-
-            $remaining = max(0, $limit - $data['count']);
-            $reset = $data['start'] + $window;
-
-            if ($data['count'] > $limit) {
-
-                header("X-RateLimit-Limit: {$limit}");
-                header("X-RateLimit-Remaining: {$remaining}");
-                header("X-RateLimit-Reset: {$reset}");
-                flock($fp, LOCK_UN);
-                fclose($fp);
-                include_once "app/php/core/partials/cbe.php";
-                if (cbe_ctrx_endpoint() == "FE") {
-                    die("Too many attemps, please try again later.");
-                    return;
+            if ($redisDatabase > 0) {
+                if (!$redis->select($redisDatabase)) {
+                    throw new Exception("Redis failed to select database {$redisDatabase}");
                 }
-
-                header('Content-Type: application/json');
-                http_response_code(429);
-                header('Retry-After: ' . max(0, $window - (time() - $data['start'])));
-
-                $msg = self::$xrateMessage ?: 'Request limit exceeded. Please try again later.';
-
-                echo json_encode([
-                    'code'        => 429,
-                    'message'     => $msg,
-                    'error'       => 'Request limit exceeded',
-                    'limit'       => $limit,
-                    'window'      => $window,
-                    'success'     => false,
-                    'retry_after' => max(0, $window - (time() - $data['start']))
-                ]);
-                exit;
             }
 
-            rewind($fp);
-            ftruncate($fp, 0);
-            fwrite($fp, json_encode($data));
-            fflush($fp);
+            if (!$redis->ping()) {
+                throw new Exception("Redis ping failed - connection is not responsive");
+            }
 
-            flock($fp, LOCK_UN);
-            fclose($fp);
+            return $redis;
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * Save rate limit using Redis
+     */
+    private static function saveRedisRateLimit($redis, $route, $signal, $limit, $window, $org)
+    {
+        $key = "ratelimit_{$route}_{$signal}";
+        $key = "ratelimit_" . md5($key);
+
+        $current = $redis->get($key);
+
+        if ($current === false) {
+            $data = [
+                'count' => 1,
+                'start' => time(),
+                'route' => $org,
+                'ctr' => $route,
+                'limit' => $limit,
+                'seconds' => $window,
+                'left' => $limit - 1
+            ];
+
+            $redis->setex($key, $window, json_encode($data));
 
             return true;
-        } catch (Throwable $e) {
-            #No expected error here...
         }
+
+        $data = json_decode($current, true);
+
+        if (!is_array($data)) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
+        }
+
+        if ((time() - $data['start']) > $window) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
+        }
+
+        $data['route'] = $org;
+        $data['ctr'] = $route;
+        $data['count']++;
+        $data['left'] = max(0, $limit - $data['count']);
+        $data['limit'] = $limit;
+        $data['seconds'] = $window;
+
+        $remaining = max(0, $limit - $data['count']);
+        $reset = $data['start'] + $window;
+
+        if ($data['count'] > $limit) {
+            header("X-RateLimit-Limit: {$limit}");
+            header("X-RateLimit-Remaining: {$remaining}");
+            header("X-RateLimit-Reset: {$reset}");
+
+            include_once "app/php/core/partials/cbe.php";
+            if (cbe_ctrx_endpoint() == "FE") {
+                die("Too many attempts, please try again later.");
+                return;
+            }
+
+            header('Content-Type: application/json');
+            http_response_code(429);
+            header('Retry-After: ' . max(0, $window - (time() - $data['start'])));
+
+            $msg = self::$xrateMessage ?: 'Request limit exceeded. Please try again later.';
+
+            echo json_encode([
+                'code'        => 429,
+                'message'     => $msg,
+                'error'       => 'Request limit exceeded',
+                'limit'       => $limit,
+                'window'      => $window,
+                'success'     => false,
+                'retry_after' => max(0, $window - (time() - $data['start']))
+            ]);
+            exit;
+        }
+
+        $redis->setex($key, $window, json_encode($data));
+
+        return true;
+    }
+
+    /**
+     * Save rate limit using file (original method)
+     */
+    private static function saveFileRateLimit($directory, $route, $signal, $limit, $window, $org)
+    {
+        $dir = "app/php/core/partials/$directory";
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $file = $dir . '/ratelimit_' . md5($route . '_' . $signal);
+
+        $ran = mt_rand(1, 60);
+        if ($ran == 5 || $ran == 7 || $ran == 14) {
+            foreach (glob($dir . '/ratelimit_*') as $f) {
+                if (@filemtime($f) + $window < time()) {
+                    @unlink($f);
+                }
+            }
+        }
+
+        $fp = fopen($file, 'c+');
+
+        if (!$fp) {
+            return false;
+        }
+
+        flock($fp, LOCK_EX);
+
+        rewind($fp);
+        $contents = stream_get_contents($fp);
+
+        $data = json_decode($contents, true);
+
+        if (!is_array($data)) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
+        }
+
+        if ((time() - $data['start']) > $window) {
+            $data = [
+                'count' => 0,
+                'start' => time()
+            ];
+        }
+
+        $data['route'] = $org;
+        $data['ctr'] = $route;
+        $data['count']++;
+        $data['left'] = max(0, $limit - $data['count']);
+        $data['limit'] = $limit;
+        $data['seconds'] = $window;
+
+        $remaining = max(0, $limit - $data['count']);
+        $reset = $data['start'] + $window;
+
+        if ($data['count'] > $limit) {
+            header("X-RateLimit-Limit: {$limit}");
+            header("X-RateLimit-Remaining: {$remaining}");
+            header("X-RateLimit-Reset: {$reset}");
+            flock($fp, LOCK_UN);
+            fclose($fp);
+            include_once "app/php/core/partials/cbe.php";
+            if (cbe_ctrx_endpoint() == "FE") {
+                die("Too many attempts, please try again later.");
+                return;
+            }
+
+            header('Content-Type: application/json');
+            http_response_code(429);
+            header('Retry-After: ' . max(0, $window - (time() - $data['start'])));
+
+            $msg = self::$xrateMessage ?: 'Request limit exceeded. Please try again later.';
+
+            echo json_encode([
+                'code'        => 429,
+                'message'     => $msg,
+                'error'       => 'Request limit exceeded',
+                'limit'       => $limit,
+                'window'      => $window,
+                'success'     => false,
+                'retry_after' => max(0, $window - (time() - $data['start']))
+            ]);
+            exit;
+        }
+
+        rewind($fp);
+        ftruncate($fp, 0);
+        fwrite($fp, json_encode($data));
+        fflush($fp);
+
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        return true;
     }
 
     public static function file_exists_strict(string $path): bool
@@ -240,17 +399,21 @@ class Ctrx
         return in_array($file, scandir($dir), true);
     }
 
-    private static function ctrratedetails($route = "")
+    private static function ctrratedetails($route = "", $dir = "dir")
     {
-        $dir = "app/php/core/partials/dir";
+        $dir = "app/php/core/partials/$dir";
         if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        $ip = $_SERVER['REMOTE_ADDR'];
+        $signal = implode('_', [
+            $_SERVER['REMOTE_ADDR'] ?? '',
+            $_SERVER['HTTP_USER_AGENT'] ?? '',
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
+        ]);
         $window = 60;
         $limit = 100;
         $route = ! $route ? current_be() : "ctzr_" . $route;
-        $file = $dir . '/ratelimit_' . md5($route . '_' . $ip);
+        $file = $dir . '/ratelimit_' . md5($route . '_' . $signal);
         if (\Classes\Ctrx::file_exists_strict($file)) {
             $data = json_decode(file_get_contents($file), true);
             $window = $data['seconds'] ?? $window;
@@ -609,20 +772,38 @@ class Ctrx
         return rmdir($directory);
     }
 
-    public static function remove_xrates(){
-        try{
+    public static function remove_xrates()
+    {
+        try {
             $arr = [
                 "app/php/core/partials/dir",
                 "app/php/core/partials/fe_limit",
                 "app/php/core/partials/be_limit",
                 "app/php/core/partials/page_limit",
             ];
-    
-            foreach($arr as $k=>$v){
+
+            foreach ($arr as $v) {
                 self::deleteDirectory($v);
             }
+
+            try {
+                $redis = self::getRedisConnection();
+                if ($redis !== null) {
+                    $keys = $redis->keys('ratelimit_*');
+
+                    if (!empty($keys)) {
+                        $redis->del($keys);
+                        error_log("Cleared " . count($keys) . " rate limiting keys from Redis");
+                    } else {
+                        error_log("No rate limiting keys found in Redis");
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("\n❌ Redis clear failed: " . $e->getMessage());
+            }
+
             return true;
-        }catch(Throwable $e){
+        } catch (Throwable $e) {
             throw new Exception($e->getMessage());
         }
     }

@@ -1,12 +1,10 @@
 services:
-
   app:
     build:
       context: .
       dockerfile: Dockerfile
-
+      
     container_name: ctrx_app
-
     ports:
       - "8081:80"
 
@@ -15,6 +13,14 @@ services:
 
     depends_on:
       - docker_db
+      - docker_redis
+
+    environment:
+      - REDIS_HOST=ctrx_redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=ctrx
+      - REDIS_DATABASE=0
+      - REDIS_TIMEOUT=0.2
 
   docker_db:
     image: mariadb:10.11
@@ -32,8 +38,30 @@ services:
     volumes:
       - ctrx_db_data:/var/lib/mysql
 
+  docker_redis:
+    image: redis:7.2-alpine
+
+    container_name: ctrx_redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - ctrx_redis_data:/data
+
+    command: redis-server --appendonly yes
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   ctrx_db_data:
+  ctrx_redis_data:  
 
 
   #>> Build and start the CTRX app
@@ -86,3 +114,6 @@ volumes:
 
   #>> Stop and remove containers, networks, and database volume
   #>> docker compose down -v
+
+  #>> Check the xrate files
+  #>> docker compose exec docker_redis redis-cli keys "ratelimit_*"

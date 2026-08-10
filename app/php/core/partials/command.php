@@ -76,7 +76,7 @@ $extra = isset($arguments[3]) ? $arguments[3] : '';
 $exxr = isset($arguments[4]) ? $arguments[4] : '';
 
 if ($route == "run" || $route == "server") {
-    include "app/php/core/partials/envloader.php";
+    include_once "app/php/core/partials/envloader.php";
     $host = env("rootpath");
     $exp = explode("//", $host);
     $runner = $exp[1];
