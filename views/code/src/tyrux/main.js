@@ -495,9 +495,6 @@ function get_form_data(selector) {
 
 if (typeof window !== "undefined") {
     window.get_form_data = get_form_data;
-    window.tyrequest = tyrequest;
-    window.tyrax = tyrax;
-    window.tyrasync = tyrsync;
 }
 
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {

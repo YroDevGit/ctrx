@@ -10,9 +10,12 @@ function encrypt($data, string $key = null)
     $iv = openssl_random_pseudo_bytes($iv_length);
     $encrypted_data = null;
     if ($key == null || $key == "") {
-        $encrypted_data = openssl_encrypt($data, $cipher, env("encrypt_key"), 0, $iv);
+        $enc = env("encrypt_key") ?? "ctrx_yro";
+        $ky = "ctrxyro_salt_".$enc;
+        $encrypted_data = openssl_encrypt($data, $cipher, $ky , 0, $iv);
     } else {
-        $encrypted_data = openssl_encrypt($data, $cipher, $key, 0, $iv);
+        $ky = "ctrxyro_salt_".$key;
+        $encrypted_data = openssl_encrypt($data, $cipher, $ky, 0, $iv);
     }
 
     $combined_data = $iv . $encrypted_data;
@@ -61,7 +64,8 @@ function decrypt($encrypted_data, string $key = null)
     $encrypted_data = substr($decoded_data, $iv_length);
 
     $decryption_key = $key ?: env("encrypt_key");
-    $decrypted_data = openssl_decrypt($encrypted_data, $cipher, $decryption_key, 0, $iv);
+    $newDec = "ctrxyro_salt_". $decryption_key;
+    $decrypted_data = openssl_decrypt($encrypted_data, $cipher, $newDec, 0, $iv);
 
     if ($decrypted_data === false || !mb_check_encoding($decrypted_data, 'UTF-8')) {
         return null;

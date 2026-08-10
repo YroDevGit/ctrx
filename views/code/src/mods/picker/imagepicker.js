@@ -1565,8 +1565,4 @@ class CImagePicker {
     }
 }
 
-if (typeof window !== "undefined") {
-    window.CImagePicker = CImagePicker;
-}
-
 export default CImagePicker;
