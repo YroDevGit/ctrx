@@ -166,11 +166,10 @@ if (!function_exists("js")) {
                 unset($flx);
                 $flx = current_page();
             }
-            $fl = "";
+            
+            $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
             if ($jsversion) {
-                $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js?v=' . $jsversion;
-            } else {
-                $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
+                $fl = $fl. '?v=' . $jsversion;
             }
             $value = htmlspecialchars('/views/js/' . $fl, ENT_QUOTES);
             if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {

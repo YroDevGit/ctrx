@@ -2,8 +2,7 @@
 if(! function_exists("ctrx_fe_configuration")){
     function ctrx_fe_configuration(string $key = "*")
     {
-        $view_config = file_get_contents("views/fe_config.json");
-        $view_config = json_decode($view_config, true);
+        $view_config = $GLOBALS['ctrx_views_conf_a_vars'] ?? [];
 
         if ($key == "*") {
             return $view_config;
