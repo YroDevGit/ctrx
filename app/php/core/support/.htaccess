@@ -36,7 +36,7 @@ RewriteRule ^vendor/ - [F,L]
 RewriteRule ^composer\.(json|lock)$ - [F,L,NC]
 
 # Ctrx Javascript
-RewriteCond %{REQUEST_URI} ^/(views/js/|views/code/src/|views/code/script/) [NC]
+RewriteCond %{REQUEST_URI} ^/(views/js/|views/code/src/|views/code/script/|views/code/settings/) [NC]
 RewriteCond %{REQUEST_URI} !\.(js|css)$ [NC]
 RewriteCond %{REQUEST_FILENAME}.js -f
 RewriteRule ^(.*)$ $1.js [L,T=application/javascript]
