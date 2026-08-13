@@ -157,8 +157,7 @@ if (!function_exists("js")) {
     function js(string|bool ...$filenames)
     {
         if (! $filenames) {
-            $current = current_page();
-            $filenames = [$current];
+            $filenames = [true];
         }
         $jsversion = fe_config("js_version");
         foreach ($filenames as $flx) {
@@ -166,10 +165,20 @@ if (!function_exists("js")) {
                 unset($flx);
                 $flx = current_page();
             }
+
+            if (is_bool($flx) && $flx == false) {
+                $GLOBALS['ctrx_js_includes_1993664_yro2'] = 1;
+                continue;
+            }
             
             $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
+            $gl = $fl;
             if ($jsversion) {
                 $fl = $fl. '?v=' . $jsversion;
+            }
+            if(! file_exists("views/js/".$gl)){
+                $GLOBALS['ctrx_js_includes_1993664_yro1'][$gl] = "views/js/".$gl;
+                continue;
             }
             $value = htmlspecialchars('/views/js/' . $fl, ENT_QUOTES);
             if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {

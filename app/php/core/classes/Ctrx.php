@@ -635,7 +635,7 @@ class Ctrx
         $currPage = current_page();
         $roleFilt = fe_config("role_filtering");
         $UserRole = self::get_user_role();
-        if ($roleFilt != "yes" || $roleFilt == null) {
+        if ($roleFilt != true || $roleFilt == null) {
             return;
         }
         if (! env('database')) {
