@@ -1,3 +1,4 @@
+import CtrDATE from "../date";
 import Validator from "../validator";
 
 /**
@@ -613,7 +614,7 @@ class TModal {
 
             wrapper.className = "tmodal-group";
 
-            const tag = field.tag || "input";
+            let tag = field.tag || "input";
 
             if (
                 field.label !== false &&
@@ -633,7 +634,7 @@ class TModal {
                 wrapper.appendChild(label);
             }
 
-            const input = document.createElement(tag);
+            const input = document.createElement(tag == "calendar" || tag == "datepicker" ? "input" : tag);
 
             input.name = key;
             input.id = key;
@@ -644,6 +645,14 @@ class TModal {
 
                 input.className =
                     "tmodal-input " + (field.class || "");
+            }
+
+            if(tag == "calendar" || tag == "datepicker"){
+                tag = "input";
+                field.tag = "input";
+                input.type = "text";
+                input.className =
+                    "tmodal-input tmodal-calendar-input " + (field.class || "");
             }
 
             /* textarea */
@@ -897,6 +906,8 @@ class TModal {
                 //instance.hide();
             }
         });
+
+        CtrDATE.datePicker(".tmodal-calendar-input");
 
         return instance;
     }
