@@ -907,8 +907,10 @@ class TModal {
             }
         });
 
-        CtrDATE.datePicker(".tmodal-calendar-input");
-
+        let hasCalendarInpt = document.querySelectorAll(".tmodal-calendar-input");
+        if(hasCalendarInpt.length && hasCalendarInpt.length > 0){
+            CtrDATE.datePicker(".tmodal-calendar-input");
+        }
         return instance;
     }
 }

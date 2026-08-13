@@ -251,9 +251,9 @@ class CtrDate {
 
         const fields = options.fields || [];
 
-
         fields.forEach(selector => {
             const input = document.querySelector(selector);
+            if(! input) {console.error(`Selector ${selector} not found.!`);return;};
             input.setAttribute("autocomplete", "off");
             input.setAttribute("readonly", true);
             let mx = input.getAttribute("maxdate") ?? null;
