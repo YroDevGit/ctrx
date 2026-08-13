@@ -280,7 +280,7 @@ class CtrDate {
             const container = document.createElement('div');
             container.className = 'ctr-calendar';
             const title = document.createElement("div");
-            title.innerHTML = input.getAttribute("ctrtitle") ?? "CodeTazer Calendar";
+            title.innerHTML = input.getAttribute("ctrtitle") ?? "CTRX Calendar";
             title.style.color = "black";
             title.style.fontFamily = "monospaced";
             title.setAttribute("align", "center");
@@ -484,7 +484,7 @@ class CtrDate {
             yearSelect.addEventListener('change', () => { currentDate.setFullYear(parseInt(yearSelect.value)); renderCalendar(currentDate); });
 
             okBtn.addEventListener('click', () => {
-                if (!selectedDay) return;
+                if (!selectedDay) {alert("Please select date");return};
 
                 const y = currentDate.getFullYear(), m = currentDate.getMonth() + 1, d = selectedDay;
                 let val = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
