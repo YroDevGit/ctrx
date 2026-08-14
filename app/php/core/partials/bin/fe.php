@@ -905,6 +905,17 @@ if(! function_exists("append_url_params")){
     }
 }
 
+if(! function_exists("compare_decrypt")){
+    function compare_decrypt($value, ...$values){
+        $value = val($value);
+        foreach($values as $k=>$v){
+            $v = val($v);
+            if(decrypt($v) !== decrypt($value)) return false;
+        }
+        return true;
+    }
+}
+
 if (! function_exists("active_class")) {
     function active_class(string $route, $class = "active")
     {
