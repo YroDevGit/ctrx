@@ -900,6 +900,16 @@ class CtrClass {
         }
     }
 
+    append_ur_params(newParams) {
+        const params = new URLSearchParams(window.location.search);
+    
+        Object.entries(newParams).forEach(([key, value]) => {
+            params.set(key, value);
+        });
+    
+        return params.toString();
+    }
+
     log(...message) {
         console.log(...message);
     }
