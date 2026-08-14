@@ -236,8 +236,8 @@ const tyrax = { // tyrux default config :: CodeTazeR
         return new Promise((resolve, reject) => {
             tyrux({
                 ...option,
-                response: res => resolve(res),
-                error: err => reject(err)
+                response: res => {if(option.dataOnly){resolve(res.data ?? []);}else{resolve(res);}},
+                error: err => {if(option.dataOnly){console.error(err);resolve([]);}else{reject(err);}}
             });
         });
     },

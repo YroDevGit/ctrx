@@ -715,10 +715,12 @@ class TModal {
                                 opts = spl;
                             }else{
                                 const ind = field?.config?.index ?? field?.index ?? undefined;
-                                if(typeof ind == "string"){
+                                if(typeof ind == "string" || typeof ind == "number"){
                                     opts = [{ value: "", label: `${ind ?? "Select Item"}` }, ...spl];
                                 }else if(typeof ind == "object"){
                                     opts = [ind, ...spl];
+                                }else{
+                                    opts = [{ value: "", label: "Select Item"}, ...spl];
                                 }
                             }
                         }
