@@ -771,6 +771,9 @@ class TModal {
             if (field.required && field.required == true) {
                 input.setAttribute("required", "");
             }
+            if(field.id){
+                input.setAttribute("id", field.id);
+            }
             if (field.attributes) {
 
                 Object.keys(field.attributes).forEach((attr) => {
