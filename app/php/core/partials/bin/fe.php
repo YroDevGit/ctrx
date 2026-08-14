@@ -117,6 +117,8 @@ if (! function_exists("val")) {
                     return "";
                     break;
             }
+        }else{
+            return $val;
         }
     }
 }
