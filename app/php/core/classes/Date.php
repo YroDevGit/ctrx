@@ -1,6 +1,7 @@
 <?php
 
 namespace Classes;
+
 use DateTime;
 
 class Date
@@ -26,6 +27,45 @@ class Date
         $given = $date;
         $date  = new DateTime($given);
         return $date->format($format);
+    }
+
+    static function timeDif(string|null $datetime)
+    {
+        if(! $datetime) return null;
+        $time = strtotime($datetime);
+        $now  = time();
+
+        $diff = $time - $now;
+        $absDiff = abs($diff);
+
+        if ($absDiff < 60) {
+            $value = $absDiff;
+            $unit = 'second';
+        } elseif ($absDiff < 3600) {
+            $value = floor($absDiff / 60);
+            $unit = 'minute';
+        } elseif ($absDiff < 86400) {
+            $value = floor($absDiff / 3600);
+            $unit = 'hour';
+        } elseif ($absDiff < 604800) {
+            $value = floor($absDiff / 86400);
+            $unit = 'day';
+        } elseif ($absDiff < 2592000) {
+            $value = floor($absDiff / 604800);
+            $unit = 'week';
+        } elseif ($absDiff < 31536000) {
+            $value = floor($absDiff / 2592000);
+            $unit = 'month';
+        } else {
+            $value = floor($absDiff / 31536000);
+            $unit = 'year';
+        }
+
+        $unit .= $value != 1 ? 's' : '';
+
+        return $diff < 0
+            ? "$value $unit ago"
+            : "$value $unit left";
     }
 
     static function now($dateformat = "Y-m-d H:i:s")

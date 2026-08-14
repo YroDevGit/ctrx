@@ -5,6 +5,7 @@ namespace Classes;
 use Exception;
 use DateTime;
 use DateTimeZone;
+
 class TimeZone
 {
 
@@ -20,7 +21,7 @@ class TimeZone
         return date_default_timezone_get();
     }
 
-    static function convert(string $to, string $date = "now", string|null $from = null, $format = "Y-m-d H:i:s"):string
+    static function convert(string $to, string $date = "now", string|null $from = null, $format = "Y-m-d H:i:s"): string
     {
         $from ??= date_default_timezone_get();
 
@@ -31,5 +32,13 @@ class TimeZone
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
+    }
+
+    function convert_timezone($datetime, $timezone = 'Asia/Manila', $format = "Y-m-d H:i:s")
+    {
+        $date = new DateTime($datetime, new DateTimeZone('UTC'));
+        $date->setTimezone(new DateTimeZone($timezone));
+
+        return $date->format($format);
     }
 }
