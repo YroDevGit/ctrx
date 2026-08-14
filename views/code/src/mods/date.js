@@ -110,6 +110,49 @@ class CtrDate {
         return format.replace(/Y|m|d|H|h|i|s|A|a/g, m => map[m]);
     }
 
+    timeDif(datetime) {
+        if(! datetime) return null;
+        const time = new Date(datetime).getTime();
+        const now = Date.now();
+    
+        const diff = time - now;
+        const absDiff = Math.abs(diff);
+    
+        let value;
+        let unit;
+    
+        if (absDiff < 60 * 1000) {
+            value = Math.floor(absDiff / 1000);
+            unit = 'second';
+        } else if (absDiff < 60 * 60 * 1000) {
+            value = Math.floor(absDiff / (60 * 1000));
+            unit = 'minute';
+        } else if (absDiff < 24 * 60 * 60 * 1000) {
+            value = Math.floor(absDiff / (60 * 60 * 1000));
+            unit = 'hour';
+        } else if (absDiff < 7 * 24 * 60 * 60 * 1000) {
+            value = Math.floor(absDiff / (24 * 60 * 60 * 1000));
+            unit = 'day';
+        } else if (absDiff < 30 * 24 * 60 * 60 * 1000) {
+            value = Math.floor(absDiff / (7 * 24 * 60 * 60 * 1000));
+            unit = 'week';
+        } else if (absDiff < 365 * 24 * 60 * 60 * 1000) {
+            value = Math.floor(absDiff / (30 * 24 * 60 * 60 * 1000));
+            unit = 'month';
+        } else {
+            value = Math.floor(absDiff / (365 * 24 * 60 * 60 * 1000));
+            unit = 'year';
+        }
+    
+        if (value !== 1) {
+            unit += 's';
+        }
+    
+        return diff < 0
+            ? `${value} ${unit} ago`
+            : `${value} ${unit} left`;
+    }
+
     now(format = "Y-m-d H:i:s", timezone = "Asia/Manila") {
         const d = new Date();
     
