@@ -189,6 +189,7 @@ const opt = {
     where: undefined,
     query: undefined,
     req: undefined,
+    params: undefined
 };
 
 const tyrax = { // tyrux default config :: CodeTazeR
