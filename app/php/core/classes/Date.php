@@ -31,7 +31,7 @@ class Date
 
     static function timeDif(string|null $datetime)
     {
-        if(! $datetime) return null;
+        if (! $datetime) return null;
         $time = strtotime($datetime);
         $now  = time();
 
@@ -71,6 +71,25 @@ class Date
     static function now($dateformat = "Y-m-d H:i:s")
     {
         return date($dateformat);
+    }
+
+    static function local(&$date, $timezone = null)
+    {
+        if(! isset($date)) return null;
+        if(! $date) return null;
+        $dbTimezone = $timezone ?? env('dbtimezone') ?? "UTC";
+        $appTimezone = date_default_timezone_get();
+
+        $date = new DateTime(
+            $date,
+            new DateTimeZone($dbTimezone)
+        );
+
+        $date->setTimezone(
+            new DateTimeZone($appTimezone)
+        );
+
+        return $date;
     }
 }
 

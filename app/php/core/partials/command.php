@@ -271,7 +271,7 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n✅ Done\n\n";
     exit;
-}else if ($route == "reset:docker") {
+} else if ($route == "reset:docker") {
     if (file_exists("compose.yml")) {
         unlink("compose.yml");
     }
@@ -863,29 +863,31 @@ if ($route == "update") {
         echo "❌ " . $e->getMessage();
         exit;
     }
-}else if($route == "-" || $route == "@d" || $route == "@docker"){
+} else if ($route == "-" || $route == "@d" || $route == "@docker") {
     $newArr = [];
-    if(! $arguments){
-        echo "No args found.!";exit;
+    if (! $arguments) {
+        echo "No args found.!";
+        exit;
     }
-    foreach($arguments as $k=>$v){
-        if($k == 0 || $k == 1) continue;
+    foreach ($arguments as $k => $v) {
+        if ($k == 0 || $k == 1) continue;
         $newArr[] = $v;
     }
 
-    if(! $newArr){
-        echo "No commands found.!";exit;
+    if (! $newArr) {
+        echo "No commands found.!";
+        exit;
     }
 
-    $comm = implode(" ",$newArr);
-    
+    $comm = implode(" ", $newArr);
+
     $res = exec("docker compose exec app php cli $comm", $output);
-    foreach($output as $kk=>$vv){
-        if(! $vv || $vv == "" || $vv == null) echo "\n";
-        echo $vv."\n";
+    foreach ($output as $kk => $vv) {
+        if (! $vv || $vv == "" || $vv == null) echo "\n";
+        echo $vv . "\n";
     }
     exit;
-}else if ($route == "sync:tables" || $route == "db:sync") {
+} else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
     $dbname = env("database");
     if (! $dbname) {
@@ -917,49 +919,49 @@ if ($route == "update") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
-}else if($route == "dl:testmemory"){
+} else if ($route == "dl:testmemory") {
     $targetDir = 'views/pages/';
-    
+
     if (!is_dir($targetDir)) {
         if (!mkdir($targetDir, 0755, true)) {
             die("Failed to create directory: " . $targetDir);
         }
     }
 
-    if(file_exists("views/pages/testmemory.php")){
+    if (file_exists("views/pages/testmemory.php")) {
         echo "\n❌ File conflict with views/pages/testmemory.php\n\n";
         exit;
     }
-    
+
     $files = [
         'testmemory.php' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/memory.php',
     ];
-    
+
     $successCount = 0;
     $errors = [];
-    
+
     include_once "app/php/core/partials/envloader.php";
     foreach ($files as $filename => $url) {
         $filePath = $targetDir . $filename;
-        
+
         $fileContent = @file_get_contents($url);
-        
+
         if ($fileContent === false) {
             $errors[] = "Failed to download: " . $filename;
             continue;
         }
-        
+
         if (file_put_contents($filePath, $fileContent) === false) {
             $errors[] = "Failed to save: " . $filename;
             continue;
         }
-        
+
         $successCount++;
     }
-    
+
     echo "\nMemory Download Results\n";
     echo "\n✅ Successfully downloaded: " . $successCount . " out of " . count($files) . " files\n";
-    
+
     if (!empty($errors)) {
         echo "Errors:";
         echo "\n";
@@ -971,44 +973,44 @@ if ($route == "update") {
         echo "✅ Memory DB has been downloaded: $en/testmemory\n\n";
     }
     exit;
-}else if($route == "dl:bootstrap"){
+} else if ($route == "dl:bootstrap") {
     $targetDir = 'views/assets/_bootstrap/';
-    
+
     if (!is_dir($targetDir)) {
         if (!mkdir($targetDir, 0755, true)) {
             die("Failed to create directory: " . $targetDir);
         }
     }
-    
+
     $files = [
         'bootstrap.css' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/bootstrap.css',
         'bootstrap.js' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/bootstrap.js'
     ];
-    
+
     $successCount = 0;
     $errors = [];
-    
+
     foreach ($files as $filename => $url) {
         $filePath = $targetDir . $filename;
-        
+
         $fileContent = @file_get_contents($url);
-        
+
         if ($fileContent === false) {
             $errors[] = "Failed to download: " . $filename;
             continue;
         }
-        
+
         if (file_put_contents($filePath, $fileContent) === false) {
             $errors[] = "Failed to save: " . $filename;
             continue;
         }
-        
+
         $successCount++;
     }
-    
+
     echo "\n\nBootstrap Download Results\n";
     echo "\n✅ Successfully downloaded: " . $successCount . " out of " . count($files) . " files\n";
-    
+
     if (!empty($errors)) {
         echo "Errors:";
         echo "\n";
@@ -1019,40 +1021,71 @@ if ($route == "update") {
         echo "✅ All files downloaded successfully to: views/assets_bootstrap/\n\n";
     }
     exit;
-}else if($route == "reset:memory" || $route == "reset:sqlite"){
-    try{
+} else if ($route == "reset:memory" || $route == "reset:sqlite") {
+    try {
         \Classes\SQLite::dropAllTables();
         echo "✅ Done";
-    }catch(Throwable $e){
-        echo "❌ ".$e->getMessage();
+    } catch (Throwable $e) {
+        echo "❌ " . $e->getMessage();
     }
     exit;
-}else if($route == "reset:role" || $route == "reset:role_management"){
-    try{
+} else if ($route == "reset:role" || $route == "reset:role_management") {
+    try {
         \Classes\SQLite::dropTables("ctrx_roles", "ctrx_roles_access");
         echo "✅ Done";
-    }catch(Throwable $e){
-        echo "❌ ".$e->getMessage();
+    } catch (Throwable $e) {
+        echo "❌ " . $e->getMessage();
     }
     exit;
-}else if($route == "grant:public" || $route == "make:public"){
-    if(! $filename){
+} else if ($route == "grant:public" || $route == "make:public") {
+    if (! $filename) {
         echo "❌ Please input page name/route";
         exit;
     }
     $filename = trim($filename, " /\\");
     include_once "app/php/core/partials/envloader.php";
-    try{
+    try {
         \Classes\SQLite::delete("ctrx_roles_access", "role_id = 1 and `route` = '$filename'");
-        \Classes\SQLite::insert("ctrx_roles_access", ["role_id"=> 1, "route" => $filename, "has_access"=>1]);
+        \Classes\SQLite::insert("ctrx_roles_access", ["role_id" => 1, "route" => $filename, "has_access" => 1]);
         echo "✅ Done";
-    }catch(Throwable $e){
-        echo "❌ ".$e->getMessage();
+    } catch (Throwable $e) {
+        echo "❌ " . $e->getMessage();
     }
     exit;
-}else if($route == "reset:xrate" || $route == "reset:throttle"){
+} else if ($route == "reset:xrate" || $route == "reset:throttle") {
     $res = \Classes\Ctrx::remove_xrates();
-    echo "\n✅ Done\n\n"; exit;
+    echo "\n✅ Done\n\n";
+    exit;
+} else if ($route == "db:timezone") {
+    include_once "app/php/core/partials/backend.php";
+    include_once "app/php/core/partials/envloader.php";
+    if (! env("database")) {
+        echo "❌ Database not set @env\n";
+        exit;
+    }
+    $str = "SELECT CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone;";
+    if($filename == "--query"){
+        echo $str;exit;
+    }
+    $result = \Classes\DB::query($str);
+    echo json_encode($result);
+    exit;
+} else if ($route == "db:sync:timezone") {
+    include_once "app/php/core/partials/backend.php";
+    include_once "app/php/core/partials/envloader.php";
+    if (! env("database")) {
+        echo "❌ Database not set @env\n";
+        exit;
+    }
+    date_default_timezone_set(env('time_zone'));
+    $offset = date('P');
+    $str = "SET time_zone = '$offset'";
+    if($filename == "--query"){
+        echo $str; exit;
+    }
+    \Classes\DB::query("");
+    echo "✅ Success";
+    exit;
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "❌ Please provide a filename for Library.\n";
