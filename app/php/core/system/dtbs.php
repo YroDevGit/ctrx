@@ -652,6 +652,72 @@ function importSQL($pdo, $sql, $isFile = false)
     }
 }
 
+function executeCustomQuery($pdo, $sql)
+{
+    $sql = trim($sql);
+    if (empty($sql)) {
+        return ['success' => false, 'message' => 'SQL query is empty'];
+    }
+
+    try {
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        // Check if this is a SELECT query
+        $isSelect = stripos(trim($sql), 'SELECT') === 0;
+        
+        if ($isSelect) {
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return [
+                'success' => true, 
+                'data' => $data, 
+                'rowCount' => count($data),
+                'isSelect' => true
+            ];
+        } else {
+            $rowCount = $stmt->rowCount();
+            return [
+                'success' => true, 
+                'rowCount' => $rowCount,
+                'isSelect' => false,
+                'message' => "Query executed successfully. $rowCount row(s) affected."
+            ];
+        }
+    } catch (PDOException $e) {
+        return ['success' => false, 'message' => $e->getMessage()];
+    }
+}
+
+// Function to get database timezone
+function getDBTimezone($pdo)
+{
+    global $driver;
+    
+    try {
+        if (isMysql()) {
+            $sql = "SELECT CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone";
+            $result = executeQuery($pdo, $sql);
+            if ($result['success']) {
+                $row = $result['data']->fetch();
+                return $row['timezone'] ?? 'Unknown';
+            }
+        } elseif (isPostgres()) {
+            $sql = "SELECT TO_CHAR(EXTRACT(TIMEZONE FROM NOW()) * INTERVAL '1 second', 'HH24:MI') AS timezone";
+            $result = executeQuery($pdo, $sql);
+            if ($result['success']) {
+                $row = $result['data']->fetch();
+                return $row['timezone'] ?? 'Unknown';
+            }
+        } elseif (isSqlite()) {
+            return 'SQLite (UTC)';
+        }
+        return 'Unknown';
+    } catch (Exception $e) {
+        return 'Error retrieving timezone';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $pdo = getDBConnection($driver, $host, $port, $dbname, DB_CHARSET);
     $action = $_POST['action'];
@@ -747,6 +813,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $response = importSQL($pdo, $sqlQuery, false);
                 }
                 break;
+            case 'executeQuery':
+                $sqlQuery = $_POST['sql_query'] ?? '';
+                $response = executeCustomQuery($pdo, $sqlQuery);
+                break;
+            case 'getTimezone':
+                $timezone = getDBTimezone($pdo);
+                $response = ['success' => true, 'timezone' => $timezone];
+                break;
         }
     } catch (Exception $e) {
         $response = ['success' => false, 'message' => $e->getMessage()];
@@ -821,7 +895,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             background: white;
             padding: 15px 20px;
             border-radius: 8px;
@@ -1741,6 +1815,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             flex-shrink: 0;
         }
 
+        .query-result-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            max-height: 300px;
+            overflow: auto;
+            display: none;
+        }
+
+        .query-result-container.show {
+            display: block;
+        }
+
+        .query-result-container table {
+            font-size: 12px;
+        }
+
+        .query-result-container table th,
+        .query-result-container table td {
+            padding: 4px 8px;
+        }
+
+        .query-result-stats {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .query-result-error {
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        .query-wrapper {
+            background: white;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .query-wrapper .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .query-wrapper .input-group .form-control {
+            flex: 1;
+            min-height: 80px;
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        .query-wrapper .input-group .btn {
+            flex-shrink: 0;
+            height: 80px;
+            align-self: stretch;
+        }
+
+        .timezone-display {
+            font-size: 14px;
+            color: #6c757d;
+            margin-left: 10px;
+            background: #f8f9fa;
+            padding: 2px 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
         @media (max-width: 768px) {
             .db-header-actions {
                 display: grid;
@@ -1827,6 +1973,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             .db-header {
                 flex-wrap: wrap;
             }
+
+            .query-wrapper .input-group {
+                flex-direction: column;
+            }
+
+            .query-wrapper .input-group .btn {
+                height: auto;
+                align-self: flex-end;
+            }
         }
     </style>
 </head>
@@ -1859,6 +2014,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     </button>
                 </a>
             </div>
+        </div>
+
+        <div class="query-wrapper">
+            <div class="input-group">
+                <textarea class="form-control" id="queryInput" placeholder="Enter SQL query here... (e.g., SELECT * FROM users)"></textarea>
+                <button class="btn btn-primary" onclick="executeCustomQuery()">
+                    <span class="icon">▶️</span> Execute
+                </button>
+            </div>
+            <div id="queryResultContainer" class="query-result-container"></div>
         </div>
 
         <div id="alertContainer"></div>
@@ -1905,6 +2070,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="modal-header">
                 <h5><span class="icon">🔐</span>Database Credentials</h5>
                 <button class="btn-close" onclick="closeModal('credentialsModal')">×</button>
+            </div>
+            <div align="center" style="margin-top: 5px;">
+            <span class="timezone-display" id="timezoneDisplay">⏰ Loading timezone...</span>
             </div>
             <div class="modal-body">
                 <?php
@@ -2473,7 +2641,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     }
                 });
             }
+
+            // Load timezone
+            loadTimezone();
+
+            // Allow Ctrl+Enter to execute query
+            document.getElementById('queryInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    executeCustomQuery();
+                }
+            });
         });
+
+        async function loadTimezone() {
+            try {
+                const result = await apiRequest('getTimezone');
+                if (result.success && result.timezone) {
+                    document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: ' + result.timezone;
+                } else {
+                    document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: Unknown';
+                }
+            } catch (error) {
+                document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: Error';
+            }
+        }
 
         async function importSQL() {
             const activeTab = document.querySelector('.import-tab.active');
@@ -3458,6 +3650,107 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 document.body.removeChild(textarea);
                 showAlert('All credentials copied!', 'success');
             });
+        }
+
+        // New function to execute custom SQL queries
+        async function executeCustomQuery() {
+            const queryInput = document.getElementById('queryInput');
+            const query = queryInput.value.trim();
+
+            if (!query) {
+                showAlert('Please enter a SQL query to execute', 'warning');
+                return;
+            }
+
+            const container = document.getElementById('queryResultContainer');
+            const btn = document.querySelector('.query-wrapper .btn');
+            const originalText = btn.innerHTML;
+
+            // Show loading state
+            btn.innerHTML = '⏳ Executing...';
+            btn.disabled = true;
+            container.classList.add('show');
+            container.innerHTML = '<div class="text-center py-3"><span class="spinner-border"></span> Executing query...</div>';
+
+            try {
+                const result = await apiRequest('executeQuery', {
+                    sql_query: query
+                });
+
+                if (result.success) {
+                    if (result.isSelect) {
+                        // SELECT query - show results in a table
+                        const data = result.data || [];
+                        const rowCount = result.rowCount || 0;
+
+                        if (data.length === 0) {
+                            container.innerHTML = `
+                                <div class="alert alert-info" style="margin: 0;">
+                                    Query executed successfully. <strong>0</strong> rows returned.
+                                </div>
+                            `;
+                        } else {
+                            const columns = Object.keys(data[0]);
+                            let tableHtml = `
+                                <div class="query-result-stats">
+                                    ✅ Query executed successfully. <strong>${rowCount}</strong> row(s) returned.
+                                </div>
+                                <div class="table-responsive" style="max-height: 300px;">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                ${columns.map(col => `<th>${col}</th>`).join('')}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+
+                            data.forEach(row => {
+                                tableHtml += '<tr>';
+                                columns.forEach(col => {
+                                    tableHtml += `<td>${row[col] !== null ? row[col] : '<span class="text-muted">NULL</span>'}</td>`;
+                                });
+                                tableHtml += '</tr>';
+                            });
+
+                            tableHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                            container.innerHTML = tableHtml;
+                        }
+                    } else {
+                        // Non-SELECT query (INSERT, UPDATE, DELETE, etc.)
+                        container.innerHTML = `
+                            <div class="alert alert-success" style="margin: 0;">
+                                ✅ ${result.message || 'Query executed successfully.'} <strong>${result.rowCount || 0}</strong> row(s) affected.
+                            </div>
+                        `;
+
+                        // Refresh table data if we have a current table
+                        if (currentTable) {
+                            await loadTableData();
+                        }
+                        await loadTables();
+                    }
+                } else {
+                    container.innerHTML = `
+                        <div class="alert alert-danger" style="margin: 0;">
+                            ❌ Query execution failed: ${result.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="alert alert-danger" style="margin: 0;">
+                        ❌ Error: ${error.message || 'Failed to execute query'}
+                    </div>
+                `;
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
 
         document.addEventListener('DOMContentLoaded', async function() {

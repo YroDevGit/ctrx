@@ -319,27 +319,61 @@ class Collection
             return $this;
         }
 
-        $sortColumns = [];
-        if (is_string($columns)) {
-            $sortColumns[$columns] = "asc";
-        } elseif (is_array($columns)) {
-            foreach ($columns as $col => $dir) {
-                if (is_int($col)) $sortColumns[$dir] = "asc";
-                else $sortColumns[$col] = strtolower($dir) === "desc" ? "desc" : "asc";
-            }
-        }
+        $sortColumns = $this->normalizeSortColumns($columns);
 
         usort($this->items, function ($a, $b) use ($sortColumns) {
             foreach ($sortColumns as $col => $dir) {
                 $valA = $a[$col] ?? null;
                 $valB = $b[$col] ?? null;
-                $cmp = (is_numeric($valA) && is_numeric($valB)) ? ($valA <=> $valB) : strcasecmp((string)$valA, (string)$valB);
-                if ($cmp !== 0) return $dir === "desc" ? -$cmp : $cmp;
+
+                $cmp = $this->smartCompare($valA, $valB);
+
+                if ($cmp !== 0) {
+                    return $dir === "desc" ? -$cmp : $cmp;
+                }
             }
             return 0;
         });
 
         return $this;
+    }
+
+    private function normalizeSortColumns(string|array $columns): array
+    {
+        $sortColumns = [];
+
+        if (is_string($columns)) {
+            $sortColumns[$columns] = "asc";
+        } elseif (is_array($columns)) {
+            foreach ($columns as $col => $dir) {
+                if (is_int($col)) {
+                    $sortColumns[$dir] = "asc";
+                } else {
+                    $sortColumns[$col] = strtolower($dir) === "desc" ? "desc" : "asc";
+                }
+            }
+        }
+
+        return $sortColumns;
+    }
+
+    private function smartCompare($a, $b): int
+    {
+        if ($a === null && $b === null) return 0;
+        if ($a === null) return -1;
+        if ($b === null) return 1;
+
+        if (is_numeric($a) && is_numeric($b)) {
+            return $a <=> $b;
+        }
+
+        $timeA = is_string($a) ? strtotime($a) : false;
+        $timeB = is_string($b) ? strtotime($b) : false;
+
+        if ($timeA !== false && $timeB !== false) {
+            return $timeA <=> $timeB;
+        }
+        return strcasecmp((string)$a, (string)$b);
     }
 
     public function strtolower(string|array $keys): self

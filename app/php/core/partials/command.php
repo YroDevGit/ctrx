@@ -1079,11 +1079,27 @@ if ($route == "update") {
     }
     date_default_timezone_set(env('time_zone'));
     $offset = date('P');
-    $str = "SET time_zone = '$offset'";
+    $str = "SET GLOBAL time_zone = '$offset'";
     if($filename == "--query"){
         echo $str; exit;
     }
-    \Classes\DB::query("");
+    \Classes\DB::query($str);
+    echo "✅ Success";
+    exit;
+}else if($route == "db:set:timezone"){
+    include_once "app/php/core/partials/backend.php";
+    include_once "app/php/core/partials/envloader.php";
+    if (! env("database")) {
+        echo "❌ Database not set @env\n";
+        exit;
+    }
+    if(! $filename){
+        echo "❌ timezone is required";
+    }
+    $offset = $filename;
+    $str = "SET GLOBAL time_zone = '$offset'";
+    \Classes\DB::query($str);
+
     echo "✅ Success";
     exit;
 } else if ($route == "+library") {

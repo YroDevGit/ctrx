@@ -3,6 +3,7 @@
 namespace Classes;
 
 use DateTime;
+use Exception;
 
 class Date
 {
@@ -29,9 +30,12 @@ class Date
         return $date->format($format);
     }
 
-    static function timeDif(string|null $datetime)
+    static function timeDif(string|null $datetime, $date_local = false)
     {
         if (! $datetime) return null;
+        if($date_local){
+            $datetime = strval(self::local($datetime));
+        }
         $time = strtotime($datetime);
         $now  = time();
 
@@ -73,21 +77,24 @@ class Date
         return date($dateformat);
     }
 
-    static function local(&$date, $timezone = null)
+    static function local($date, $timezone = null)
     {
         if(! isset($date)) return null;
         if(! $date) return null;
-        $dbTimezone = $timezone ?? env('dbtimezone') ?? "UTC";
+        $dbTimezone = $timezone ?? env('dbtimezone') ?? null;
+        if(! $dbTimezone) return $date;
         $appTimezone = date_default_timezone_get();
 
-        $date = new DateTime(
+        $date = new \DateTime(
             $date,
-            new DateTimeZone($dbTimezone)
+            new \DateTimeZone($dbTimezone)
         );
 
         $date->setTimezone(
-            new DateTimeZone($appTimezone)
+            new \DateTimeZone($appTimezone)
         );
+
+        $date = $date->format('Y-m-d H:i:s');
 
         return $date;
     }

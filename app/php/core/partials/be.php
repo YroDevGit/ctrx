@@ -680,3 +680,21 @@ if (! function_exists("is_already_included")) {
         return $hasIt;
     }
 }
+
+if(! function_exists("get_user_data")){
+    function get_user_data(string|int $key = "*"){
+        return \Classes\Ctrx::get_user_data($key);
+    }
+}
+
+if(! function_exists("myId")){
+    function myID(string $column = "id"){
+        return get_user_data($column) ?? null;
+    }
+}
+
+if(! function_exists("date_locale")){
+    function date_locale($date, $timezone = null){
+        return \Classes\Date::local($date, $timezone);
+    }
+}
