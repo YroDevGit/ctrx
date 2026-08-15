@@ -117,7 +117,7 @@ if (! function_exists("val")) {
                     return "";
                     break;
             }
-        }else{
+        } else {
             return $val;
         }
     }
@@ -318,26 +318,28 @@ if (! function_exists('assets')) {
     }
 }
 
-if(! function_exists("assets_css")){
-    function assets_css(string|null $path, bool $tag = true){
+if (! function_exists("assets_css")) {
+    function assets_css(string|null $path, bool $tag = true)
+    {
         $asset = assets($path);
-        if(! $tag){
+        if (! $tag) {
             return $asset;
         }
-        if(! str_ends_with($asset,".css")){
+        if (! str_ends_with($asset, ".css")) {
             $asset .= ".css";
         }
         return "<link rel='stylesheet' href='$asset'>";
     }
 }
 
-if(! function_exists("assets_js")){
-    function assets_js(string|null $path, bool $tag = true){
+if (! function_exists("assets_js")) {
+    function assets_js(string|null $path, bool $tag = true)
+    {
         $asset = assets($path);
-        if(! $tag){
+        if (! $tag) {
             return $asset;
         }
-        if(! str_ends_with($asset,".js")){
+        if (! str_ends_with($asset, ".js")) {
             $asset .= ".js";
         }
         return "<script src='$asset'></script>";
@@ -897,20 +899,29 @@ if (! function_exists("array_as_param")) {
     }
 }
 
-if(! function_exists("append_url_params")){
-    function append_url_params(array $newParams){
+if (! function_exists("append_url_params")) {
+    function append_url_params(array|string $newParams)
+    {
+        if (is_string($newParams)) {
+            $newParams = trim($newParams, " /\\");
+            $newParams = trim($newParams, "?");
+            $newParams = trim($newParams, "&");
+            $allGet = $_GET ?? [];
+            return array_as_param($newPar)."&". $newParams;
+        }
         $allGet = $_GET ?? [];
         $newPar = [...$allGet, ...$newParams];
         return array_as_param($newPar);
     }
 }
 
-if(! function_exists("compare_decrypt")){
-    function compare_decrypt($value, ...$values){
+if (! function_exists("compare_decrypt")) {
+    function compare_decrypt($value, ...$values)
+    {
         $value = val($value);
-        foreach($values as $k=>$v){
+        foreach ($values as $k => $v) {
             $v = val($v);
-            if(decrypt($v) !== decrypt($value)) return false;
+            if (decrypt($v) !== decrypt($value)) return false;
         }
         return true;
     }
@@ -946,20 +957,22 @@ if (! function_exists("ctrx_tools")) {
     }
 }
 
-if(! function_exists("_bootstrap_css")){
-    function _bootstrap_css(bool $tag = true){
+if (! function_exists("_bootstrap_css")) {
+    function _bootstrap_css(bool $tag = true)
+    {
         $asset = assets("_bootstrap/bootstrap.css");
-        if($tag){
+        if ($tag) {
             return "<link rel='stylesheet' href='$asset'>";
         }
         return $asset;
     }
 }
 
-if(! function_exists("_bootstrap_js")){
-    function _bootstrap_js(bool $tag = true){
+if (! function_exists("_bootstrap_js")) {
+    function _bootstrap_js(bool $tag = true)
+    {
         $asset = assets("_bootstrap/bootstrap.js");
-        if($tag){
+        if ($tag) {
             return "<script src='$asset'></script>";
         }
         return $asset;
