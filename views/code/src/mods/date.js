@@ -110,8 +110,20 @@ class CtrDate {
         return format.replace(/Y|m|d|H|h|i|s|A|a/g, m => map[m]);
     }
 
-    get myTimezone(){
+    get myTimeLocation(){
         return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+
+    get myTimezone(){
+        const offset = new Date().getTimezoneOffset();
+        const sign = offset > 0 ? '-' : '+';
+        const hours = String(Math.abs(Math.floor(offset / 60))).padStart(2, '0');
+        const minutes = String(Math.abs(offset % 60)).padStart(2, '0');
+        
+        return {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            offset: `${sign}${hours}:${minutes}`
+        };
     }
 
     timeDif(datetime) {
