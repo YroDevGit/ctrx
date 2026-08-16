@@ -14,7 +14,9 @@ session_start();
 /**
  * Timezone is set to default (@env)
  */
-date_default_timezone_set(env('time_zone'));
+if(env('time_zone')){
+    date_default_timezone_set(env('time_zone'));
+}
 
 /**
  * Basix server adopt by codetazer and ctrx
