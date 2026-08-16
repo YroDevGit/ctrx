@@ -110,6 +110,10 @@ class CtrDate {
         return format.replace(/Y|m|d|H|h|i|s|A|a/g, m => map[m]);
     }
 
+    get myTimezone(){
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+
     timeDif(datetime) {
         if(! datetime) return null;
         const time = new Date(datetime).getTime();
