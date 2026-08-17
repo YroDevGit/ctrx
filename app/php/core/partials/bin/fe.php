@@ -81,6 +81,7 @@ if (! function_exists("dbNow")) {
 if (! function_exists("dbDate")) {
     function dbDate($date, $format = null, $serverTimezone = null)
     {
+        if(! $date) return null;
         $format ??= 'Y-m-d H:i:s';
 
         $serverTimezone = $serverTimezone ?? env('dbtimezone');
