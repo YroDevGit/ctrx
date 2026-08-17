@@ -928,13 +928,14 @@ if (! function_exists("compare_decrypt")) {
 }
 
 if (! function_exists("active_class")) {
-    function active_class(string $route, $class = "active")
+    function active_class(string $route, $class = null)
     {
+        $className = $class ?? fe_config("active_class") ?? "active";
         $current = current_page(false);
         $route = trim($route, "/");
         $route = trim($route, "\\");
         if ($route == $current) {
-            return "active";
+            return $className;
         } else {
             return "";
         }

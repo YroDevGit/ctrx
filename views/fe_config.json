@@ -8,6 +8,7 @@
     "role_filtering": true,
     "js_autoload": true,
     "default_logout": "/",
+    "active_class": "active",
     "assets_version": 1.0,
     "js_version": 1.0,
     "variable": {
