@@ -509,6 +509,6 @@ export {
     tyrequest,
     tyrsync,
     tyrux,
-    Tyrax,
     Tyrsync
 };
+export default Tyrax;
