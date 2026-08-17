@@ -144,10 +144,11 @@ if (!function_exists('dd')) {
 }
 
 if (! function_exists("val")) {
-    function val(&$val, $datatype = "string")
+    function val(&$val, string|null $datatype = "string")
     {
         $datatype = strtolower($datatype);
         if (! isset($val) || ! $val || $val == null || $val == "") {
+            if(!$datatype) return null;
             switch ($datatype) {
                 case "string":
                 case "text":
