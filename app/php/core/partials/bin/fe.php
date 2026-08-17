@@ -144,36 +144,10 @@ if (!function_exists('dd')) {
 }
 
 if (! function_exists("val")) {
-    function val(&$val, string|null $datatype = "string")
+    function val(&$val, $default = "")
     {
-        $datatype = strtolower($datatype);
         if (! isset($val) || ! $val || $val == null || $val == "") {
-            if(!$datatype) return null;
-            switch ($datatype) {
-                case "string":
-                case "text":
-                    return "";
-                    break;
-                case "number":
-                case "int":
-                case "integer":
-                case "float":
-                case "double":
-                case "num":
-                    return "0";
-                    break;
-                case "array":
-                case "object":
-                    return [];
-                    break;
-                case "boolean":
-                case "bool":
-                    return false;
-                    break;
-                default:
-                    return "";
-                    break;
-            }
+            return $default;
         } else {
             return $val;
         }
