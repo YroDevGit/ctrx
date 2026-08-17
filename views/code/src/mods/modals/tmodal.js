@@ -526,11 +526,11 @@ class TModal {
                 overlay.classList.add("tmodal-show");
             },
 
-            get open(){
+            get open() {
                 this.show();
             },
 
-            get close(){
+            get close() {
                 this.hide();
             },
 
@@ -623,15 +623,15 @@ class TModal {
             wrapper.className = "tmodal-group";
 
             let tag = field.tag || "input";
-            if(field.type == "textarea"){
+            if (field.type == "textarea") {
                 delete field.type;
                 tag = "textarea";
             }
-            if(field.type == "calendar"){
+            if (field.type == "calendar") {
                 delete field.type;
                 tag = "calendar";
             }
-            if(field.type == "select"){
+            if (field.type == "select") {
                 delete field.type;
                 tag = "select";
             }
@@ -667,7 +667,7 @@ class TModal {
                     "tmodal-input " + (field.class || "");
             }
 
-            if(tag == "calendar" || tag == "datepicker"){
+            if (tag == "calendar" || tag == "datepicker") {
                 tag = "input";
                 field.tag = "input";
                 input.type = "text";
@@ -682,53 +682,54 @@ class TModal {
                     "tmodal-textarea " + (field.class || "");
             }
 
-            if(tag == "div" || tag == "span" || tag == "section" || tag == "label"){
+            if (tag == "div" || tag == "span" || tag == "section" || tag == "label") {
                 input.className = field.class ?? "";
-                if(field.innerHTML){
+                if (field.innerHTML) {
                     input.innerHTML = field.innerHTML;
                 }
             }
-        
+
             if (tag === "select") {
                 input.className =
                     "tmodal-select " + (field.class || "");
-                    let opts = field.options;
+                let opts = field.options;
                 if (Array.isArray(opts)) {
-                    if (field.config) {
-                        let conf = field.config;
-                        let value = conf.value ?? "value";
-                        let label = conf.label ?? "label";
-                        let spl = [];
-                        let optx = opts;
-                        for (let op in optx) {
-                            let separator = conf.separator ?? "";
-                            let lbl = "";
-                            let lblarr = [];
-                            let labl = optx[op][label];
-                            if (Array.isArray(label)) {
-                                for (let l in label) {
-                                    lblarr = [...lblarr, optx[op][label[l]]];
-                                }
-                                lbl = lblarr.join(separator);
-                            } else {
-                                lbl = labl;
+                    if (!field.config) {
+                        field.config = { value: "value", label: "label" };
+                    }
+                    let conf = field.config;
+                    let value = conf.value ?? "value";
+                    let label = conf.label ?? "label";
+                    let spl = [];
+                    let optx = opts;
+                    for (let op in optx) {
+                        let separator = conf.separator ?? "";
+                        let lbl = "";
+                        let lblarr = [];
+                        let labl = optx[op][label];
+                        if (Array.isArray(label)) {
+                            for (let l in label) {
+                                lblarr = [...lblarr, optx[op][label[l]]];
                             }
-                            spl[op] = { value: optx[op][value], label: lbl };
+                            lbl = lblarr.join(separator);
+                        } else {
+                            lbl = labl;
                         }
-                        if (typeof field?.config.index && field?.config.index == false) {
+                        spl[op] = { value: optx[op][value], label: lbl };
+                    }
+                    if (typeof field?.config.index && field?.config.index == false) {
+                        opts = spl;
+                    } else {
+                        if (field.multiple) {
                             opts = spl;
                         } else {
-                            if(field.multiple){
-                                opts = spl;
-                            }else{
-                                const ind = field?.config?.index ?? field?.index ?? undefined;
-                                if(typeof ind == "string" || typeof ind == "number"){
-                                    opts = [{ value: "", label: `${ind ?? "Select Item"}` }, ...spl];
-                                }else if(typeof ind == "object"){
-                                    opts = [ind, ...spl];
-                                }else{
-                                    opts = [{ value: "", label: "Select Item"}, ...spl];
-                                }
+                            const ind = field?.config?.index ?? field?.index ?? undefined;
+                            if (typeof ind == "string" || typeof ind == "number") {
+                                opts = [{ value: "", label: `${ind ?? "Select Item"}` }, ...spl];
+                            } else if (typeof ind == "object") {
+                                opts = [ind, ...spl];
+                            } else {
+                                opts = [{ value: "", label: "Select Item" }, ...spl];
                             }
                         }
                     }
@@ -780,7 +781,7 @@ class TModal {
             if (field.required && field.required == true) {
                 input.setAttribute("required", "");
             }
-            if(field.id){
+            if (field.id) {
                 input.setAttribute("id", field.id);
             }
             if (field.attributes) {
@@ -920,7 +921,7 @@ class TModal {
         });
 
         let hasCalendarInpt = document.querySelectorAll(".tmodal-calendar-input");
-        if(hasCalendarInpt.length && hasCalendarInpt.length > 0){
+        if (hasCalendarInpt.length && hasCalendarInpt.length > 0) {
             CtrDATE.datePicker(".tmodal-calendar-input");
         }
         return instance;
