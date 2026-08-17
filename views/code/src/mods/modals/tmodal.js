@@ -526,6 +526,14 @@ class TModal {
                 overlay.classList.add("tmodal-show");
             },
 
+            get open(){
+                this.show();
+            },
+
+            get close(){
+                this.hide();
+            },
+
             hide() {
                 overlay.classList.remove("tmodal-show");
                 TModal.resetErrorStr();
@@ -615,6 +623,18 @@ class TModal {
             wrapper.className = "tmodal-group";
 
             let tag = field.tag || "input";
+            if(field.type == "textarea"){
+                delete field.type;
+                tag = "textarea";
+            }
+            if(field.type == "calendar"){
+                delete field.type;
+                tag = "calendar";
+            }
+            if(field.type == "select"){
+                delete field.type;
+                tag = "select";
+            }
 
             if (
                 field.label !== false &&
@@ -668,20 +688,7 @@ class TModal {
                     input.innerHTML = field.innerHTML;
                 }
             }
-
-            /* select */
-            /*
-            ussage:
-            form: {
-                sel : {
-                    tag: "select",
-                    label: "Select something",
-                    options: [{value: "1", label: "Hi"},{value: "2", label: "Hello"}],
-                    onchange: (input, value)=> {console.log(value)},
-                    value: 2,
-                    placeholder: "Select word"
-                }
-            }*/
+        
             if (tag === "select") {
                 input.className =
                     "tmodal-select " + (field.class || "");
