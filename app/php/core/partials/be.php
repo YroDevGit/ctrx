@@ -693,8 +693,8 @@ if(! function_exists("myId")){
     }
 }
 
-if(! function_exists("date_locale")){
-    function date_locale($date, $timezone = null){
+if(! function_exists("dateLocal")){
+    function dateLocal($date, $timezone = null){
         return \Classes\Date::local($date, $timezone);
     }
 }
