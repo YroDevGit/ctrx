@@ -140,8 +140,9 @@ class DB
         return $data[0] ?? [];
     }
 
-    public static function get(string $table, array $where, array|int|null $extra = null): array
+    public static function get(string $table, array|null $where, array|int|null $extra = null): array
     {
+        $where ??= [];
         $data = self::find($table, $where, $extra);
         return $data ?: [];
     }
@@ -156,8 +157,9 @@ class DB
         return self::get($table, $where, $extra);
     }
 
-    public static function find(string $table, array $where, array|int|null $extra = null): array
+    public static function find(string $table, array|null $where, array|int|null $extra = null): array
     {
+        $where ??= [];
         if (!is_array($where)) {
             throw new \InvalidArgumentException("Where conditions must be an associative array.");
         }
@@ -257,8 +259,9 @@ class DB
         return $rc > 0 ? $rows : [];
     }
 
-    public static function paginatedFind(string $table, array $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
+    public static function paginatedFind(string $table, array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
     {
+        $where ??= [];
         $page = max(1, $page);
 
         $params = [];

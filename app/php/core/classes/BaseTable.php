@@ -278,8 +278,9 @@ class BaseTable
         }
     }
 
-    public static function get(array $where, array $extra = []): array
+    public static function get(array|null $where, array $extra = []): array
     {
+        $where ??= [];
         $self = static::instance();
         $bindings = [];
         $sql = "SELECT * FROM " . $self->quoteIdentifier($self->table);
@@ -447,8 +448,9 @@ class BaseTable
         return self::fuzzy($where, $distance, $extra);
     }
 
-    public static function find(array $where, array|int|null $extra = null)
+    public static function find(array|null $where, array|int|null $extra = null)
     {
+        $where ??= [];
         $self = static::instance();
         if (!is_array($where)) {
             throw new \InvalidArgumentException("Where conditions must be an associative array.");
@@ -557,8 +559,9 @@ class BaseTable
         return $rc > 0 ? array_map([$self, 'hydrate'], $rows) : [];
     }
 
-    public static function paginatedFind(array $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
+    public static function paginatedFind(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
     {
+        $where ??= [];
         $page = max(1, $page);
 
         $params = [];
