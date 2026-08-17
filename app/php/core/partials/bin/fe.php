@@ -11,6 +11,9 @@ define('_backend', '_backend');
 define('assets', '/views/assets');
 define('codepath', '/views/code');
 
+define("DATE_FORMAT", "Y-m-d");
+define("DATETIME_FORMAT", "Y-m-d H:i:s");
+
 define('SUCCESS', env('success_code'));
 
 define("success_code", env("success_code"));
