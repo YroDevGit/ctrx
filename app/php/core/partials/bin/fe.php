@@ -33,7 +33,7 @@ if (env("time_zone")) {
 }
 
 if (! function_exists("now")) {
-    function now(string|null $dateformat = "Y-m-d H:i:s", $timezone = null)
+    function now(string|null $dateformat = null, $timezone = null)
     {
         $dateformat ??= "Y-m-d H:i:s";
         if ($timezone) {
@@ -46,6 +46,58 @@ if (! function_exists("now")) {
             return $dt->format($dateformat);
         }
         return date($dateformat);
+    }
+}
+
+if (! function_exists("dbNow")) {
+    function dbNow($format = null, $serverTimezone = null)
+    {
+        $format ??= 'Y-m-d H:i:s';
+
+        $serverTimezone = $serverTimezone ?? env('dbtimezone');
+        if(! $serverTimezone){
+            return date($format);
+        }
+        $appTimezone = date_default_timezone_get();
+
+        $currentDate = date('Y-m-d H:i:s');
+
+        $date = new DateTime(
+            $currentDate,
+            new DateTimeZone($appTimezone)
+        );
+
+        $date->setTimezone(
+            new DateTimeZone($serverTimezone)
+        );
+
+        return $date->format($format);
+    }
+}
+
+if (! function_exists("dbDate")) {
+    function dbDate($date, $format = null, $serverTimezone = null)
+    {
+        $format ??= 'Y-m-d H:i:s';
+
+        $serverTimezone = $serverTimezone ?? env('dbtimezone');
+
+        if (! $serverTimezone) {
+            return date($format, strtotime($date));
+        }
+
+        $appTimezone = date_default_timezone_get();
+
+        $date = new DateTime(
+            $date,
+            new DateTimeZone($appTimezone)
+        );
+
+        $date->setTimezone(
+            new DateTimeZone($serverTimezone)
+        );
+
+        return $date->format($format);
     }
 }
 
@@ -907,7 +959,7 @@ if (! function_exists("append_url_params")) {
             $newParams = trim($newParams, "?");
             $newParams = trim($newParams, "&");
             $allGet = $_GET ?? [];
-            return array_as_param($newPar)."&". $newParams;
+            return array_as_param($newPar) . "&" . $newParams;
         }
         $allGet = $_GET ?? [];
         $newPar = [...$allGet, ...$newParams];
