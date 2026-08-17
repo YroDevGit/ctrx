@@ -488,6 +488,37 @@ class TModal {
         const instance = {
             _submitCallback: null,
             _cancelCallback: null,
+            _type: null,
+
+            setMeta(metaData){
+                this._type = metaData;
+                return this;
+            },
+
+            resetMeta(){
+                this._type = null;
+                return this;
+            },
+
+            getMeta(key = null){
+                if(! key){
+                    return this._type;
+                }
+                return this._type[key] ?? null;
+            },
+
+            setValue(data) {
+                const form = this.form;
+                if (!form) return this;
+
+                Object.keys(data).forEach(key => {
+                    const input = form.querySelector(`#${key}`);
+                    if (input) {
+                        input.value = data[key];
+                    }
+                });
+                return this;
+            },
 
             displayErrors(errors, autoReset = true) {
                 const formElement = this.form;
@@ -522,8 +553,12 @@ class TModal {
                 });
             },
 
-            show() {
+            show(data = null) {
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    this.setValue(data);
+                }
                 overlay.classList.add("tmodal-show");
+                return this;
             },
 
             get open() {
@@ -534,11 +569,15 @@ class TModal {
                 this.hide();
             },
 
-            hide() {
+            hide(resetMeta = true) {
                 overlay.classList.remove("tmodal-show");
+                if(resetMeta){
+                    this.resetMeta();
+                }
                 TModal.resetErrorStr();
                 TModal.clearFieldErrors();
                 Validator.reset();
+                return this;
             },
 
             remove() {
