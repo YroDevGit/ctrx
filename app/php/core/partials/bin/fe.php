@@ -144,7 +144,7 @@ if (!function_exists('dd')) {
 }
 
 if (! function_exists("val")) {
-    function val(&$val, $default = "")
+    function val(&$val, $default = null)
     {
         if (! isset($val) || ! $val || $val == null || $val == "") {
             return $default;
