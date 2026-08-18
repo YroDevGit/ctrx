@@ -279,7 +279,6 @@ class TModal {
             transform: none;
         }
 
-        /* Responsive */
         @media (max-width: 640px) {
             .tmodal{
                 width: 98%;
@@ -485,26 +484,58 @@ class TModal {
         modal.className = `tmodal ${config.class || ""}`;
         modal.id = config.id || "tmodal";
         config.form_id = config.form_id ?? "tmodal-form";
+
         const instance = {
             _submitCallback: null,
             _cancelCallback: null,
             _type: null,
+            _titleElement: null,
+            _originalTitle: config.title || "CTRX MODAL",
+            _currentTitle: null,
 
-            setMeta(metaData){
-                this._type = metaData;
+            setMeta(metaData) {
+                if (!metaData) return this;
+                if (!this._type) {
+                    this._type = {};
+                }
+                Object.keys(metaData).forEach(key => {
+                    this._type[key] = metaData[key];
+                });
                 return this;
             },
 
-            resetMeta(){
+            setTitle(title) {
+                if (title) {
+                    this._currentTitle = title;
+                    if (this._titleElement) {
+                        this._titleElement.innerHTML = title;
+                    }
+                }
+                return this;
+            },
+
+            getTitle() {
+                return this._currentTitle || this._originalTitle;
+            },
+
+            resetTitle() {
+                this._currentTitle = null;
+                if (this._titleElement) {
+                    this._titleElement.innerHTML = this._originalTitle;
+                }
+                return this;
+            },
+
+            resetMeta() {
                 this._type = null;
                 return this;
             },
 
-            getMeta(key = null){
-                if(! key){
+            getMeta(key = null) {
+                if (!key) {
                     return this._type;
                 }
-                return this._type[key] ?? null;
+                return this._type?.[key] ?? null;
             },
 
             setValue(data) {
@@ -517,6 +548,35 @@ class TModal {
                         input.value = data[key];
                     }
                 });
+                return this;
+            },
+
+            resetForm(options = {}) {
+                const form = this.form;
+                if (!form) return this;
+
+                const {
+                    clearErrors = true,
+                    clearMeta = false,
+                    resetTitle = false
+                } = options;
+
+                form.reset();
+
+                if (clearErrors) {
+                    TModal.clearFieldErrors();
+                    TModal.resetErrorStr();
+                    Validator.reset();
+                }
+
+                if (clearMeta) {
+                    this.resetMeta();
+                }
+
+                if (resetTitle) {
+                    this.resetTitle();
+                }
+
                 return this;
             },
 
@@ -553,27 +613,55 @@ class TModal {
                 });
             },
 
-            show(data = null) {
+            show(data = null, title = null) {
+                if (title) {
+                    this.setTitle(title);
+                }
+
                 if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    this.resetForm();
                     this.setValue(data);
                 }
+
+                if (!this._currentTitle) {
+                    this.resetTitle();
+                }
+
                 overlay.classList.add("tmodal-show");
                 return this;
             },
 
             get open() {
                 this.show();
+                return this;
+            },
+
+            get openNew() {
+                this.resetForm();
+                this.show();
+                return this;
             },
 
             get close() {
                 this.hide();
+                return this;
             },
 
-            hide(resetMeta = true) {
+            hide(resetMeta = true, resetTitle = true, resetForm = false) {
                 overlay.classList.remove("tmodal-show");
-                if(resetMeta){
+
+                if (resetMeta) {
                     this.resetMeta();
                 }
+
+                if (resetTitle) {
+                    this.resetTitle();
+                }
+
+                if (resetForm) {
+                    this.resetForm({ clearMeta: false, resetTitle: false });
+                }
+
                 TModal.resetErrorStr();
                 TModal.clearFieldErrors();
                 Validator.reset();
@@ -582,6 +670,7 @@ class TModal {
 
             remove() {
                 overlay.remove();
+                return this;
             },
 
             form_submit(callback) {
@@ -619,6 +708,7 @@ class TModal {
         const title = document.createElement("span");
 
         title.innerHTML = config.title || "CTRX MODAL";
+        instance._titleElement = title;
 
         const closeBtn = document.createElement("button");
 
@@ -714,7 +804,6 @@ class TModal {
                     "tmodal-input tmodal-calendar-input " + (field.class || "");
             }
 
-            /* textarea */
             if (tag === "textarea") {
 
                 input.className =
@@ -816,7 +905,6 @@ class TModal {
                 }
             }
 
-            /* attributes */
             if (field.required && field.required == true) {
                 input.setAttribute("required", "");
             }
@@ -862,7 +950,6 @@ class TModal {
 
         closeFooterBtn.onclick = () => instance.hide();
 
-        /* cancel button (red) */
         const cancelBtn = document.createElement("button");
 
         cancelBtn.type = "button";
@@ -874,8 +961,7 @@ class TModal {
         cancelBtn.setAttribute("type", "reset");
 
         cancelBtn.onclick = () => {
-            this.resetErrorStr();
-            this.clearFieldErrors();
+            instance.resetForm();
         };
 
         const submitBtn = document.createElement("button");
