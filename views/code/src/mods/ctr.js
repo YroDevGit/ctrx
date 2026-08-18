@@ -567,6 +567,41 @@ class CtrClass {
         }
     }
 
+    change(selector, callable) {
+        if (typeof selector == "string") {
+            let form = null;
+            if (selector.charAt(0) === "#" || selector.charAt(0) === ".") {
+                form = document.querySelectorAll(selector);
+                form.forEach(element => {
+                    const attrs = {};
+                    for (let attr of element.attributes) {
+                        attrs[attr.name] = attr.value;
+                    }
+                    element.addEventListener("change", function () {
+                        callable(element, attrs);
+                    });
+                });
+            } else {
+                form = document.getElementById(selector);
+                const attrs = {};
+                for (let attr of form.attributes) {
+                    attrs[attr.name] = attr.value;
+                }
+                form.addEventListener("change", function () {
+                    callable(form, attrs);
+                });
+            }
+        } else if (selector instanceof HTMLElement) {
+            selector.addEventListener("change", () => {
+                const attrs = {};
+                for (let attr of selector.attributes) {
+                    attrs[attr.name] = attr.value;
+                }
+                callable(selector, attrs);
+            })
+        }
+    }
+
     to_object(data) {
         if (data instanceof FormData) {
             return Object.fromEntries(data.entries());
