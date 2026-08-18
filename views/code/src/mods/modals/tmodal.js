@@ -551,7 +551,7 @@ class TModal {
                 if (!form) return this;
 
                 Object.keys(data).forEach(key => {
-                    const input = form.querySelector(`#${key}`);
+                    const input = form.querySelector(`[name="${key}"]`);
                     if (input) {
                         input.value = data[key];
                     }
