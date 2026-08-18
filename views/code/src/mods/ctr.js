@@ -8,6 +8,11 @@ class CtrClass {
         this.cacheMap = new Map();
     }
 
+    url_get(key){
+        const params =  new URLSearchParams(window.location.search);
+        return params.get(key) ?? null;
+    }
+
     page($page = "", params = {}) {
         if (!$page || $page == "/") {
             return "/";
