@@ -127,7 +127,6 @@ class Router
         return $this;
     }
 
-
     public function parent(string $parent)
     {
         $pref = $this->getGlobalPrefix();
