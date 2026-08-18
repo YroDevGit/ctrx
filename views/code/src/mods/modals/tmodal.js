@@ -494,6 +494,10 @@ class TModal {
             _currentTitle: null,
 
             setMeta(metaData) {
+                if(typeof metaData == "string" || typeof metaData == "number" || typeof metaData == "boolean"){
+                    this._type = metaData;
+                    return this;
+                }
                 if (!metaData) return this;
                 if (!this._type) {
                     this._type = {};
@@ -536,6 +540,10 @@ class TModal {
                     return this._type;
                 }
                 return this._type?.[key] ?? null;
+            },
+
+            get meta(){
+                return this._type;
             },
 
             setValue(data) {
