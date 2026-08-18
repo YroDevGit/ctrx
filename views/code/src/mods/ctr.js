@@ -940,13 +940,16 @@ class CtrClass {
         }
     }
 
-    append_url_params(newParams) {
+    append_url_params(newParams, isParam = true) {
         const params = new URLSearchParams(window.location.search);
     
         Object.entries(newParams).forEach(([key, value]) => {
             params.set(key, value);
         });
     
+        if(isParam){
+            return `?${params.toString()}`;
+        }
         return params.toString();
     }
 
