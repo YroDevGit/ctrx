@@ -900,7 +900,7 @@ class CtrClass {
         }
     }
 
-    append_ur_params(newParams) {
+    append_url_params(newParams) {
         const params = new URLSearchParams(window.location.search);
     
         Object.entries(newParams).forEach(([key, value]) => {

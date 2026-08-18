@@ -550,4 +550,10 @@ class Collection
         if (count($arr) === 1 && is_array($arr[0]) && empty($arr[0])) return true;
         return false;
     }
+
+    public function array_column_key(string|int $column_key){
+        $data = $this->items ?? [];
+        if(! $data) return [];
+        return array_column($data, null, $column_key);
+    }
 }
