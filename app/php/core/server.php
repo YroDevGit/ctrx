@@ -120,7 +120,6 @@ if (str_starts_with($req, "api/")) {
 
         $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
-        $req = strtolower($req);
         if (str_starts_with($req, "api/")) $serve = "api";
         $newReq = "";
         if ($serve == "api") $newReq = str_replace("api/", "", $req);

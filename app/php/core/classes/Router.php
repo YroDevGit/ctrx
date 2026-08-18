@@ -119,7 +119,7 @@ class Router
 
         foreach ($this->arr as $kf => $vf) {
             foreach ($vf as $k => $v) {
-                $kk = strtolower($k);
+                $kk = $k;
                 $key = "ctrx_" . $kk . "_" . $v;
                 $_REQUEST[$key]['middleware'] = [...$middleware];
             }
@@ -141,7 +141,7 @@ class Router
         $newarr = [];
         foreach ($this->arr as $kf => $vf) {
             foreach ($vf as $k => $v) {
-                $kk = strtolower($k);
+                $kk = $k;
                 $key = "ctrx_" . $kk . "_" . $v;
                 $data = $_REQUEST[$key];
                 $route = $data['route'];
@@ -181,15 +181,15 @@ class Router
                     $rename = isset($newvexpl[1]) ? trim($newvexpl[1]) : null;
                     $rename = $rename ? $rename : $newv;
                     self::checkRoutes($newv);
-                    $key = strtolower($k);
+                    $key = $k;
                     $newkey = "ctrx_" . $key . "_" . $rename;
                     if ($pref) {
                         $newkey = "ctrx_" . $key . "_" . $pref . "/" . $rename;
                         $_REQUEST[$newkey] = ["route" => $newv, "method" => $key, "intro" => "ctrx_" . $key . "_", "rename" => $rename];
-                        $arr[] = [strtolower($key) => strtolower($pref . "/" . $rename)];
+                        $arr[] = [$key => $pref . "/" . $rename];
                     } else {
                         $_REQUEST[$newkey] = ["route" => $newv, "method" => $key, "intro" => "ctrx_" . $key . "_", "rename" => $rename];
-                        $arr[] = [strtolower($key) => strtolower($rename)];
+                        $arr[] = [$key => $rename];
                     }
                 } else if (is_array($v)) {
                     $first = $v[0] ?? null;
@@ -197,16 +197,16 @@ class Router
                     if (! $first && ! $sec) {
                         throw new Exception("Route pattern error");
                     }
-                    $key = strtolower($k);
+                    $key = $k;
                     self::checkRoutes($first);
                     if ($pref) {
                         $newkey = "ctrx_" . $key . "_" . $pref . "/" . $sec;
                         $_REQUEST[$newkey] = ["route" => $first, "method" => $key, "intro" => "ctrx_" . $key . "_"];
-                        $arr[] = [strtolower($key) => strtolower($pref . "/" . $sec)];
+                        $arr[] = [$key => $pref . "/" . $sec];
                     } else {
                         $newkey = "ctrx_" . $key . "_" . $sec;
                         $_REQUEST[$newkey] = ["route" => $first, "method" => $key, "intro" => "ctrx_" . $key . "_"];
-                        $arr[] = [strtolower($key) => strtolower($sec)];
+                        $arr[] = [$key => $sec];
                     }
                 }
             }

@@ -235,8 +235,12 @@ class BaseTable
         return array_map([$self, 'hydrate'], $rows);
     }
 
-    public static function findOne(array $where)
+    public static function findOne(array|int $where)
     {
+        if(is_int($where)){
+            $self = static::instance();
+            $where = [$self->primaryKey => $where];
+        }
         $self = static::instance();
         $data = $self->find($where);
         return $data[0] ?? [];
