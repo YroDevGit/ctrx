@@ -25,6 +25,19 @@ class CtrUrl {
         }
         return params.toString();
     }
+
+    set_params(newParams, isParam = true) {
+        const params = new URLSearchParams("");
+    
+        Object.entries(newParams).forEach(([key, value]) => {
+            params.set(key, value);
+        });
+    
+        if(isParam){
+            return `?${params.toString()}`;
+        }
+        return params.toString();
+    }
 }
 
 const Url = new CtrUrl();
