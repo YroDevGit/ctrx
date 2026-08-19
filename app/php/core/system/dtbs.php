@@ -254,7 +254,7 @@ function createTable($pdo, $tableName, $columnDefs)
 {
     $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $tableName);
     $quoted = quoteIdentifier($tableName);
-    $sql = "CREATE TABLE $quoted ($columnDefs)";
+    $sql = "CREATE TABLE IF NOT EXISTS $quoted ($columnDefs)";
     $result = executeQuery($pdo, $sql);
     return $result;
 }
@@ -458,7 +458,7 @@ function truncateTable($pdo, $table)
     return $result;
 }
 
-function exportDatabaseSQL($pdo, $tablesWithData = [])
+function exportDatabaseSQL($pdo, $tablesWithData = [], $singleTable = null)
 {
     $tablesResult = getTables($pdo);
     if (!$tablesResult['success']) {
@@ -466,11 +466,20 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     }
 
     $allTables = $tablesResult['data'];
+    if ($singleTable && !in_array($singleTable, $allTables)) {
+        return ['success' => false, 'message' => 'Table not found'];
+    }
+
+    $tablesToExport = $singleTable ? [$singleTable] : $allTables;
+
     $sql = "-- ============================================\n";
     $sql .= "-- Database Export By CTR-X\n";
     $sql .= "-- Database: " . DB_NAME . "\n";
     $sql .= "-- Driver: " . $GLOBALS['driver'] . "\n";
     $sql .= "-- Export Date: " . date('Y-m-d H:i:s') . "\n";
+    if ($singleTable) {
+        $sql .= "-- Table: " . $singleTable . " (Single Table Export)\n";
+    }
     $sql .= "-- ============================================\n\n";
 
     if (!isSqlite()) {
@@ -480,7 +489,7 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
 
     $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
 
-    foreach ($allTables as $table) {
+    foreach ($tablesToExport as $table) {
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
         $quoted = quoteIdentifier($table);
 
@@ -489,12 +498,12 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
             if ($createResult['success']) {
                 $row = $createResult['data']->fetch();
                 $sql .= "-- Table structure for `$table`\n";
-                $sql .= "DROP TABLE IF EXISTS $quoted;\n";
-                $sql .= $row['Create Table'] . ";\n\n";
+                $createStatement = $row['Create Table'];
+                $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
+                $sql .= $createStatement . ";\n\n";
             }
         } elseif (isPostgres()) {
             $sql .= "-- Table structure for \"$table\"\n";
-            $sql .= "DROP TABLE IF EXISTS $quoted CASCADE;\n";
 
             $colResult = executeQuery($pdo, "
                 SELECT column_name, data_type, is_nullable, column_default
@@ -510,15 +519,16 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
                     if ($row['column_default']) $colDef .= " DEFAULT " . $row['column_default'];
                     $cols[] = $colDef;
                 }
-                $sql .= "CREATE TABLE $quoted (\n  " . implode(",\n  ", $cols) . "\n);\n\n";
+                $sql .= "CREATE TABLE IF NOT EXISTS $quoted (\n  " . implode(",\n  ", $cols) . "\n);\n\n";
             }
         } else {
             $createResult = executeQuery($pdo, "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$table]);
             if ($createResult['success'] && $createResult['data']->rowCount() > 0) {
                 $row = $createResult['data']->fetch();
                 $sql .= "-- Table structure for \"$table\"\n";
-                $sql .= "DROP TABLE IF EXISTS $quoted;\n";
-                $sql .= $row['sql'] . ";\n\n";
+                $createStatement = $row['sql'];
+                $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
+                $sql .= $createStatement . ";\n\n";
             }
         }
 
@@ -564,6 +574,51 @@ function exportDatabaseSQL($pdo, $tablesWithData = [])
     $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
 
     return ['success' => true, 'sql' => $sql];
+}
+
+function getCreateTableSQL($pdo, $table)
+{
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $quoted = quoteIdentifier($table);
+
+    if (isMysql()) {
+        $createResult = executeQuery($pdo, "SHOW CREATE TABLE $quoted");
+        if ($createResult['success']) {
+            $row = $createResult['data']->fetch();
+            $createStatement = $row['Create Table'];
+            $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
+            return ['success' => true, 'sql' => $createStatement];
+        }
+        return ['success' => false, 'message' => 'Failed to get create table SQL'];
+    } elseif (isPostgres()) {
+        $colResult = executeQuery($pdo, "
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns 
+            WHERE table_name = ?
+        ", [$table]);
+
+        if ($colResult['success']) {
+            $cols = [];
+            while ($row = $colResult['data']->fetch()) {
+                $colDef = quoteIdentifier($row['column_name']) . " " . $row['data_type'];
+                if ($row['is_nullable'] == 'NO') $colDef .= " NOT NULL";
+                if ($row['column_default']) $colDef .= " DEFAULT " . $row['column_default'];
+                $cols[] = $colDef;
+            }
+            $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdentifier($table) . " (\n  " . implode(",\n  ", $cols) . "\n);";
+            return ['success' => true, 'sql' => $sql];
+        }
+        return ['success' => false, 'message' => 'Failed to get create table SQL'];
+    } else {
+        $createResult = executeQuery($pdo, "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$table]);
+        if ($createResult['success'] && $createResult['data']->rowCount() > 0) {
+            $row = $createResult['data']->fetch();
+            $createStatement = $row['sql'];
+            $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
+            return ['success' => true, 'sql' => $createStatement];
+        }
+        return ['success' => false, 'message' => 'Failed to get create table SQL'];
+    }
 }
 
 function importSQL($pdo, $sql, $isFile = false)
@@ -664,7 +719,6 @@ function executeCustomQuery($pdo, $sql)
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         
-        // Check if this is a SELECT query
         $isSelect = stripos(trim($sql), 'SELECT') === 0;
         
         if ($isSelect) {
@@ -689,7 +743,6 @@ function executeCustomQuery($pdo, $sql)
     }
 }
 
-// Function to get database timezone
 function getDBTimezone($pdo)
 {
     global $driver;
@@ -802,7 +855,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 break;
             case 'exportSQL':
                 $tablesWithData = isset($_POST['tables_with_data']) ? json_decode($_POST['tables_with_data'], true) : [];
-                $response = exportDatabaseSQL($pdo, $tablesWithData);
+                $singleTable = $_POST['single_table'] ?? null;
+                $response = exportDatabaseSQL($pdo, $tablesWithData, $singleTable);
                 break;
             case 'importSQL':
                 $isFile = isset($_POST['import_type']) && $_POST['import_type'] === 'file';
@@ -821,6 +875,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $timezone = getDBTimezone($pdo);
                 $response = ['success' => true, 'timezone' => $timezone];
                 break;
+            case 'getCreateTableSQL':
+                $response = getCreateTableSQL($pdo, $_POST['table'] ?? '');
+                break;
         }
     } catch (Exception $e) {
         $response = ['success' => false, 'message' => $e->getMessage()];
@@ -828,7 +885,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
     if ($action === 'exportSQL' && $response['success']) {
         header('Content-Type: application/sql');
-        header('Content-Disposition: attachment; filename="' . DB_NAME . '_backup_' . date('Y-m-d_H-i-s') . '.sql"');
+        $filename = DB_NAME . '_backup_' . date('Y-m-d_H-i-s');
+        if (isset($_POST['single_table']) && $_POST['single_table']) {
+            $filename .= '_' . $_POST['single_table'];
+        }
+        header('Content-Disposition: attachment; filename="' . $filename . '.sql"');
         header('Pragma: no-cache');
         header('Expires: 0');
         echo $response['sql'];
@@ -1887,6 +1948,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             border: 1px solid #e9ecef;
         }
 
+        .sql-code-block {
+            background: #1e1e1e;
+            color: #0bff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #333;
+        }
+
+        .sql-code-block .keyword {
+            color: #569cd6;
+        }
+        .sql-code-block .string {
+            color: #ce9178;
+        }
+        .sql-code-block .comment {
+            color: #6a9955;
+        }
+        .sql-code-block .function {
+            color: #dcdcaa;
+        }
+        .sql-code-block .variable {
+            color: #9cdcfe;
+        }
+        .sql-code-block .operator {
+            color: #d4d4d4;
+        }
+        .sql-code-block .number {
+            color: #b5cea8;
+        }
+
         @media (max-width: 768px) {
             .db-header-actions {
                 display: grid;
@@ -2197,12 +2296,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
                         Paste your SQL query below. Multiple statements separated by semicolons are supported.
                     </p>
-                    <textarea id="sqlPasteInput" class="form-control" rows="12" placeholder="-- Paste your SQL here
-            CREATE TABLE IF NOT EXISTS users (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                name VARCHAR(100)
-            );
-            INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
+                    <textarea id="sqlPasteInput" class="form-control" rows="12" 
+placeholder="-- Paste your SQL here
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100)
+);
+INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -2407,6 +2507,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
+    <div class="modal-overlay" id="createCodeModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h5><span class="icon">📝</span>Create Table SQL</h5>
+                <button class="btn-close" onclick="closeModal('createCodeModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                    SQL statement to create table <strong id="createCodeTableName"></strong>
+                </p>
+                <div class="sql-code-block" id="createCodeContent">
+                    Loading...
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyCreateCode()">📋 Copy SQL</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('createCodeModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="exportSingleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h5><span class="icon">💾</span>Export Table: <span id="exportSingleTableName"></span></h5>
+                <button class="btn-close" onclick="closeModal('exportSingleModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                    Export the table <strong id="exportSingleTableNameStrong"></strong> with or without data.
+                </p>
+                <div style="margin: 10px 0;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Include Data?</label>
+                    <div style="display: flex; gap: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="single_export_data" value="1">
+                            Yes, include data
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="single_export_data" value="0" checked>
+                            No, structure only
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('exportSingleModal')">Cancel</button>
+                <button class="btn btn-success" onclick="exportSingleTable()">
+                    <span class="icon">💾</span> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentTable = null;
         let currentColumns = [];
@@ -2552,11 +2708,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 selectedTables.push(cb.value);
             });
 
-            if (selectedTables.length === 0) {
-                showAlert('Please select at least one table to include data', 'warning');
-                return;
-            }
-
             closeModal('exportModal');
 
             const btn = document.querySelector('.export-sql-btn');
@@ -2642,10 +2793,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 });
             }
 
-            // Load timezone
             loadTimezone();
 
-            // Allow Ctrl+Enter to execute query
             document.getElementById('queryInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
@@ -2871,6 +3020,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="truncateTable()">
                     <span class="icon">🗑️</span> Truncate
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="showExportSingleModal()">
+                    <span class="icon">💾</span> Export
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="showCreateCodeModal()">
+                    <span class="icon">📝</span> Create Code
                 </button>
             </div>
         </div>
@@ -3652,7 +3807,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             });
         }
 
-        // New function to execute custom SQL queries
         async function executeCustomQuery() {
             const queryInput = document.getElementById('queryInput');
             const query = queryInput.value.trim();
@@ -3666,7 +3820,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             const btn = document.querySelector('.query-wrapper .btn');
             const originalText = btn.innerHTML;
 
-            // Show loading state
             btn.innerHTML = '⏳ Executing...';
             btn.disabled = true;
             container.classList.add('show');
@@ -3679,7 +3832,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
                 if (result.success) {
                     if (result.isSelect) {
-                        // SELECT query - show results in a table
                         const data = result.data || [];
                         const rowCount = result.rowCount || 0;
 
@@ -3721,14 +3873,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                             container.innerHTML = tableHtml;
                         }
                     } else {
-                        // Non-SELECT query (INSERT, UPDATE, DELETE, etc.)
                         container.innerHTML = `
                             <div class="alert alert-success" style="margin: 0;">
                                 ✅ ${result.message || 'Query executed successfully.'} <strong>${result.rowCount || 0}</strong> row(s) affected.
                             </div>
                         `;
 
-                        // Refresh table data if we have a current table
                         if (currentTable) {
                             await loadTableData();
                         }
@@ -3751,6 +3901,89 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
+        }
+
+        function showExportSingleModal() {
+            if (!currentTable) {
+                showAlert('Please select a table first', 'warning');
+                return;
+            }
+            document.getElementById('exportSingleTableName').textContent = currentTable;
+            document.getElementById('exportSingleTableNameStrong').textContent = currentTable;
+            openModal('exportSingleModal');
+        }
+
+        async function exportSingleTable() {
+            const includeData = document.querySelector('input[name="single_export_data"]:checked').value === '1';
+            const table = currentTable;
+
+            closeModal('exportSingleModal');
+
+            const btn = document.querySelector('.btn-group .btn-outline-success');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Exporting...';
+            btn.disabled = true;
+
+            try {
+                const result = await apiRequest('exportSQL', {
+                    tables_with_data: JSON.stringify(includeData ? [table] : []),
+                    single_table: table
+                });
+                if (result.success) {
+                    showAlert(`Table "${table}" exported successfully!`, 'success');
+                }
+            } catch (error) {
+                showAlert('Export failed: ' + error.message, 'danger');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function showCreateCodeModal() {
+            if (!currentTable) {
+                showAlert('Please select a table first', 'warning');
+                return;
+            }
+
+            document.getElementById('createCodeTableName').textContent = currentTable;
+            const content = document.getElementById('createCodeContent');
+            content.textContent = 'Loading...';
+
+            openModal('createCodeModal');
+
+            const result = await apiRequest('getCreateTableSQL', {
+                table: currentTable
+            });
+
+            if (result.success && result.sql) {
+                content.textContent = result.sql;
+            } else {
+                content.textContent = 'Failed to get CREATE TABLE SQL: ' + (result.message || 'Unknown error');
+                content.style.color = '#dc3545';
+            }
+        }
+
+        function copyCreateCode() {
+            const content = document.getElementById('createCodeContent');
+            const text = content.textContent;
+
+            if (!text || text === 'Loading...' || text.includes('Failed')) {
+                showAlert('No SQL to copy', 'warning');
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('SQL copied to clipboard!', 'success');
+            }).catch(() => {
+                const range = document.createRange();
+                range.selectNode(content);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                showAlert('SQL copied to clipboard!', 'success');
+            });
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
