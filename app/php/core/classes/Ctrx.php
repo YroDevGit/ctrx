@@ -399,6 +399,17 @@ class Ctrx
         return in_array($file, scandir($dir), true);
     }
 
+    public static function CachedHeader(int $age, $privacy = "private"){
+        $allowed = ['private', 'public'];
+        if (!in_array($privacy, $allowed)) {
+            $privacy = 'private';
+        }
+        header_remove('Cache-Control');
+        header_remove('Expires');
+        header_remove('Pragma');
+        header("Cache-Control: $privacy, max-age=$age");
+    }
+
     private static function ctrratedetails($route = "", $dir = "dir")
     {
         $dir = "app/php/core/partials/$dir";

@@ -2,18 +2,36 @@
 if (! function_exists('json_response')) {
     function json_response(array $data, int $status = 200)
     {
-        ctrx_save_cookies();   
+        ctrx_save_cookies();
         \Classes\Ctrx::resetBackend();
         remove_single_thread();
+
         header('Content-Type: application/json');
+
+        $json = json_encode($data);
+
+        if($status == 200 && (isset($data['code']) && $data['code'] == success_code)){
+            $etag = md5($json);
+            if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+                $clientEtag = trim($_SERVER['HTTP_IF_NONE_MATCH'], '"');
+
+                if ($clientEtag === $etag) {
+                    http_response_code(304);
+                    header("ETag: \"$etag\"");
+                    exit;
+                }
+            }
+            header("ETag: \"$etag\"");
+        }
         http_response_code($status);
-        echo json_encode($data);
+        echo $json;
         exit;
     }
 }
 
-if(! function_exists("ctrx_save_cookies")){
-    function ctrx_save_cookies(){
+if (! function_exists("ctrx_save_cookies")) {
+    function ctrx_save_cookies()
+    {
         $newCookies = $GLOBALS['_CTRX_COOKIES'] ?? null;
         if ($newCookies) {
             foreach ($newCookies as $key => $val) {
@@ -424,7 +442,7 @@ if (! function_exists("current_be")) {
     function current_be(bool $php_exention = false): string
     {
         $filename =  $_SESSION['basixs_current_be_ctrx'] ?? null;
-        if(! $filename) return null;
+        if (! $filename) return null;
         if (! $php_exention) {
             $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;
             return $filename;
@@ -681,20 +699,23 @@ if (! function_exists("is_already_included")) {
     }
 }
 
-if(! function_exists("get_user_data")){
-    function get_user_data(string|int $key = "*"){
+if (! function_exists("get_user_data")) {
+    function get_user_data(string|int $key = "*")
+    {
         return \Classes\Ctrx::get_user_data($key);
     }
 }
 
-if(! function_exists("myId")){
-    function myID(string $column = "id"){
+if (! function_exists("myId")) {
+    function myID(string $column = "id")
+    {
         return get_user_data($column) ?? null;
     }
 }
 
-if(! function_exists("dateLocal")){
-    function dateLocal($date, $timezone = null){
+if (! function_exists("dateLocal")) {
+    function dateLocal($date, $timezone = null)
+    {
         return \Classes\Date::local($date, $timezone);
     }
 }

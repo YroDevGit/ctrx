@@ -128,6 +128,8 @@ if (str_starts_with($req, "api/")) {
         $_SESSION['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
 
+        header("Cache-Control: private, max-age=0");
+        
         \Classes\Ctrx::include_all_autoFiles();
 
         if (env("cross_origin_sharing") == "yes") {
