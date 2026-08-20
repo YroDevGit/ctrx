@@ -1449,7 +1449,7 @@ class CImagePicker {
                 },
 
                 toggleImage(image, item) {
-                    const isMultiple = instanceConfig.selection === "multiple";
+                    const isMultiple = instanceConfig.selection === "multiple" || instanceConfig.multiple;
 
                     if (!isMultiple) {
                         if (this.selectedImages.length === 1 && this.selectedImages[0].name === image.name) {
@@ -1500,7 +1500,7 @@ class CImagePicker {
                         return;
                     }
 
-                    const isMultiple = instanceConfig.selection === "multiple";
+                    const isMultiple = instanceConfig.selection === "multiple" || instanceConfig.multiple;
 
                     if (isMultiple) {
                         const urls = this.selectedImages.map(f => f.url || f.path);
