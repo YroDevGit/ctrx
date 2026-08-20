@@ -1,4 +1,6 @@
 import CtrDATE from "../date";
+import CImagePicker from "../picker/imagepicker";
+import ImageSelector from "../picker/imageselector";
 import Validator from "../validator";
 
 /**
@@ -772,6 +774,14 @@ class TModal {
                 delete field.type;
                 tag = "select";
             }
+            if (field.type == "cimage") {
+                delete field.type;
+                tag = "cimage";
+            }
+            if (field.type == "imagepicker") {
+                delete field.type;
+                tag = "imagepicker";
+            }
 
             if (
                 field.label !== false &&
@@ -791,8 +801,8 @@ class TModal {
                 wrapper.appendChild(label);
             }
 
-            const input = document.createElement(tag == "calendar" || tag == "datepicker" ? "input" : tag);
-
+            const input = document.createElement(tag == "calendar" || tag == "datepicker" || tag == "cimage" || tag == "imagepicker" ? "input" : tag);
+            let orgTag = tag;
             input.name = key;
             input.id = key;
 
@@ -810,6 +820,22 @@ class TModal {
                 input.type = "text";
                 input.className =
                     "tmodal-input tmodal-calendar-input " + (field.class || "");
+            }
+
+            if(tag == "cimage"){
+                tag = "input";
+                field.tag = "input";
+                input.type = "text";
+                input.className =
+                    "tmodal-input tmodal-cimage-input " + (field.class || "");
+            }
+
+            if(tag == "imagepicker"){
+                tag = "input";
+                field.tag = "input";
+                input.type = "text";
+                input.className =
+                    "tmodal-input tmodal-imagepicker-input " + (field.class || "");
             }
 
             if (tag === "textarea") {
@@ -941,6 +967,12 @@ class TModal {
             wrapper.appendChild(err);
 
             form.appendChild(wrapper);
+            if(orgTag == "cimage"){
+                ImageSelector.init(input, field.config ?? {});
+            }
+            if(orgTag == "imagepicker"){
+                CImagePicker.init(input, field.config ?? {});
+            }
         });
 
         const footer = document.createElement("div");

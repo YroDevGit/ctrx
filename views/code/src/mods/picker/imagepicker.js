@@ -819,11 +819,13 @@ class CImagePicker {
         });
     }
 
-    static init(config = {}) {
+    static init(element, config = {}) {
         this.ensureStyle();
 
         const instances = [];
         let elements = [];
+
+        config.element = element;
 
         if (config.element) {
             if (typeof config.element === 'string') {
