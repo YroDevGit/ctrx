@@ -697,9 +697,15 @@ class CImagePicker {
         document.head.appendChild(style);
     }
 
-    static async fetchImages(path = "public", action = "0") {
+    static async fetchImages(path = "public", action = "0", postdata = {}) {
         try {
-            const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=${action}&dir=${encodeURIComponent(path)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/getall?action=${action}&dir=${encodeURIComponent(path)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postdata)
+            });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message ?? "Failed to fetch images");
             return data.images || [];
@@ -709,10 +715,16 @@ class CImagePicker {
         }
     }
 
-    static async uploadImage(file, path = "public", onProgress = null, action = "0") {
+    static async uploadImage(file, path = "public", onProgress = null, action = "0", data = undefined) {
         const formData = new FormData();
         formData.append("image", file);
         formData.append("path", path);
+        if (data) {
+            for (let dt in data) {
+                let rw = data[dt];
+                formData.append(dt, rw);
+            }
+        }
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -746,9 +758,17 @@ class CImagePicker {
         });
     }
 
-    static async deleteImage(filename, path = "public", action = "0") {
+    static async deleteImage(filename, path = "public", action = "0", postData = {}) {
         try {
-            const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=${action}&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`);
+            const response = await fetch(`/ctrx.yro.ctrstorage.images/deleteImg?action=${action}&dir=${encodeURIComponent(path)}&filename=${encodeURIComponent(filename)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    postData
+                )
+            });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message ?? "Failed to delete image");
             return data;
@@ -854,6 +874,7 @@ class CImagePicker {
             const instanceConfig = { ...config };
             instanceConfig.id = input.id || input.className || `cimagepicker-${Date.now()}-${Math.random()}`;
             instanceConfig.path = config.path ?? config.dir ?? config.directory ?? "public";
+            instanceConfig.post = config.post ?? config.body;
             instanceConfig.quality = config.quality ?? 95;
             instanceConfig.maxWidth = config.maxWidth ?? 1920;
             instanceConfig.maxHeight = config.maxHeight ?? 1920;
@@ -1232,7 +1253,8 @@ class CImagePicker {
                             (percent) => {
                                 this.progressBar.style.width = percent + "%";
                             },
-                            instanceConfig.action
+                            instanceConfig.action,
+                            instanceConfig.post
                         );
 
                         if (result.success && result.image) {
@@ -1274,7 +1296,7 @@ class CImagePicker {
                     }
 
                     try {
-                        let resDel = await CImagePicker.deleteImage(image.name, image.source_dir || "public", instanceConfig.action);
+                        let resDel = await CImagePicker.deleteImage(image.name, image.source_dir || "public", instanceConfig.action, this?.config?.post ?? {});
 
                         if (resDel.success) {
                             alert("Image deleted successfully");
@@ -1524,7 +1546,7 @@ class CImagePicker {
                 },
 
                 async loadImages() {
-                    this.images = await CImagePicker.fetchImages(instanceConfig.path || "public", instanceConfig.action);
+                    this.images = await CImagePicker.fetchImages(instanceConfig.path || "public", instanceConfig.action, instanceConfig.post ?? {});
 
                     if (instanceConfig.type && instanceConfig.type !== "*") {
                         const allowed = instanceConfig.type.split("|").map(t => t.trim().toLowerCase());

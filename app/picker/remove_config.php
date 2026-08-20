@@ -6,15 +6,22 @@ use Classes\Response;
  * This is a middleware for storage file delete
  * delete using CImagePicker
  */
-$role = Ctrx::get_user_role(); // Current user role
-$allow = ["admin"]; // roles allowed to delete
-
 $dir = get('dir'); // requested directory
+$role = Ctrx::get_user_role(); // Current user role
+$access = []; // roles allowed to delete
 
-// You can more validations here..
+//Filter role access
+$filter = [
+    "admin" => ["public"],
+];
 
-if(in_array($role, $allow)){
-    CtrStorage::ctr_remove_image($dir);
-}else{
+//get directory access by role 
+if($role){
+    $access = $filter[$role] ?? $access;
+}
+if(! in_array($dir, $access)){
     Response::code(unauthorized_code)->message("Unauthorized access")->send();
 }
+
+// You can more validations here..
+CtrStorage::ctr_remove_image($dir);
