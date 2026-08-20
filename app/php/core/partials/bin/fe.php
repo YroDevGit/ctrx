@@ -58,7 +58,7 @@ if (! function_exists("dbNow")) {
         $format ??= 'Y-m-d H:i:s';
 
         $serverTimezone = $serverTimezone ?? env('dbtimezone');
-        if(! $serverTimezone){
+        if (! $serverTimezone) {
             return date($format);
         }
         $appTimezone = date_default_timezone_get();
@@ -81,7 +81,7 @@ if (! function_exists("dbNow")) {
 if (! function_exists("dbDate")) {
     function dbDate($date, $format = null, $serverTimezone = null)
     {
-        if(! $date) return null;
+        if (! $date) return null;
         $format ??= 'Y-m-d H:i:s';
 
         $serverTimezone = $serverTimezone ?? env('dbtimezone');
@@ -959,17 +959,22 @@ if (! function_exists("compare_decrypt")) {
 }
 
 if (! function_exists("active_class")) {
-    function active_class(string $route, $class = null)
+    function active_class(string|array $route, $class = null)
     {
+        $allRoute = $route;
+        if (is_string($route)) {
+            $allRoute = [$route];
+        }
         $className = $class ?? fe_config("active_class") ?? "active";
         $current = current_page(false);
-        $route = trim($route, "/");
-        $route = trim($route, "\\");
-        if ($route == $current) {
-            return $className;
-        } else {
-            return "";
+        foreach ($allRoute as $k => $v) {
+            $route = trim($v, "/");
+            $route = trim($route, "\\");
+            if ($route == $current) {
+                return $className;
+            }
         }
+        return "";
     }
 }
 
