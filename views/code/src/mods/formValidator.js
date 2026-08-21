@@ -177,10 +177,10 @@ class FormValidator {
     }
 
     /**
-     * Display errors on form fields
-     * @param {Object} errors - Error object from validate()
-     * @param {string|HTMLElement} form - Form element, ID, or selector
-     */
+ * Display errors on form fields
+ * @param {Object} errors - Error object from validate()
+ * @param {string|HTMLElement} form - Form element, ID, or selector
+ */
     static displayErrors(errors, form, autoReset = true) {
 
         const formElement = this._getFormElement(form);
@@ -193,20 +193,23 @@ class FormValidator {
             this.clearErrors(form);
         }
 
+        let firstErrorField = null;
+
         Object.keys(errors).forEach(fieldName => {
             const errorMsg = errors[fieldName];
             if (!errorMsg) return;
 
-            // Find input
             const input = formElement.querySelector(`[name="${fieldName}"]`);
             if (input) {
                 input.classList.add('err-field');
+                if (!firstErrorField) {
+                    firstErrorField = input;
+                }
             } else {
                 let fid = formElement.getAttribute("id");
                 console.error(`INPUT named: '${fieldName}' not found.! @${fid}`);
             }
 
-            // Find error display
             const errorEl = formElement.querySelector(`#err_${fieldName}`);
             if (errorEl) {
                 errorEl.textContent = errorMsg;
@@ -215,6 +218,22 @@ class FormValidator {
                 console.error(`error_text: '${fieldName}' not found.! @${fid}`);
             }
         });
+
+        if (firstErrorField) {
+            setTimeout(() => {
+                const modalBody = firstErrorField.closest('.tmodal-body');
+                if (modalBody) {
+                    const scrollTop = firstErrorField.offsetTop - modalBody.offsetTop - (modalBody.clientHeight / 2) + (firstErrorField.offsetHeight / 2);
+                    modalBody.scrollTo({
+                        top: Math.max(0, scrollTop),
+                        behavior: 'smooth'
+                    });
+                }
+                firstErrorField.focus({
+                    preventScroll: true
+                });
+            }, 100);
+        }
     }
 
     /**

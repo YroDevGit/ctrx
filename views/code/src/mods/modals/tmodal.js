@@ -451,20 +451,40 @@ class TModal {
     static displayErrors(errors) {
         TModal.clearFieldErrors();
 
+        let firstErrorField = null;
+
         Object.keys(errors).forEach(key => {
             const errorMsg = errors[key];
             if (errorMsg) {
                 const input = document.getElementById(key);
                 if (input) {
                     input.classList.add('tmodal-error');
+                    if (!firstErrorField) {
+                        firstErrorField = input;
+                    }
                 }
-
                 const errorEl = document.getElementById(`err_t_${key}`);
                 if (errorEl) {
                     errorEl.textContent = errorMsg;
                 }
             }
         });
+
+        if (firstErrorField) {
+            setTimeout(() => {
+                const modalBody = firstErrorField.closest('.tmodal-body');
+                if (modalBody) {
+                    const scrollTop = firstErrorField.offsetTop - modalBody.offsetTop - (modalBody.clientHeight / 2) + (firstErrorField.offsetHeight / 2);
+                    modalBody.scrollTo({
+                        top: Math.max(0, scrollTop),
+                        behavior: 'smooth'
+                    });
+                }
+                firstErrorField.focus({
+                    preventScroll: true
+                });
+            }, 100);
+        }
     }
 
     static init(config = {}) {
@@ -496,7 +516,7 @@ class TModal {
             _currentTitle: null,
 
             setMeta(metaData) {
-                if(typeof metaData == "string" || typeof metaData == "number" || typeof metaData == "boolean"){
+                if (typeof metaData == "string" || typeof metaData == "number" || typeof metaData == "boolean") {
                     this._type = metaData;
                     return this;
                 }
@@ -544,7 +564,7 @@ class TModal {
                 return this._type?.[key] ?? null;
             },
 
-            get meta(){
+            get meta() {
                 return this._type;
             },
 
@@ -603,6 +623,8 @@ class TModal {
                     TModal.resetErrorStr();
                 }
 
+                let firstErrorField = null;
+
                 Object.keys(errors).forEach(fieldName => {
                     const errorMsg = errors[fieldName];
                     if (!errorMsg) return;
@@ -610,6 +632,9 @@ class TModal {
                     const input = formElement.querySelector(`#${fieldName}`);
                     if (input) {
                         input.classList.add('tmodal-error');
+                        if (!firstErrorField) {
+                            firstErrorField = input;
+                        }
                     } else {
                         console.error(`TModal: Input with ID '${fieldName}' not found`);
                     }
@@ -621,6 +646,22 @@ class TModal {
                         console.error(`TModal: Error element with ID 'err_t_${fieldName}' not found`);
                     }
                 });
+
+                if (firstErrorField) {
+                    setTimeout(() => {
+                        const modalBody = firstErrorField.closest('.tmodal-body');
+                        if (modalBody) {
+                            const scrollTop = firstErrorField.offsetTop - modalBody.offsetTop - (modalBody.clientHeight / 2) + (firstErrorField.offsetHeight / 2);
+                            modalBody.scrollTo({
+                                top: Math.max(0, scrollTop),
+                                behavior: 'smooth'
+                            });
+                        }
+                        firstErrorField.focus({
+                            preventScroll: true
+                        });
+                    }, 100);
+                }
             },
 
             show(data = null, title = null) {
@@ -822,7 +863,7 @@ class TModal {
                     "tmodal-input tmodal-calendar-input " + (field.class || "");
             }
 
-            if(tag == "cimage"){
+            if (tag == "cimage") {
                 tag = "input";
                 field.tag = "input";
                 input.type = "text";
@@ -830,7 +871,7 @@ class TModal {
                     "tmodal-input tmodal-cimage-input " + (field.class || "");
             }
 
-            if(tag == "imagepicker"){
+            if (tag == "imagepicker") {
                 tag = "input";
                 field.tag = "input";
                 input.type = "text";
@@ -967,10 +1008,10 @@ class TModal {
             wrapper.appendChild(err);
 
             form.appendChild(wrapper);
-            if(orgTag == "cimage"){
+            if (orgTag == "cimage") {
                 ImageSelector.init(input, field.config ?? {});
             }
-            if(orgTag == "imagepicker"){
+            if (orgTag == "imagepicker") {
                 CImagePicker.init(input, field.config ?? {});
             }
         });
