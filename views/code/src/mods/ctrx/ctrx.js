@@ -640,6 +640,94 @@ class CtrxClass {
         });
     }
 
+    set_attributes(selector, ...array) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+    
+        for (const element of elements) {
+            for (const row of array) {
+                const k = Object.keys(row)[0];
+                const attr = row[k];
+    
+                if (typeof k === 'string') {
+                    element.setAttribute(k, attr);
+                }
+            }
+        }
+    }
+
+    get_attribute(selector, attribute) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+    
+        return element.getAttribute(attribute);
+    }
+
+    get_html(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+        return element.innerHTML;
+    }
+
+    get_text_content(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+        return element.textContent;
+    }
+
+    set_text_content(selector, text) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+        element.textContent = text;
+    }
+
+    get_inner_text(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+        return element.innerText;
+    }
+
+    set_inner_text(selector, text) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+        element.innerText = text;
+    }
+    
+    get_attributes(selector, ...attributes) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+    
+        if (!element) return null;
+    
+        const result = {};
+    
+        for (const attr of attributes) {
+            result[attr] = element.getAttribute(attr);
+        }
+    
+        return result;
+    }
+
     scroll_to_top(top = 0, behavior = "smooth") {
         window.scrollTo({
             top: top,
