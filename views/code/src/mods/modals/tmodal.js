@@ -575,7 +575,7 @@ class TModal {
                 Object.keys(data).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
                     if (input) {
-                        input.value = data[key];
+                        input.value = data[key] || "";
                     }
                 });
                 return this;
@@ -961,10 +961,10 @@ class TModal {
                     opts.forEach((optk) => {
                         const option_c = document.createElement("option");
                         if (typeof optk === "object") {
-                            option_c.value = optk.value;
+                            option_c.value = optk.value || "";
                             option_c.innerHTML = optk.label;
                         } else {
-                            option_c.value = optk;
+                            option_c.value = optk || "";
                             option_c.innerHTML = optk;
                         }
                         input.appendChild(option_c);
