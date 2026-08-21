@@ -1016,4 +1016,11 @@ if (! function_exists("_bootstrap_js")) {
     }
 }
 
+if(! function_exists("str_img_as_array")){
+    function str_img_as_array(string|null $imageString, $seperator = "||"): array{
+        if(! $imageString) return [];
+        return explode($seperator, $imageString);
+    }
+}
+
 define('page', page(""));

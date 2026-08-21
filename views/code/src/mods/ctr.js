@@ -119,6 +119,15 @@ class CtrClass {
         window.location.href = this.page(page, params);
     }
 
+    str_img_as_array(imageString, seperator = "||"){
+        if(! imageString) {return []};
+        if(typeof imageString == "string"){
+            return imageString.split(seperator);
+        }else{
+            return [];
+        } 
+    }
+
     reload(hardRefresh = false) {
         if (hardRefresh) {
             caches.keys().then(names => {
