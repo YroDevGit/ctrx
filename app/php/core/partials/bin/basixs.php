@@ -54,11 +54,11 @@ function decrypt($encrypted_data, string $key = null)
 
     $decoded_data = base64_decode($encrypted_data, true);
     if ($decoded_data === false) {
-        return null;
+        \Classes\Hash::error_save_decryption_error();
     }
 
     if (strlen($decoded_data) < $iv_length) {
-        return null;
+        \Classes\Hash::error_save_decryption_error();
     }
     $iv = substr($decoded_data, 0, $iv_length);
     $encrypted_data = substr($decoded_data, $iv_length);
@@ -68,7 +68,7 @@ function decrypt($encrypted_data, string $key = null)
     $decrypted_data = openssl_decrypt($encrypted_data, $cipher, $newDec, 0, $iv);
 
     if ($decrypted_data === false || !mb_check_encoding($decrypted_data, 'UTF-8')) {
-        return null;
+        \Classes\Hash::error_save_decryption_error();
     }
 
     return $decrypted_data;

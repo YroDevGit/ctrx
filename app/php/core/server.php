@@ -459,16 +459,23 @@ if (str_starts_with($req, "api/")) {
                     continue;
                 }
 
-                if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
+                if ($fulltrace == "no" && (str_contains($file, "app\php\core\\") || str_contains($file, "app/php/core/"))) {
                     continue;
                 }
                 $all[] = $v;
             }
 
+            $getFile = $e->getFile();
+            $getLine = $e->getLine();
+            if(str_contains($getFile, "app\php\core\\") || str_contains($getFile, "app/php/core/")){
+                $getFile = $all[0]["file"] ?? $getFile;
+                $getLine = $all[0]["line"] ?? $getFile;
+            }
+
             $error = [
                 'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
+                'file'    => $getFile,
+                'line'    => $getLine,
                 'trace'   => $all
             ];
 

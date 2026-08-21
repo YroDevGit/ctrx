@@ -73,9 +73,6 @@ if (! function_exists('ctrx_response')) {
                 $e_line = $error->getLine();
                 $e_trace = $error->getTrace();
                 $fandl = "@";
-                if (! str_contains($e_file, "\app\php\core")) {
-                    $fandl = "@" . $e_file . " Line " . $e_line . " ";
-                }
 
                 $all = [];
                 foreach ($e_trace as $k => $v) {
@@ -83,13 +80,19 @@ if (! function_exists('ctrx_response')) {
                     if (! $file) {
                         continue;
                     }
-                    if (str_contains($file, "/app/_controller/") || str_contains($file, "\\app\\_controller\\")) {
-                        $data['message'] = $data['message'] . " @ " . current_be() . " " . $e_line;
-                    }
+
                     if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
                         continue;
                     }
                     $all[] = $v;
+                }
+
+                $fandl = "@" . $e_file . " Line " . $e_line . " ";
+                if (str_contains($e_file, "app/php/core") || str_contains($e_file, "app\\php\\core\\")) {
+                    $e_file = $all[0]["file"] ?? $e_file;
+                    $e_line = $all[0]["line"] ?? $e_line;
+                    $fandl = "@" . $e_file . " Line " . $e_line . " ";
+                    $data['message'] = $data['message'] . " @ " . current_be() . " : $e_file " . $e_line;
                 }
                 $e_error = json_encode($all);
                 $data['trace'] = $all;

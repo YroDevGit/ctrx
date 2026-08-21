@@ -31,4 +31,9 @@ class Hash
     {
         return decrypt($string, $key);
     }
+
+    public static function error_save_decryption_error(){
+        \Classes\Ctrx::x_rate_limit(3, 60, "/ctrx@decryption/route@ctrx10050714/ctrraz/10046331/ctrxyro");
+        throw new Exception("Decryption error.!");
+    }
 }
