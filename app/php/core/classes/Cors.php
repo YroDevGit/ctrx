@@ -6,7 +6,7 @@ class Cors
 {
 
 
-    public static function allow_origin(array|null $allowed, callable $error)
+    public static function allow_origin(array|null $allowed, callable|null $error = null)
     {
         $allowed = is_null($allowed) ? [] : $allowed;
 
@@ -14,6 +14,11 @@ class Cors
 
         if ($origin === '' || in_array($origin, $allowed) || $origin == rootpath) {
         } else {
+            if(! $error){
+                $error = function($org){
+                    Response::code(unauthorized_code)->message("Origin: '$org' is not allowed to access this resource")->send(unauthorized_code);
+                };
+            }
             $error($origin);
             return;
         }
@@ -32,7 +37,7 @@ class Cors
         set_request_method($method);
     }
 
-    public static function set_allowed_origin(array|string $origins)
+    public static function set_allowed_origin(array|string|null $origins)
     {
         $key = "ctrx_req_allowed_origin_sao";
         if (is_array($origins)) {

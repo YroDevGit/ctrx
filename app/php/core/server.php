@@ -14,7 +14,7 @@ session_start();
 /**
  * Timezone is set to default (@env)
  */
-if(env('time_zone')){
+if (env('time_zone')) {
     date_default_timezone_set(env('time_zone'));
 }
 
@@ -102,6 +102,16 @@ if ($req == "ctrx.yro.ctrstorage.images/deleteImg") {
  */
 
 if (str_starts_with($req, "api/")) {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '') {
+        header("Access-Control-Allow-Origin: $origin");
+    }
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: " . env("allowed_headers"));
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit();
+    }
     if (env('single_thread') && env('single_thread') == "yes") {
         if (isset($_COOKIE[ctrxc_ccookie_single_thread()])) {
             exit;
@@ -129,21 +139,19 @@ if (str_starts_with($req, "api/")) {
         defined("route") || define("ROUTE", rem_php($newReq));
 
         header("Cache-Control: private, max-age=0");
-        
+
         \Classes\Ctrx::include_all_autoFiles();
 
         if (env("cross_origin_sharing") == "yes") {
             $allowAllOrigin = env("allow_all_origin");
-            if ($allowAllOrigin == "yes") {
-                header("Access-Control-Allow-Origin: *");
-            } else {
+            if ($allowAllOrigin != "yes") {
                 $allowed = \Classes\Cors::get_allowed_origin("string");
                 if ($allowed) {
                     header("Access-Control-Allow-Origin: " . $allowed);
+                } else {
+                    header_remove("Access-Control-Allow-Origin");
                 }
             }
-            header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-            header("Access-Control-Allow-Headers: " . env("allowed_headers"));
         } else {
             $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
             $rpath = rootpath;
@@ -467,7 +475,7 @@ if (str_starts_with($req, "api/")) {
 
             $getFile = $e->getFile();
             $getLine = $e->getLine();
-            if(str_contains($getFile, "app\php\core\\") || str_contains($getFile, "app/php/core/")){
+            if (str_contains($getFile, "app\php\core\\") || str_contains($getFile, "app/php/core/")) {
                 $getFile = $all[0]["file"] ?? $getFile;
                 $getLine = $all[0]["line"] ?? $getFile;
             }
