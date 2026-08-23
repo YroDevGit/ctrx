@@ -82,6 +82,13 @@ class CtrxClass {
         return `CTR${now}${uuid}`;
     }
 
+    val(any, defaultValue = null){
+        if(! any || any == undefined){
+            return defaultValue;
+        }
+        return any;
+    }
+
     numberFormat(number, decimal = true, defaultValue = "0") {
         if (number) {
             if (decimal) {
