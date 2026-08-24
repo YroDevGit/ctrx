@@ -1,6 +1,6 @@
 {
     "name": "yrodevgit/ctrx",
-    "description": "A lightweight PHP framework by Tyrone Malocon",
+    "description": "A lightweight, powerful, and JSON-first PHP framework built for modern web application development. Designed around simplicity, performance, and developer control, CTRX provides the essential foundation for building RESTful APIs, backend services, web applications, and scalable full-stack systems without the unnecessary complexity of heavyweight frameworks.",
     "type": "project",
     "license": "MIT",
     "authors": [
