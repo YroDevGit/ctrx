@@ -664,6 +664,27 @@ class CtrxClass {
         }
     }
 
+    remove_attributes(selector, ...array) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+            console.log(elements);
+        for (const element of elements) {
+            for (const row of array) {
+                if (typeof row === 'string') {
+                    element.removeAttribute(row);
+                }
+            }
+        }
+    }
+
+    modal_unfocus(...modals){
+        for(let m in modals){
+            let row = modals[m];
+            this.set_attributes(row, {"data-bs-focus": false});
+        }
+    }
+
     get_attribute(selector, attribute) {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)

@@ -568,6 +568,16 @@ class TModal {
                 return this._type;
             },
 
+            edit(data, meta, title = "Edit"){
+                this.setTitle(title);
+                if(typeof meta == "number"){
+                    this.setMeta({id: meta});
+                }else{
+                    this.setMeta(meta);
+                }
+                this.show(data);
+            },
+
             setValue(data) {
                 const form = this.form;
                 if (!form) return this;
