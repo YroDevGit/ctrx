@@ -1,240 +1,230 @@
-<?php
-$version = "v5.4";
-$build = 1;
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CTRX | Modern PHP Framework</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts (same as before) -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@400;500;700;900&display=swap');
-
-    :root {
-      --primary: #00ccff;
-      /* Neon Blue */
-      --primary-glow: rgba(0, 204, 255, 0.4);
-      --secondary: #0d0d20;
-      /* Dark Navy */
-      --accent: #bb00ff;
-      /* Purple accent */
-    }
-
+    /* only minimal overrides to keep theme colors, no extra comments */
     body {
-      background-color: var(--secondary);
+      background-color: #0d0d20;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      background-image:
-        radial-gradient(circle at 10% 20%, rgba(0, 204, 255, 0.05) 0%, transparent 20%),
-        radial-gradient(circle at 90% 80%, rgba(187, 0, 255, 0.05) 0%, transparent 20%);
-      overflow-x: hidden;
       min-height: 100vh;
     }
-
-    .title-glow {
-      text-shadow:
-        0 0 5px var(--primary),
-        0 0 15px var(--primary),
-        0 0 25px var(--primary-glow),
-        0 0 40px var(--primary-glow);
+    .bg-dark-navy {
+      background-color: #0d0d20;
     }
-
-    .pulse-glow {
-      animation: pulse 3s infinite alternate;
+    .text-neon {
+      color: #00ccff;
     }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 5px var(--primary);
-      }
-
-      100% {
-        box-shadow: 0 0 15px var(--primary), 0 0 30px var(--primary-glow);
-      }
+    .text-purple-accent {
+      color: #bb00ff;
     }
-
-    .btn-primary {
-      background: linear-gradient(135deg, rgba(0, 204, 255, 0.1) 0%, rgba(0, 204, 255, 0.05) 100%);
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      transition: all 0.3s ease;
+    .border-neon {
+      border-color: #00ccff;
+    }
+    .glow-text {
+      text-shadow: 0 0 5px #00ccff, 0 0 15px #00ccff, 0 0 25px rgba(0,204,255,0.4), 0 0 40px rgba(0,204,255,0.4);
+    }
+    .btn-outline-neon {
+      color: #00ccff;
+      border: 1px solid #00ccff;
+      background: rgba(0,204,255,0.05);
+      transition: all 0.3s;
       position: relative;
       overflow: hidden;
     }
-
-    .btn-primary:hover {
-      background: linear-gradient(135deg, rgba(0, 204, 255, 0.2) 0%, rgba(0, 204, 255, 0.1) 100%);
+    .btn-outline-neon:hover {
+      background: rgba(0,204,255,0.15);
+      color: #00ccff;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 204, 255, 0.2);
+      box-shadow: 0 5px 15px rgba(0,204,255,0.2);
     }
-
-    .btn-primary::after {
+    .btn-outline-neon::after {
       content: '';
       position: absolute;
       top: 0;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
       transition: left 0.7s;
     }
-
-    .btn-primary:hover::after {
+    .btn-outline-neon:hover::after {
       left: 100%;
     }
-
     .feature-card {
-      background: rgba(13, 13, 32, 0.7);
-      border: 1px solid rgba(0, 204, 255, 0.2);
+      background: rgba(13,13,32,0.7);
+      border: 1px solid rgba(0,204,255,0.2);
       border-radius: 8px;
       transition: all 0.3s ease;
+      height: 100%;
     }
-
     .feature-card:hover {
-      border-color: var(--primary);
+      border-color: #00ccff;
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0, 204, 255, 0.1);
+      box-shadow: 0 10px 25px rgba(0,204,255,0.1);
     }
-
     .feature-icon {
-      color: var(--primary);
+      color: #00ccff;
       font-size: 2.5rem;
       margin-bottom: 1rem;
     }
-
-    .terminal-effect {
-      position: relative;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 1rem;
+    .terminal-box {
+      background: rgba(0,0,0,0.25);
       border-radius: 0 5px 5px 0;
+      position: relative;
+      padding: 1rem 1.5rem;
     }
-
     .scan-line {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 4px;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      background: linear-gradient(90deg, transparent, #00ccff, transparent);
       animation: scan 5s linear infinite;
     }
-
     @keyframes scan {
-      0% {
-        top: 0%
-      }
-
-      100% {
-        top: 100%
-      }
+      0% { top: 0%; }
+      100% { top: 100%; }
     }
-
-    .logo {
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 900;
-    }
-
     .copy-btn {
-      background: rgba(0, 204, 255, 0.1);
-      border: 1px solid rgba(0, 204, 255, 0.3);
-      color: var(--primary);
-      padding: 0.5rem 1rem;
+      background: rgba(0,204,255,0.1);
+      border: 1px solid rgba(0,204,255,0.3);
+      color: #00ccff;
+      padding: 0.4rem 1rem;
       border-radius: 4px;
       font-size: 0.9rem;
       cursor: pointer;
-      display: flex;
+      transition: all 0.2s;
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      margin-top: 0.5rem;
     }
-
     .copy-btn:hover {
-      background: rgba(0, 204, 255, 0.2);
+      background: rgba(0,204,255,0.2);
       transform: translateY(-2px);
     }
-
     .copy-btn.copied {
-      background: rgba(0, 204, 255, 0.3);
+      background: rgba(0,204,255,0.3);
       color: #fff;
+    }
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      border-left: 3px solid #00ccff;
+      font-family: 'JetBrains Mono', monospace;
+      color: #a0d9ff;
+      display: inline-block;
+    }
+    .logo-font {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+    }
+    .footer-border {
+      border-top: 1px solid #1e1e3a;
+    }
+    a {
+      text-decoration: none;
     }
   </style>
 </head>
+<body>
 
-<body class="relative">
+  <!-- scan line effect -->
   <div class="scan-line"></div>
 
-  <main class="container mx-auto px-4 py-12 flex flex-col justify-center min-h-screen">
-    <div class="text-center mb-12">
-      <div class="logo title-glow text-5xl md:text-7xl lg:text-8xl font-black mb-4 pulse-glow inline-block py-8 rounded-lg">
-        ⚡ CTRX <?= $version ?> ⚡
+  <main class="container py-5 d-flex flex-column min-vh-100">
+    <!-- hero -->
+    <div class="text-center my-4">
+      <div class="logo-font display-4 fw-bold glow-text py-3 px-2 d-inline-block pulse-glow">
+        ⚡ CTRX <?php echo $version ?? 'v5.4'; ?> ⚡
       </div>
-      <div class="terminal-effect max-w-2xl mx-auto mb-8">
-        <p class="text-blue-300 text-lg md:text-xl mb-4">The modern PHP framework for developers</p>
-        <p class="text-xl md:text-2xl text-blue-200">
-          Fullstack ready, JSON-first, <span class="text-purple-400 font-bold">flexible</span>, <span class="text-purple-400 font-bold">secure</span>, and <span class="text-purple-400 font-bold">fast</span>.
+      <div class="terminal-box mx-auto mt-4" style="max-width: 700px;">
+        <p class="text-info fs-5 mb-2">The modern PHP framework for developers</p>
+        <p class="fs-5 text-light">
+          Fullstack ready, JSON-first, <span class="text-purple-accent fw-bold">flexible</span>, <span class="text-purple-accent fw-bold">secure</span>, and <span class="text-purple-accent fw-bold">fast</span>.
         </p>
       </div>
 
-      <div class="flex flex-wrap justify-center gap-6 mt-10">
-        <a href="#" class="btn-primary px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2">
+      <!-- action buttons -->
+      <div class="d-flex flex-wrap justify-content-center gap-4 mt-5">
+        <a href="#" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
           <i class="fab fa-github"></i> Visit Repository
         </a>
-        <a href="https://drive.google.com/file/d/1P1RvCMcPFzs_-jLE2ddsORy9PSLE4klf/view?usp=sharing" target="_blank" class="btn-primary px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2">
+        <a href="https://drive.google.com/file/d/1P1RvCMcPFzs_-jLE2ddsORy9PSLE4klf/view?usp=sharing" target="_blank" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
           <i class="fas fa-database"></i> Download MariaDB
         </a>
       </div>
 
-      <div class="composer-install mt-8">
-        <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-blue-300 flex items-center justify-center gap-2">
+      <!-- composer install -->
+      <div class="mt-5">
+        <div class="mb-3">
+          <h5 class="text-info d-flex align-items-center justify-content-center gap-2">
             <i class="fas fa-terminal"></i> Install via Composer
-          </h3>
-          <p class="text-gray-300 text-sm mt-2">Quick setup with Composer</p>
+          </h5>
+          <p class="text-secondary small">Quick setup with Composer</p>
         </div>
-
         <div class="code-block">
           <code>composer create-project yrodevgit/ctrx</code>
         </div>
-
-        <button class="copy-btn mx-auto" id="copybtn">
-          <i class="far fa-copy"></i> Copy Command
-        </button>
+        <div class="mt-3">
+          <button class="copy-btn" id="copybtn">
+            <i class="far fa-copy"></i> Copy Command
+          </button>
+        </div>
       </div>
     </div>
 
-    <section class="max-w-6xl mx-auto mb-20">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-blue-300 title-glow">Features in <?= $version ?>:</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="feature-card p-6 text-center">
-          <div class="feature-icon"><i class="fas fa-box"></i></div>
-          <h3 class="text-xl font-bold mb-3 text-purple-400">Composer Support</h3>
-          <p class="text-gray-300">Easy dependency management and fast project setup.</p>
+    <!-- features -->
+    <section class="mt-5 pt-4">
+      <h2 class="display-6 fw-bold text-center mb-5 text-info glow-text">
+        Features in <?php echo $version ?? 'v5.4'; ?>:
+      </h2>
+      <div class="row g-4 justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="feature-card p-4 text-center">
+            <div class="feature-icon"><i class="fas fa-box"></i></div>
+            <h5 class="fw-bold mb-3 text-purple-accent">Composer Support</h5>
+            <p class="text-light">Easy dependency management and fast project setup.</p>
+          </div>
         </div>
-
-        <div class="feature-card p-6 text-center">
-          <div class="feature-icon"><i class="fas fa-server"></i></div>
-          <h3 class="text-xl font-bold mb-3 text-purple-400">JSON APIs</h3>
-          <p class="text-gray-300">All responses are JSON by default for internal and external apps.</p>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="feature-card p-4 text-center">
+            <div class="feature-icon"><i class="fas fa-server"></i></div>
+            <h5 class="fw-bold mb-3 text-purple-accent">JSON APIs</h5>
+            <p class="text-light">All responses are JSON by default for internal and external apps.</p>
+          </div>
         </div>
-
-        <div class="feature-card p-6 text-center">
-          <div class="feature-icon"><i class="fas fa-cogs"></i></div>
-          <h3 class="text-xl font-bold mb-3 text-purple-400">Modular Plugins</h3>
-          <p class="text-gray-300">Add or remove features easily with isolated plugins.</p>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="feature-card p-4 text-center">
+            <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+            <h5 class="fw-bold mb-3 text-purple-accent">Modular Plugins</h5>
+            <p class="text-light">Add or remove features easily with isolated plugins.</p>
+          </div>
         </div>
       </div>
     </section>
+
+    <!-- footer -->
+    <footer class="footer-border pt-4 pb-3 text-center mt-auto">
+      <p class="text-info mb-0">
+        &copy; <?php echo date('Y'); ?> CTRX Framework. Built with <span class="text-purple-accent">❤️</span> in PHP
+      </p>
+    </footer>
   </main>
 
-  <footer class="border-t border-gray-800 pt-8 pb-6 text-center">
-    <p class="text-blue-400 mb-2">&copy; <?= date('Y') ?> CTRX Framework. Built with <span class="text-purple-400">❤️</span> in PHP</p>
-  </footer>
+  <!-- Bootstrap JS (optional) + copy handler -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
   <?= js('main') ?>
 </body>
-
 </html>
