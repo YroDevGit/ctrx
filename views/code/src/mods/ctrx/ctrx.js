@@ -918,6 +918,14 @@ class CtrxClass {
 
     }
 
+    get_selected_item(selector){
+        return this.get_selected(selector, "label");
+    }
+
+    get_selected_value(selector){
+        return this.get_selected(selector, "value");
+    }
+
     get_selected(selector, type = null) {
         const select = document.querySelector(selector);
         if (!select) return null;
