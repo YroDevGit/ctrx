@@ -678,6 +678,31 @@ class CtrxClass {
         }
     }
 
+    scroll_to_element(selector, config = null, offset = 0) {
+        const element = document.querySelector(selector);
+    
+        if (!element) return;
+    
+        const top = element.getBoundingClientRect().top + window.scrollY - offset;
+    
+        window.scrollTo({
+            ...(config ?? {}),
+            top,
+            behavior: config?.behavior ?? 'smooth'
+        });
+    }
+
+    scroll(config) {
+        config = { ...config };
+    
+        if (config.offset) {
+            config.top = (config.top ?? 0) - config.offset;
+            delete config.offset;
+        }
+    
+        window.scroll(config);
+    }
+
     modal_unfocus(...modals){
         for(let m in modals){
             let row = modals[m];
