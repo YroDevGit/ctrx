@@ -570,11 +570,7 @@ class TModal {
 
             edit(data, meta, title = "Edit"){
                 this.setTitle(title);
-                if(typeof meta == "number"){
-                    this.setMeta({id: meta});
-                }else{
-                    this.setMeta(meta);
-                }
+                this.setMeta(meta);
                 this.show(data);
             },
 
