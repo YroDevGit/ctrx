@@ -9,12 +9,12 @@ use Classes\Response;
 
 class Request
 {
-    static function post(string $key, bool|null|string $trim = true)
+    static function post(string $key, bool|null|string|float $trim = true)
     {
        return post($key, $trim);
     }
 
-    static function post_decrypt(string $key, $errormessage = null, bool $trim = true)
+    static function post_decrypt(string $key, $errormessage = null, bool|string|int|float $trim = true)
     {
         $post = self::post($key, $trim);
         if (! $post) {
@@ -27,7 +27,7 @@ class Request
         return $post;
     }
 
-    static function get_decrypt(string $key, $errormessage = null, bool $trim = true)
+    static function get_decrypt(string $key, $errormessage = null, $trim = true)
     {
         $get = self::get($key, $trim);
         if (! $get) {
@@ -58,7 +58,7 @@ class Request
         return $post;
     }
 
-    static function get(string $key, bool $trim = true)
+    static function get(string $key, bool|string|int|float $trim = true)
     {
         $get = get($key);
         if (is_null($get)) {

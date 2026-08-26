@@ -175,7 +175,7 @@ if (! function_exists('json_unauthorized')) {
 
 if (! function_exists("post")) {
     /** (Any) returns the value of the post */
-    function post(string $inputname = null, bool|null|string $trim = true)
+    function post(string $inputname = null, bool|null|string|float $trim = true)
     {
         $data = $_POST ?? [];
         if (! $inputname) {
@@ -226,11 +226,33 @@ if (! function_exists("input")) {
 
 if (! function_exists("get")) {
     /** (Any) returns the value of the get */
-    function get(string $inputname)
+    function get(string $key, $trim = true)
     {
-        return isset($_GET[$inputname]) ? $_GET[$inputname] : null;
+        if($trim){
+            if(is_bool($trim)){
+                return isset($_GET[$key]) ? trim(val($_GET[$key], "")) : null;
+            }else{
+                return isset($_GET[$key]) ? trim(val($_GET[$key], ""), $trim) : null;
+            }
+        }
+        return isset($_GET[$key]) ? $_GET[$key] : null;
     }
 }
+
+if (! function_exists("get_decrypt")) {
+    /** (Any) returns the value of the get */
+    function get_decrypt(string $key,$errorMessage = null, $trim = true)
+    {
+        return \Classes\Request::get_decrypt($key, $errorMessage, $trim);
+    }
+}
+
+if(! function_exists("post_decrypt")){
+    function post_decrypt($key, $errorMessage = null, $trim = true){
+        return \Classes\Request::post_decrypt($key, $errorMessage, $trim);
+    }
+}
+
 if (! function_exists("getall")) {
     /** (Any) returns the value of the get */
     function getall()
