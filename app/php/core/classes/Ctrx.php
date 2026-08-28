@@ -645,10 +645,10 @@ class Ctrx
         $role = null;
         $currPage = current_page();
         $roleFilt = fe_config("role_filtering");
-        $UserRole = self::get_user_role();
         if ($roleFilt != true || $roleFilt == null) {
             return;
         }
+        $UserRole = self::get_user_role();
         if (! env('database')) {
             return;
         }

@@ -5,7 +5,7 @@
     "dev_error_page": "dev_error",
     "forbidden_page": "forbidden",
     "unauthorize_page": "unauthorize",
-    "role_filtering": true,
+    "role_filtering": false,
     "js_autoload": true,
     "default_logout": "/",
     "active_class": "active",
