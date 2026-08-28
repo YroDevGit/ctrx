@@ -178,7 +178,7 @@ if (str_starts_with($req, "api/")) {
                 }
             } else {
                 $upperReqMethod = strtoupper($reqmeth);
-                ctrx_response(["code" => env('notfound_code'), "message" => "Controller: ($upperReqMethod) '$newReq' not found"], 500);
+                ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found.!"], 500);
             }
             echo \Classes\Ctrx::file_exists_strict("app/_controller/$newReqPHP");
             exit;

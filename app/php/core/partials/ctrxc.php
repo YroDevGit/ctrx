@@ -81,7 +81,7 @@ if (! function_exists('ctrx_response')) {
                         continue;
                     }
 
-                    if ($fulltrace == "no" && str_contains($file, "\app\php\core")) {
+                    if ($fulltrace == "no" && (str_contains($file, "app\php\core") || str_contains($file, "app/php/core"))) {
                         continue;
                     }
                     $all[] = $v;

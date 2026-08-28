@@ -94,7 +94,7 @@ class Router
     {
         $route = append_php($route);
         if (! \Classes\Ctrx::file_exists_strict("app/_controller/" . $route)) {
-            throw new Exception("(Routes): Controller $route not found.!");
+            throw new Exception("Controller file $route not found.!");
         }
     }
 
