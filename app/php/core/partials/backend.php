@@ -508,3 +508,21 @@ function db_rollback()
         $transaction_active = false;
     }
 }
+
+function makeRoute(
+    string|null $method = null,
+    string|null $controller = null,
+    string|null $as = null
+    )
+{
+    if(! $method){
+        $method = "get";
+    }
+    if(! $controller){
+        throw new Exception("Route Register error: controller not set.!");
+    }
+    if($as){
+        return [$method => "$controller >> $as"];
+    }
+    return [$method => $controller];
+}

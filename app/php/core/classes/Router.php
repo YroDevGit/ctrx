@@ -180,7 +180,7 @@ class Router
                     $rename = isset($newvexpl[1]) ? trim($newvexpl[1]) : null;
                     $rename = $rename ? $rename : $newv;
                     self::checkRoutes($newv);
-                    $key = $k;
+                    $key = strtolower($k);
                     $newkey = "ctrx_" . $key . "_" . $rename;
                     if ($pref) {
                         $newkey = "ctrx_" . $key . "_" . $pref . "/" . $rename;
@@ -196,7 +196,7 @@ class Router
                     if (! $first && ! $sec) {
                         throw new Exception("Route pattern error");
                     }
-                    $key = $k;
+                    $key = strtolower($k);
                     self::checkRoutes($first);
                     if ($pref) {
                         $newkey = "ctrx_" . $key . "_" . $pref . "/" . $sec;
