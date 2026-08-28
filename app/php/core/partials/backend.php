@@ -526,3 +526,38 @@ function makeRoute(
     }
     return [$method => $controller];
 }
+
+function sendResponse(
+    int|null $code = 200,
+    $message = null,
+    array|null $data = null,
+    array|null $errors = null,
+    int|null $status = null,
+    int|null|float $count = null,
+    array|null $var = null,
+){
+    if(! $code){
+        $code = 200;
+    }
+    $resp = \Classes\Response::code($code);
+    if($message){
+        $resp->message($message);
+    }
+    if($data){
+        $resp->data($data);
+    }
+    if($errors){
+        $resp->errors($errors);
+    }
+    if($count){
+        $resp->count($count);
+    }
+    if($var){
+        $resp->var($var);
+    }
+    if($status){
+        $resp->send($status);
+    }else{
+        $resp->send();
+    }
+}
