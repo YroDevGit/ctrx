@@ -1,8 +1,8 @@
 class CtrLoading {
     constructor(theme = "dark") {
         this.theme = theme;
-        this.loaderId = "s-loader-overlay";
-        this.styleId = "s-loader-style";
+        this.loaderId = "s-loader-overlay-ctrx";
+        this.styleId = "s-loader-style-ctrx";
         this.ensureStyle();
     }
 
