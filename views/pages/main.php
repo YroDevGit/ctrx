@@ -187,7 +187,7 @@
     <!-- features -->
     <section class="mt-5 pt-4">
       <h2 class="display-6 fw-bold text-center mb-5 text-info glow-text">
-        Features in <?php echo $version ?? 'v5.4'; ?>:
+        Features in <?php echo $version ?? 'v5.5'; ?>:
       </h2>
       <div class="row g-4 justify-content-center">
         <div class="col-12 col-md-6 col-lg-4">
