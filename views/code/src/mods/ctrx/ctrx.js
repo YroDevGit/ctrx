@@ -82,8 +82,8 @@ class CtrxClass {
         return `CTR${now}${uuid}`;
     }
 
-    val(any, defaultValue = null){
-        if(! any || any == undefined){
+    val(any, defaultValue = null) {
+        if (!any || any == undefined) {
             return defaultValue;
         }
         return any;
@@ -658,12 +658,12 @@ class CtrxClass {
         const elements = typeof selector === 'string'
             ? document.querySelectorAll(selector)
             : [selector];
-    
+
         for (const element of elements) {
             for (const row of array) {
                 const k = Object.keys(row)[0];
                 const attr = row[k];
-    
+
                 if (typeof k === 'string') {
                     element.setAttribute(k, attr);
                 }
@@ -675,7 +675,7 @@ class CtrxClass {
         const elements = typeof selector === 'string'
             ? document.querySelectorAll(selector)
             : [selector];
-            console.log(elements);
+        console.log(elements);
         for (const element of elements) {
             for (const row of array) {
                 if (typeof row === 'string') {
@@ -687,11 +687,11 @@ class CtrxClass {
 
     scroll_to_element(selector, config = null, offset = 0) {
         const element = document.querySelector(selector);
-    
+
         if (!element) return;
-    
+
         const top = element.getBoundingClientRect().top + window.scrollY - offset;
-    
+
         window.scrollTo({
             ...(config ?? {}),
             top,
@@ -701,19 +701,19 @@ class CtrxClass {
 
     scroll(config) {
         config = { ...config };
-    
+
         if (config.offset) {
             config.top = (config.top ?? 0) - config.offset;
             delete config.offset;
         }
-    
+
         window.scroll(config);
     }
 
-    modal_unfocus(...modals){
-        for(let m in modals){
+    modal_unfocus(...modals) {
+        for (let m in modals) {
             let row = modals[m];
-            this.set_attributes(row, {"data-bs-focus": false});
+            this.set_attributes(row, { "data-bs-focus": false });
         }
     }
 
@@ -721,9 +721,9 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
-    
+
         return element.getAttribute(attribute);
     }
 
@@ -731,7 +731,7 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
         return element.innerHTML;
     }
@@ -740,7 +740,7 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
         return element.textContent;
     }
@@ -749,7 +749,7 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
         element.textContent = text;
     }
@@ -758,7 +758,7 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
         return element.innerText;
     }
@@ -767,39 +767,135 @@ class CtrxClass {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
         element.innerText = text;
     }
-    
+
     get_attributes(selector, ...attributes) {
         const element = typeof selector === 'string'
             ? document.querySelector(selector)
             : selector;
-    
+
         if (!element) return null;
-    
+
         const result = {};
-    
+
         for (const attr of attributes) {
             result[attr] = element.getAttribute(attr);
         }
-    
+
         return result;
     }
 
-    scroll_to_top(top = 0, behavior = "smooth") {
-        window.scrollTo({
-            top: top,
-            behavior: behavior
-        });
+    scroll_to_top(top = 0, delay = 0, behavior = "smooth") {
+        if (delay > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }, delay);
+        } else {
+            window.scrollTo({
+                top: top,
+                behavior: behavior
+            });
+        }
     }
 
-    scroll_to_bottom(reduce = 0, behavior = "smooth") {
-        window.scrollTo({
-            top: document.body.scrollHeight - reduce,
-            behavior: behavior
-        });
+    element_scroll_top(element, top = 0, delay = 0, behavior = "smooth") {
+        if (typeof element == "string") {
+            let doc = document.querySelector(element);
+            if (delay > 0) {
+                setTimeout(() => {
+                    doc.scrollTo({
+                        top: top,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                doc.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }
+        } else if (element instanceof HTMLElement) {
+            if (delay > 0) {
+                setTimeout(() => {
+                    element.scrollTo({
+                        top: top,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                element.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }
+        } else {
+            return false;
+        }
+    }
+
+    element_auto_scroll_top(element, top = 0, behavior = "smooth", delay = 500) {
+        this.element_scroll_top(element, top, delay, behavior);
+    }
+
+    element_scroll_bottom(element, reduce = 0, delay = 0, behavior = "smooth") {
+        if (typeof element == "string") {
+            let doc = document.querySelector(element);
+            if (delay > 0) {
+                setTimeout(() => {
+                    doc.scrollTo({
+                        top: document.body.scrollHeight - reduce,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                doc.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }
+        } else if (element instanceof HTMLElement) {
+            if (delay > 0) {
+                setTimeout(() => {
+                    element.scrollTo({
+                        top: document.body.scrollHeight - reduce,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                element.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }
+        } else {
+            return false;
+        }
+    }
+
+    element_auto_scroll_bottom(element, reduce = 0, behavior = "smooth", delay = 500) {
+        this.element_scroll_bottom(element, reduce, delay, behavior);
+    }
+
+    scroll_to_bottom(reduce = 0, delay = 0, behavior = "smooth") {
+        if (delay > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }, delay);
+        } else {
+            window.scrollTo({
+                top: document.body.scrollHeight - reduce,
+                behavior: behavior
+            });
+        }
     }
 
     reverse_object(object) {
@@ -971,11 +1067,11 @@ class CtrxClass {
 
     }
 
-    get_selected_item(selector){
+    get_selected_item(selector) {
         return this.get_selected(selector, "label");
     }
 
-    get_selected_value(selector){
+    get_selected_value(selector) {
         return this.get_selected(selector, "value");
     }
 
@@ -1146,8 +1242,8 @@ class CtrxClass {
         }
     }
 
-    elementStr(element){
-        if(! element instanceof HTMLElement) return null;
+    elementStr(element) {
+        if (!element instanceof HTMLElement) return null;
         return element.outerHTML || null;
     }
 

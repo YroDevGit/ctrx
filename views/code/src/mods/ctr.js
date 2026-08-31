@@ -82,6 +82,13 @@ class CtrClass {
         return `CTR${now}${uuid}`;
     }
 
+    val(any, defaultValue = null) {
+        if (!any || any == undefined) {
+            return defaultValue;
+        }
+        return any;
+    }
+
     numberFormat(number, decimal = true, defaultValue = "0") {
         if (number) {
             if (decimal) {
@@ -618,6 +625,13 @@ class CtrClass {
         return data;
     }
 
+    makeElement(elementString) {
+        return document
+            .createRange()
+            .createContextualFragment(elementString.trim())
+            .firstElementChild;
+    }
+
     scroll_to_element(selector, offset = 0) {
         let elements = [];
 
@@ -640,18 +654,248 @@ class CtrClass {
         });
     }
 
-    scroll_to_top(top = 0, behavior = "smooth") {
+    set_attributes(selector, ...array) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+
+        for (const element of elements) {
+            for (const row of array) {
+                const k = Object.keys(row)[0];
+                const attr = row[k];
+
+                if (typeof k === 'string') {
+                    element.setAttribute(k, attr);
+                }
+            }
+        }
+    }
+
+    remove_attributes(selector, ...array) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+        console.log(elements);
+        for (const element of elements) {
+            for (const row of array) {
+                if (typeof row === 'string') {
+                    element.removeAttribute(row);
+                }
+            }
+        }
+    }
+
+    scroll_to_element(selector, config = null, offset = 0) {
+        const element = document.querySelector(selector);
+
+        if (!element) return;
+
+        const top = element.getBoundingClientRect().top + window.scrollY - offset;
+
         window.scrollTo({
-            top: top,
-            behavior: behavior
+            ...(config ?? {}),
+            top,
+            behavior: config?.behavior ?? 'smooth'
         });
     }
 
-    scroll_to_bottom(reduce = 0, behavior = "smooth") {
-        window.scrollTo({
-            top: document.body.scrollHeight - reduce,
-            behavior: behavior
-        });
+    scroll(config) {
+        config = { ...config };
+
+        if (config.offset) {
+            config.top = (config.top ?? 0) - config.offset;
+            delete config.offset;
+        }
+
+        window.scroll(config);
+    }
+
+    modal_unfocus(...modals) {
+        for (let m in modals) {
+            let row = modals[m];
+            this.set_attributes(row, { "data-bs-focus": false });
+        }
+    }
+
+    get_attribute(selector, attribute) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+
+        return element.getAttribute(attribute);
+    }
+
+    get_html(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+        return element.innerHTML;
+    }
+
+    get_text_content(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+        return element.textContent;
+    }
+
+    set_text_content(selector, text) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+        element.textContent = text;
+    }
+
+    get_inner_text(selector) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+        return element.innerText;
+    }
+
+    set_inner_text(selector, text) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+        element.innerText = text;
+    }
+
+    get_attributes(selector, ...attributes) {
+        const element = typeof selector === 'string'
+            ? document.querySelector(selector)
+            : selector;
+
+        if (!element) return null;
+
+        const result = {};
+
+        for (const attr of attributes) {
+            result[attr] = element.getAttribute(attr);
+        }
+
+        return result;
+    }
+
+    scroll_to_top(top = 0, delay = 0, behavior = "smooth") {
+        if (delay > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }, delay);
+        } else {
+            window.scrollTo({
+                top: top,
+                behavior: behavior
+            });
+        }
+    }
+
+    element_scroll_top(element, top = 0, delay = 0, behavior = "smooth") {
+        if (typeof element == "string") {
+            let doc = document.querySelector(element);
+            if (delay > 0) {
+                setTimeout(() => {
+                    doc.scrollTo({
+                        top: top,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                doc.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }
+        } else if (element instanceof HTMLElement) {
+            if (delay > 0) {
+                setTimeout(() => {
+                    element.scrollTo({
+                        top: top,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                element.scrollTo({
+                    top: top,
+                    behavior: behavior
+                });
+            }
+        } else {
+            return false;
+        }
+    }
+
+    element_auto_scroll_top(element, top = 0, behavior = "smooth", delay = 500) {
+        this.element_scroll_top(element, top, delay, behavior);
+    }
+
+    element_scroll_bottom(element, reduce = 0, delay = 0, behavior = "smooth") {
+        if (typeof element == "string") {
+            let doc = document.querySelector(element);
+            if (delay > 0) {
+                setTimeout(() => {
+                    doc.scrollTo({
+                        top: document.body.scrollHeight - reduce,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                doc.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }
+        } else if (element instanceof HTMLElement) {
+            if (delay > 0) {
+                setTimeout(() => {
+                    element.scrollTo({
+                        top: document.body.scrollHeight - reduce,
+                        behavior: behavior
+                    });
+                }, delay);
+            } else {
+                element.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }
+        } else {
+            return false;
+        }
+    }
+
+    element_auto_scroll_bottom(element, reduce = 0, behavior = "smooth", delay = 500) {
+        this.element_scroll_bottom(element, reduce, delay, behavior);
+    }
+
+    scroll_to_bottom(reduce = 0, delay = 0, behavior = "smooth") {
+        if (delay > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: document.body.scrollHeight - reduce,
+                    behavior: behavior
+                });
+            }, delay);
+        } else {
+            window.scrollTo({
+                top: document.body.scrollHeight - reduce,
+                behavior: behavior
+            });
+        }
     }
 
     reverse_object(object) {
@@ -823,6 +1067,14 @@ class CtrClass {
 
     }
 
+    get_selected_item(selector) {
+        return this.get_selected(selector, "label");
+    }
+
+    get_selected_value(selector) {
+        return this.get_selected(selector, "value");
+    }
+
     get_selected(selector, type = null) {
         const select = document.querySelector(selector);
         if (!select) return null;
@@ -988,6 +1240,11 @@ class CtrClass {
             console.warn(`parentAndChild: '${selector}' has an issue`, err);
             return null;
         }
+    }
+
+    elementStr(element) {
+        if (!element instanceof HTMLElement) return null;
+        return element.outerHTML || null;
     }
 
     errStr(str = null, errorString = "err_") {
