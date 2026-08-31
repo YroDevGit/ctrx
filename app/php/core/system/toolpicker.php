@@ -9,15 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exec_value'])) {
 }
 
 if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testdb") {
-  if (file_exists("views/pages/testdb.php")) {
-    @unlink("views/pages/testdb.php");
+  if (file_exists("views/pages/test/db.php")) {
+    @unlink("views/pages/test/db.php");
     reload_page(false);
   }
 }
 
 if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testmemory") {
-  if (file_exists("views/pages/testmemory.php")) {
-    @unlink("views/pages/testmemory.php");
+  if (file_exists("views/pages/test/memory.php")) {
+    @unlink("views/pages/test/memory.php");
     reload_page(false);
   }
 }
@@ -561,15 +561,15 @@ $size = folderSize('app/php/logs');
       </button>
     </div>
 
-    <?php if (file_exists("views/pages/testdb.php")): ?>
+    <?php if (file_exists("views/pages/test/db.php")): ?>
       <div style="color:red;">
-        ⚠️ WARNING: <a href="/testdb" style="text-decoration: none;" target="_blank"><b>testdb</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testdb">Delete testdb.php?</a>
+        ⚠️ WARNING: <a href="/test/db" style="text-decoration: none;" target="_blank"><b>testdb</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting test/db?')" href="?deltestdb=testdb">Delete test/db.php?</a>
       </div>
     <?php endif; ?>
 
-    <?php if (file_exists("views/pages/testmemory.php")): ?>
+    <?php if (file_exists("views/pages/test/memory.php")): ?>
       <div style="color:red;">
-        ⚠️ WARNING: <a href="/testmemory" style="text-decoration: none;" target="_blank"><b>testmemory</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting testdb?')" href="?deltestdb=testmemory">Delete testmemory.php?</a>
+        ⚠️ WARNING: <a href="/test/memory" style="text-decoration: none;" target="_blank"><b>testmemory</b></a> is exposed, <a style="text-decoration: none;" onclick="return confirm('Proceed deleting test/memory?')" href="?deltestdb=testmemory">Delete test/memory.php?</a>
       </div>
     <?php endif; ?>
 

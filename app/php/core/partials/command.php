@@ -180,18 +180,21 @@ if ($route == "run" || $route == "server") {
             exit(1);
         }
     }
-} else if ($route == "generate:testdb") {
+} else if ($route == "generate:testdb" || $route == "generate:test:db") {
+    if(! dir("views/pages/test/")){
+        @mkdir("views/pages/test/");
+    }
     copy(
         'app/php/core/system/dtbs.php',
-        'views/pages/testdb.php'
+        'views/pages/test/db.php'
     );
 
     include_once "app/php/core/partials/envloader.php";
     $root = env('rootpath');
 
-    echo "\n✅ Test db has been created @views/pages/testdb.php.\n";
+    echo "\n✅ Test db has been created @views/pages/test/db.php.\n";
     echo "⚠️  Please do not expose this in public.\n\n";
-    echo "Test-DB url @: $root/testdb\n\n";
+    echo "Test-DB url @: $root/test/db\n\n";
 
     exit;
 } else if ($route == "generate:docker") {
@@ -919,8 +922,8 @@ if ($route == "update") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
-} else if ($route == "dl:testmemory") {
-    $targetDir = 'views/pages/';
+} else if ($route == "dl:testmemory" || $route == "dl:test:memory") {
+    $targetDir = 'views/pages/test/';
 
     if (!is_dir($targetDir)) {
         if (!mkdir($targetDir, 0755, true)) {
@@ -928,13 +931,13 @@ if ($route == "update") {
         }
     }
 
-    if (file_exists("views/pages/testmemory.php")) {
-        echo "\n❌ File conflict with views/pages/testmemory.php\n\n";
+    if (file_exists("views/pages/test/memory.php")) {
+        echo "\n❌ File conflict with views/pages/test/memory.php\n\n";
         exit;
     }
 
     $files = [
-        'testmemory.php' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/memory.php',
+        'memory.php' => 'https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/memory.php',
     ];
 
     $successCount = 0;
@@ -970,7 +973,7 @@ if ($route == "update") {
         }
     } else {
         $en = env("rootpath");
-        echo "✅ Memory DB has been downloaded: $en/testmemory\n\n";
+        echo "✅ Memory DB has been downloaded: $en/test/memory\n\n";
     }
     exit;
 } else if ($route == "dl:bootstrap") {

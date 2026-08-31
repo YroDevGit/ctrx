@@ -1,4 +1,4 @@
 .env
 vendor/*
-views/pages/testdb.php
-views/pages/testmemory.php
+views/pages/test/db.php
+views/pages/test/memory.php
