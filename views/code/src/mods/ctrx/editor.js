@@ -81,11 +81,15 @@ class TextEditor {
             quill,
             
             get value(){
-                return quill.root.innerHTML;
+                let val = quill.root.innerHTML;
+                if(val == "<p><br></p>") return null;
+                return val;
             },
 
             getValue() {
-                return quill.root.innerHTML;
+                let val = quill.root.innerHTML;
+                if(val == "<p><br></p>") return null;
+                return val;
             },
             
             get clear() {
