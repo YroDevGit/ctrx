@@ -625,6 +625,13 @@ class CtrxClass {
         return data;
     }
 
+    makeElement(elementString) {
+        return document
+            .createRange()
+            .createContextualFragment(elementString.trim())
+            .firstElementChild;
+    }
+
     scroll_to_element(selector, offset = 0) {
         let elements = [];
 
@@ -1137,6 +1144,11 @@ class CtrxClass {
             console.warn(`parentAndChild: '${selector}' has an issue`, err);
             return null;
         }
+    }
+
+    elementStr(element){
+        if(! element instanceof HTMLElement) return null;
+        return element.outerHTML || null;
     }
 
     errStr(str = null, errorString = "err_") {

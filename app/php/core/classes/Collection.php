@@ -502,6 +502,27 @@ class Collection
         return $this;
     }
 
+    public function hash(string|array $keys): self
+    {
+        if ($this->trulyEmpty($this->items)) {
+            return $this;
+        }
+        if (is_string($keys)) {
+            $keys = [$keys];
+        }
+
+        $this->items = array_map(function ($item) use ($keys) {
+            foreach ($keys as $key) {
+                if (isset($item[$key])) {
+                    $item[$key] = \Classes\Hash::hash(strval($item[$key]));
+                }
+            }
+            return $item;
+        }, $this->items);
+
+        return $this;
+    }
+
     public function decrypt(string|array $keys): self
     {
         if ($this->trulyEmpty($this->items)) {
