@@ -1,15 +1,35 @@
+/* tmodal.css - By CTRX */
+
+:root {
+    --tmodal-primary: black;
+    --tmodal-purple:#6c5ce7;
+    --tmodal-primary-dark: #5a4bd1;
+    --tmodal-primary-light: #a29bfe;
+    --tmodal-danger: #fd79a8;
+    --tmodal-danger-dark: #e8436e;
+    --tmodal-bg: white;
+    --tmodal-body-bg:rgb(250, 250, 250);
+    --tmodal-bg-solid: #ffffff;
+    --tmodal-text: #2d3436;
+    --tmodal-text-light: #636e72;
+    --tmodal-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+    --tmodal-radius: 24px;
+    --tmodal-transition: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ----- Overlay with Glass Effect ----- */
 .tmodal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, .6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 999999;
     opacity: 0;
-    transition: opacity .3s ease;
+    transition: opacity 0.4s ease, backdrop-filter 0.4s ease;
 }
 
 .tmodal-overlay.tmodal-show {
@@ -17,209 +37,234 @@
     opacity: 1;
 }
 
-.tmodal_error_text {
-    color: #dc3545;
-    font-size: 14px;
-    padding-bottom: 10px;
-}
-
-.tmodal_error_text.tmodal-show {
-    display: block;
-}
-
 .tmodal {
     width: 95%;
-    max-width: 550px;
-    background: #ffffff;
-    border-radius: 12px;
+    max-width: 560px;
+    background: var(--tmodal-bg);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border-radius: var(--tmodal-radius);
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
-    animation: tmodalIn .3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    transform: scale(0.95);
+    box-shadow: var(--tmodal-shadow), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    transform: scale(0.92) translateY(12px);
     opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .tmodal-overlay.tmodal-show .tmodal {
-    transform: scale(1);
+    transform: scale(1) translateY(0);
     opacity: 1;
 }
 
-@keyframes tmodalIn {
-    from {
-        transform: scale(.95) translateY(10px);
-        opacity: 0;
-    }
-
-    to {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
 .tmodal-header {
-    padding: 20px 24px;
-    background: #ffffff;
-    border-bottom: 2px solid #f0f0f0;
+    padding: 22px 28px 16px 28px;
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    color: #1a1a1a;
+    letter-spacing: -0.3px;
+    color: var(--tmodal-text);
+}
+
+.tmodal-header span {
+    background: var(--tmodal-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .tmodal-close {
-    background: none;
+    background: rgba(0, 0, 0, 0.04);
     border: none;
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 27px;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
     cursor: pointer;
-    color: #666;
-    display: block;
+    color: var(--tmodal-text-light);
+    display: flex;
     align-items: center;
     justify-content: center;
-    transition: all .2s ease;
+    transition: all 0.25s ease;
     line-height: 1;
 }
 
 .tmodal-close:hover {
-    color: #1a1a1a;
+    background: rgba(253, 121, 168, 0.15);
+    color: var(--tmodal-danger-dark);
+    transform: rotate(90deg) scale(1.05);
 }
 
 .tmodal-body {
-    padding: 15px;
-    max-height: 70vh;
+    padding: 18px 28px 4px 28px;
+    max-height: 65vh;
     overflow-y: auto;
-    background: #fafafa;
+    background: transparent;
+    scroll-behavior: smooth;
+    background: var(--tmodal-body-bg);
 }
 
 .tmodal-body::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
 }
 
 .tmodal-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 10px;
 }
 
 .tmodal-body::-webkit-scrollbar-thumb {
-    background: #d0d0d0;
+    background: gray;
     border-radius: 10px;
 }
 
 .tmodal-body::-webkit-scrollbar-thumb:hover {
-    background: #b0b0b0;
+    background: var(--tmodal-primary);
 }
 
+/* ----- Form Group ----- */
 .tmodal-group {
-    margin-bottom: 2px;
+    margin-bottom: 6px;
 }
 
+/* ----- Labels ----- */
 .tmodal-label {
     display: block;
-    margin-bottom: 2px;
-    font-size: 15px;
+    margin-bottom: 4px;
+    font-size: 13px;
     font-weight: 600;
-    color: #333;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--tmodal-text-light);
+    transition: color 0.2s ease;
+}
+
+.tmodal-group:focus-within .tmodal-label {
+    color: var(--tmodal-primary);
 }
 
 .tmodal-input,
 .tmodal-textarea,
 .tmodal-select {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 9px 16px;
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    font-size: 15px;
     box-sizing: border-box;
-    transition: all .2s ease;
-    background: #ffffff;
+    transition: all 0.25s ease;
+    background: white;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     font-family: inherit;
-    color: #1a1a1a;
-}
-
-.tmodal-input.tmodal-error,
-.tmodal-textarea.tmodal-error,
-.tmodal-select.tmodal-error {
-    border-color: #dc3545;
-    background: #fff5f5;
-}
-
-.tmodal-input:focus,
-.tmodal-textarea:focus,
-.tmodal-select:focus {
+    color: var(--tmodal-text);
     outline: none;
-    border-color: #0066cc;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, .1);
-}
-
-.tmodal-input.tmodal-error:focus,
-.tmodal-textarea.tmodal-error:focus,
-.tmodal-select.tmodal-error:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, .1);
 }
 
 .tmodal-input:hover,
 .tmodal-textarea:hover,
 .tmodal-select:hover {
-    border-color: #bbb;
+    border-color: rgba(108, 92, 231, 0.3);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.tmodal-input:focus,
+.tmodal-textarea:focus,
+.tmodal-select:focus {
+    border-color: var(--tmodal-primary);
+    box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+    background: #ffffff;
+}
+
+/* ----- Error States ----- */
+.tmodal-input.tmodal-error,
+.tmodal-textarea.tmodal-error,
+.tmodal-select.tmodal-error {
+    border-color: var(--tmodal-danger);
+    background: rgba(253, 121, 168, 0.06);
+    box-shadow: 0 0 0 4px rgba(253, 121, 168, 0.1);
+}
+
+.tmodal-input.tmodal-error:focus,
+.tmodal-textarea.tmodal-error:focus,
+.tmodal-select.tmodal-error:focus {
+    border-color: var(--tmodal-danger-dark);
+    box-shadow: 0 0 0 4px rgba(253, 121, 168, 0.2);
+}
+
+.tmodal_error_text {
+    color: var(--tmodal-danger-dark);
+    font-size: 12px;
+    font-weight: 500;
+    padding-top: 4px;
+    padding-bottom: 6px;
+    letter-spacing: 0.2px;
+    opacity: 0.9;
 }
 
 .tmodal-textarea {
     resize: vertical;
     min-height: 80px;
+    line-height: 1.6;
+}
+
+.tmodal-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c5ce7' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 44px;
 }
 
 .tmodal-footer {
-    margin-top: 10px;
-    padding: 16px 24px;
+    padding: 18px 28px 24px 28px;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    background: #ffffff;
-    border-top: 1px solid #f0f0f0;
+    gap: 12px;
+    background: transparent;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    flex-wrap: wrap;
 }
 
 .tmodal-btn {
-    padding: 10px 20px;
+    padding: 12px 28px;
     border: none;
-    border-radius: 6px;
+    border-radius: 40px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all .2s ease;
+    transition: all 0.25s ease;
     font-family: inherit;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .tmodal-btn-close {
-    background: #f5f5f5;
-    color: #333;
-    border: 1px solid #e0e0e0;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--tmodal-text-light);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     display: none;
 }
 
-.tmodal-btn-close:hover {
-    background: #e8e8e8;
-    transform: translateY(-1px);
-}
-
-.tmodal-btn-close:active {
-    transform: translateY(0);
-}
-
 .tmodal-btn-cancel {
-    background: #dc3545;
-    color: #fff;
+    background: rgba(253, 121, 168, 0.1);
+    color: var(--tmodal-danger-dark);
+    border: 1px solid rgba(253, 121, 168, 0.2);
 }
 
 .tmodal-btn-cancel:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, .3);
+    background: var(--tmodal-danger);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(253, 121, 168, 0.35);
 }
 
 .tmodal-btn-cancel:active {
@@ -227,54 +272,149 @@
 }
 
 .tmodal-btn-submit {
-    background: #0066cc;
+    background: var(--tmodal-primary);
     color: #fff;
+    border: none;
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
 }
 
 .tmodal-btn-submit:hover {
-    background: #0052a3;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, .3);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.45);
 }
 
 .tmodal-btn-submit:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
 }
 
 .tmodal-btn-submit:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.tmodal-calendar-input,
+.tmodal-cimage-input,
+.tmodal-imagepicker-input {
+    padding-right: 44px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236c5ce7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
 }
 
 @media (max-width: 640px) {
     .tmodal {
-        width: 98%;
-        border-radius: 10px;
+        width: 96%;
+        border-radius: 20px;
     }
 
     .tmodal-header {
-        padding: 16px 18px;
-        font-size: 16px;
+        padding: 18px 20px 12px 20px;
+        font-size: 18px;
     }
 
     .tmodal-body {
-        padding: 12px;
+        padding: 16px 20px 0 20px;
+        max-height: 60vh;
     }
 
     .tmodal-group {
-        margin-bottom: 2px;
+        margin-bottom: 4px;
     }
 
     .tmodal-footer {
-        padding: 10px 2px;
+        padding: 14px 20px 20px 20px;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
     }
 
     .tmodal-btn {
         width: 100%;
-        justify-content: center;
-        padding: 12px;
+        padding: 14px 12px;
+        font-size: 15px;
+    }
+
+    .tmodal-input,
+    .tmodal-textarea,
+    .tmodal-select {
+        padding: 9px 16px;
+        font-size: 16px;
+        border-radius: 14px;
+    }
+
+    .tmodal-close {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+    }
+}
+
+/* ----- Dark Mode Support (optional, but nice) ----- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --tmodal-bg: rgba(30, 30, 40, 0.88);
+        --tmodal-bg-solid: #1e1e28;
+        --tmodal-text: #f0f0f5;
+        --tmodal-text-light: #a0a0b8;
+        --tmodal-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    .tmodal {
+        border-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .tmodal-input,
+    .tmodal-textarea,
+    .tmodal-select {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: var(--tmodal-text);
+    }
+
+    .tmodal-input:hover,
+    .tmodal-textarea:hover,
+    .tmodal-select:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(108, 92, 231, 0.4);
+    }
+
+    .tmodal-input:focus,
+    .tmodal-textarea:focus,
+    .tmodal-select:focus {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: var(--tmodal-primary);
+        box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
+    }
+
+    .tmodal-header {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .tmodal-footer {
+        border-top-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .tmodal-btn-cancel {
+        background: rgba(253, 121, 168, 0.15);
+        color: var(--tmodal-danger);
+        border-color: rgba(253, 121, 168, 0.15);
+    }
+
+    .tmodal-btn-cancel:hover {
+        background: var(--tmodal-danger);
+        color: #fff;
+    }
+
+    .tmodal-close {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--tmodal-text-light);
+    }
+
+    .tmodal-close:hover {
+        background: rgba(253, 121, 168, 0.2);
+        color: var(--tmodal-danger);
     }
 }
