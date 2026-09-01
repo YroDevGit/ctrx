@@ -274,7 +274,39 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n✅ Done\n\n";
     exit;
-} else if ($route == "reset:docker") {
+}else if($route == "generate:clean"){
+    $dir = ".vscode/";
+    if(! is_dir($dir)){
+        @mkdir($dir);
+    }
+    $file = "settings.json";
+    $fullpath = $dir.$file;
+    if(! file_exists($fullpath)){
+        file_put_contents($fullpath, <<<EOT
+        {
+            "files.exclude": {
+        
+                "app": false, // Backend
+                "views": false, // Frontend
+        
+        
+        
+                "vendor": true,
+                ".gitignore": true,
+                "compose.yml": true,
+                "composer.json": true,
+                "composer.lock": true,
+                "Dockerfile": true,
+                "cli": true,
+                ".htaccess": true,
+                "favicon.ico": true,
+                "index.php": true,
+                "jsconfig.json": true,
+            }
+        }
+        EOT);
+    }
+}else if ($route == "reset:docker") {
     if (file_exists("compose.yml")) {
         unlink("compose.yml");
     }
