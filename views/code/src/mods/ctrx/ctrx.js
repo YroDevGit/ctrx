@@ -671,6 +671,46 @@ class CtrxClass {
         }
     }
 
+    add_class(selector, newClass) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+
+        for (const element of elements) {
+            element.classList.add(newClass);
+        }
+    }
+
+    remove_class(selector, removeClass) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+
+        for (const element of elements) {
+            element.classList.remove(removeClass)
+        }
+    }
+
+    set_class(selector, className) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+
+        for (const element of elements) {
+            element.className = className;
+        }
+    }
+
+    toggle_class(selector, className) {
+        const elements = typeof selector === 'string'
+            ? document.querySelectorAll(selector)
+            : [selector];
+
+        for (const element of elements) {
+            element.classList.toggle(className);
+        }
+    }
+
     remove_attributes(selector, ...array) {
         const elements = typeof selector === 'string'
             ? document.querySelectorAll(selector)
