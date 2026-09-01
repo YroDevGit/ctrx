@@ -351,7 +351,7 @@ class CtrDate {
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 border: '1px solid #ccc',
-                background: options.bg ?? "rgb(144 228 219)",
+                background: options.bg ?? "rgb(250 255 254)",
                 padding: '10px',
                 display: 'none',
                 zIndex: '999999',
