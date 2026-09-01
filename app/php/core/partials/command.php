@@ -305,6 +305,9 @@ if ($route == "run" || $route == "server") {
             }
         }
         EOT);
+
+        echo "✅ Folder structure cleaner generated";
+        exit;
     }
 }else if ($route == "reset:docker") {
     if (file_exists("compose.yml")) {
