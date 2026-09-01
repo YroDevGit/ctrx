@@ -306,6 +306,11 @@ if ($route == "run" || $route == "server") {
         }
         EOT);
 
+        copy(
+            'app/php/core/support/.gitignore',
+            '.gitignore'
+        );
+
         echo "✅ Folder structure cleaner generated";
         exit;
     }
