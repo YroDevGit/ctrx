@@ -572,9 +572,62 @@ class Collection
         return false;
     }
 
-    public function array_column_key(string|int $column_key){
+    public function array_column_key(string|int $column_key)
+    {
         $data = $this->items ?? [];
-        if(! $data) return [];
+        if (! $data) return [];
         return array_column($data, null, $column_key);
+    }
+
+    public function addColumn(callable $callback): self
+    {
+        if ($this->trulyEmpty($this->items)) {
+            return $this;
+        }
+        $this->items = array_map(function ($item) use ($callback) {
+            $newData = $callback($item);
+
+            if (is_array($newData)) {
+                $item = array_merge($item, $newData);
+            }
+            return $item;
+        }, $this->items);
+
+        return $this;
+    }
+
+    static function array_column(array $array, string|array|null $columns, string|int|null $index = null): array
+    {
+        $columns = (array) $columns;
+        $result = [];
+
+        foreach ($array as $row) {
+            if(! $columns){
+                $value = $row;
+            }else if (count($columns) === 1) {
+                $value = $row[$columns[0]] ?? null;
+            } else {
+                $value = [];
+
+                foreach ($columns as $column) {
+                    $value[$column] = $row[$column] ?? null;
+                }
+            }
+
+            if ($index !== null) {
+                $result[$row[$index]] = $value;
+            } else {
+                $result[] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    static function find_in_array(array $data, array $search){
+        $searchKey = array_key_first($search);
+        $searchVal = $search[$searchKey];
+        $array = self::array_column($data, null, $searchKey);
+        return $array[$searchVal];
     }
 }

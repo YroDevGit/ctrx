@@ -1023,4 +1023,16 @@ if(! function_exists("str_img_as_array")){
     }
 }
 
+if(! function_exists("find_in_array")){
+    function find_in_array(array $data, array $search){
+        return \Classes\Collection::find_in_array($data, $search);
+    }
+}
+
+if(! function_exists("get_array_columns")){
+    function get_array_columns(array $data, array|string|null $columns = null, $index = null){
+        return \Classes\Collection::array_column($data, $columns, $index);
+    }
+}
+
 define('page', page(""));
