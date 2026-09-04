@@ -10,6 +10,7 @@ define('pages', 'views/pages');
 define('_backend', '_backend');
 define('assets', '/views/assets');
 define('codepath', '/views/code');
+define("docroot", $_SERVER['DOCUMENT_ROOT'] ?? "");
 
 define("DATE_FORMAT", "Y-m-d");
 define("DATETIME_FORMAT", "Y-m-d H:i:s");

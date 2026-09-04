@@ -300,6 +300,13 @@ class TModal {
 
                 Object.keys(data).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
+                    if(input.type == "file"){
+                        let subti = form.querySelector(`#${key}`);
+                        if(subti){
+                            subti.value = data[key] || "";
+                            return;
+                        }
+                    }
                     if (input) {
                         input.value = data[key] || "";
                     }
@@ -541,7 +548,7 @@ class TModal {
                 delete field.type;
                 tag = "select";
             }
-            if (field.type == "cimage") {
+            if (field.type == "cimage" || field.type == "chooseimage" || field.type == "imageselector") {
                 delete field.type;
                 tag = "cimage";
             }

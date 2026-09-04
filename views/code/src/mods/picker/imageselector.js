@@ -58,6 +58,7 @@ class ImageSelector {
         this._originalName = this.element.getAttribute('name') || '';
 
         this.element.removeAttribute('name');
+        this.element.setAttribute("name","_"+this._originalName);
         this.element.setAttribute("readonly", "");
         this.element.style.cursor = "pointer";
 

@@ -373,7 +373,6 @@ class CtrStorage
         return $ret;
     }
 
-
     public static function delete_files(array|string|null $files)
     {
         if (is_null($files)) {
@@ -381,9 +380,9 @@ class CtrStorage
         }
         if (is_string($files)) {
             if (str_contains($files, "views/core/partials/storage") || str_contains($files, "views\\core\\partials\\storage")) {
-                return unlink($files);
+                return unlink(val($_SERVER['DOCUMENT_ROOT'],'').$files);
             } else {
-                return unlink(self::fpath($files));
+                return unlink(val($_SERVER['DOCUMENT_ROOT'],'').self::fpath($files));
             }
         }
         if (is_array($files)) {
