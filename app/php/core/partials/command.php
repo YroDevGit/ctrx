@@ -443,6 +443,13 @@ if ($route == "run" || $route == "server") {
         echo "❌ Please provide a filename for the model.\n";
         exit(1);
     }
+
+    if (!is_dir("app/model/")) {
+        if (!mkdir("app/model/", 0777, true)) {
+            echo "Failed to create model directory";
+            exit;
+        }
+    }
     $newname = ucfirst($filename);
     $phpFile = "app/model/" . ucfirst($newname) . ".php";
 
@@ -689,7 +696,7 @@ if ($route == "update") {
 
     if (!is_dir("test/")) {
         if (!mkdir("test/", 0777, true)) {
-            echo "Failed to create directories: $directory";
+            echo "Failed to create test directory";
             exit;
         }
     }
@@ -730,10 +737,35 @@ if ($route == "update") {
             exit(1);
         }
     }
+}else if($route == "+helper"){
+    if ($filename == "") {
+        echo "\n❌ Please provide a filename for the helper.\n\n";
+        exit(1);
+    }
+    if (!is_dir("app/helper/")) {
+        if (!mkdir("app/helper/", 0777, true)) {
+            echo "\n❌ Failed to create helper directory\n\n";
+            exit;
+        }
+    }
+    $newname = $filename;
+    $phpFile = "app/helper/" . $newname . ".php";
+    $phpContent = <<<EOT
+    <?php
+    // Add $newname helper functions here
+
+
+    EOT;
 } else if ($route == "+middleware") {
     if ($filename == "") {
-        echo "❌ Please provide a filename for the library.\n";
+        echo "\n❌ Please provide a filename for the middleware.\n\n";
         exit(1);
+    }
+    if (!is_dir("app/middleware/")) {
+        if (!mkdir("app/middleware/", 0777, true)) {
+            echo "\nFailed to create middleware directory\n\n";
+            exit;
+        }
     }
     $newname = $filename;
     $phpFile = "app/middleware/" . $newname . ".php";
@@ -748,14 +780,14 @@ if ($route == "update") {
     EOT;
 
     if (\Classes\Ctrx::file_exists_strict($phpFile)) {
-        echo "❌ File already exists. Please choose a different name.\n";
+        echo "\n❌ File already exists. Please choose a different name.\n\n";
         exit(1);
     } else {
         if (file_put_contents($phpFile, $phpContent) !== false) {
-            echo "✔️ Middleware file created successfully: $phpFile\n\n";
+            echo "\n✔️ Middleware file created successfully: $phpFile\n\n";
             exit(0);
         } else {
-            echo "❌ Failed to create Middleware file.\n";
+            echo "\n❌ Failed to create Middleware file.\n\n";
             exit(1);
         }
     }
@@ -1147,14 +1179,14 @@ if ($route == "update") {
     exit;
 } else if ($route == "+library") {
     if ($filename == "") {
-        echo "❌ Please provide a filename for Library.\n";
+        echo "\n❌ Please provide a filename for Library.\n\n";
         exit(1);
     }
     $phpFile = $filename;
 
     if (!is_dir("app/library/")) {
         if (!mkdir("app/library/", 0777, true)) {
-            echo "Failed to create directories: $directory";
+            echo "\nFailed to create library directory\n\n";
             exit;
         }
     }
@@ -1176,17 +1208,17 @@ if ($route == "update") {
     }
     EOT;
 
-    $phpFile = "app/library/" . $phpFile;
+    $phpFile = "app/library/" . $phpFile.".php";
 
     if (\Classes\Ctrx::file_exists_strict($phpFile)) {
-        echo "❌ File already exists. Please choose a different name.\n\n";
+        echo "\n❌ File already exists. Please choose a different name.\n\n";
         exit(1);
     } else {
         if (file_put_contents($phpFile, $phpContent) !== false) {
-            echo "✔️ Library file created successfully: $phpFile\n\n";
+            echo "\n✔️ Library file created successfully: $phpFile\n\n";
             exit(0);
         } else {
-            echo "❌ Failed to create Library file.\n\n";
+            echo "\n❌ Failed to create Library file.\n\n";
             exit(1);
         }
     }

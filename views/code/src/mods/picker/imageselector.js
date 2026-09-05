@@ -15,6 +15,7 @@ class ImageSelector {
             title: config.title || 'Select Image',
             accept: config.accept || 'image/*',
             maxSize: config.maxSize || 10 * 1024 * 1024,
+            quality: config.quality !== undefined ? config.quality : 50,
             onSelect: config.onSelect || null,
             ...config
         };
@@ -28,7 +29,6 @@ class ImageSelector {
         this._originalName = this.element.getAttribute('name') || '';
 
         this._hiddenFileInput = null;
-
         this._overlay = null;
         this._modal = null;
         this._grid = null;
@@ -47,9 +47,6 @@ class ImageSelector {
         ImageSelector.instances.push(this);
     }
 
-    /**
-     * Initialize the image selector
-     */
     init() {
         if (this._initialized) return this;
 
@@ -74,10 +71,6 @@ class ImageSelector {
         return this;
     }
 
-    /**
-     * Create hidden file input that will submit the actual files
-     * @private
-     */
     _createHiddenFileInput() {
         if (this._hiddenFileInput) return;
 
@@ -92,10 +85,6 @@ class ImageSelector {
         this.element.parentNode.insertBefore(this._hiddenFileInput, this.element.nextSibling);
     }
 
-    /**
-     * Ensure CSS styles are loaded
-     * @private
-     */
     _ensureStyle() {
         const styleId = "imageselector-style";
         if (document.getElementById(styleId)) return;
@@ -108,9 +97,6 @@ class ImageSelector {
         document.head.appendChild(style);
     }
 
-    /**
-     * Open the image selector
-     */
     open() {
         if (this._isOpen) return;
         if (!this._initialized) this.init();
@@ -125,9 +111,6 @@ class ImageSelector {
         document.body.style.overflow = "hidden";
     }
 
-    /**
-     * Close the image selector
-     */
     close() {
         if (!this._isOpen) return;
         this._overlay.classList.remove("imageselector-show");
@@ -136,38 +119,23 @@ class ImageSelector {
         this._closePreview();
     }
 
-    /**
-     * Get the current value (file names for display)
-     */
     getValue() {
         return this._value || this.element.value || '';
     }
 
-    /**
-     * Get the hidden file input (for form submission)
-     */
     getFileInput() {
         return this._hiddenFileInput;
     }
 
-    /**
-     * Get selected files (File objects)
-     */
     getFiles() {
         return this._selectedFiles;
     }
 
-    /**
-     * Get file names as array
-     */
     getFileNames() {
         const value = this.getValue();
         return value ? value.split('||').filter(p => p.trim()) : [];
     }
 
-    /**
-     * Set value (file name(s))
-     */
     setValue(value) {
         if (Array.isArray(value)) {
             this._value = value.join('||');
@@ -183,9 +151,6 @@ class ImageSelector {
         }
     }
 
-    /**
-     * Clear the value
-     */
     clear() {
         this.setValue('');
         this._selectedFiles.forEach(f => {
@@ -204,24 +169,15 @@ class ImageSelector {
         this._updateSelectionInfo();
     }
 
-    /**
-     * Check if empty
-     */
     isEmpty() {
         const value = this.getValue();
         return !value || value.trim() === '';
     }
 
-    /**
-     * Get count of selected images
-     */
     count() {
         return this.getFileNames().length;
     }
 
-    /**
-     * Register change callback
-     */
     onChange(callback) {
         if (typeof callback !== 'function') {
             throw new Error('Callback must be a function');
@@ -235,17 +191,11 @@ class ImageSelector {
         };
     }
 
-    /**
-     * Register select callback
-     */
     onSelect(callback) {
         this.config.onSelect = callback;
         return this;
     }
 
-    /**
-     * Destroy instance
-     */
     destroy() {
         if (this._clickHandler) {
             this.element.removeEventListener("click", this._clickHandler);
@@ -271,10 +221,23 @@ class ImageSelector {
         }
     }
 
-    /**
-     * Build overlay
-     * @private
-     */
+    getCompressionInfo() {
+        const originalSizes = this._selectedFiles.map(f => f._originalSize || f.size);
+        const compressedSizes = this._selectedFiles.map(f => f.size);
+        
+        const totalOriginal = originalSizes.reduce((a, b) => a + b, 0);
+        const totalCompressed = compressedSizes.reduce((a, b) => a + b, 0);
+        const ratio = totalOriginal > 0 ? ((totalCompressed / totalOriginal) * 100) : 0;
+        
+        return {
+            quality: this.config.quality,
+            totalOriginal: this._formatSize(totalOriginal),
+            totalCompressed: this._formatSize(totalCompressed),
+            compressionRatio: `${ratio.toFixed(1)}%`,
+            fileCount: this._selectedFiles.length
+        };
+    }
+
     _buildOverlay() {
         const overlay = document.createElement("div");
         overlay.className = "imageselector-overlay";
@@ -294,6 +257,7 @@ class ImageSelector {
         const addBtn = document.createElement("button");
         addBtn.className = "imageselector-btn-add";
         addBtn.innerHTML = "📁 Select Files";
+        addBtn.style.display = "none";
         addBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             this._fileInput.click();
@@ -458,11 +422,75 @@ class ImageSelector {
         this._renderGrid();
     }
 
-    /**
-     * Handle file selection - syncs with hidden file input
-     * @private
-     */
-    _handleFileSelect(files) {
+    _compressImage(file, quality) {
+        return new Promise((resolve, reject) => {
+            if (quality >= 100) {
+                resolve(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const MAX_WIDTH = 1920;
+                    const MAX_HEIGHT = 1920;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            reject(new Error('Failed to compress image'));
+                            return;
+                        }
+                        
+                        const compressedFile = new File(
+                            [blob],
+                            file.name,
+                            {
+                                type: blob.type,
+                                lastModified: Date.now()
+                            }
+                        );
+                        
+                        compressedFile._originalSize = file.size;
+                        
+                        if (file._url) {
+                            compressedFile._url = file._url;
+                        }
+                        
+                        resolve(compressedFile);
+                    }, mimeType, quality / 100);
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async _handleFileSelect(files) {
         const validFiles = [];
         let hasError = false;
 
@@ -486,9 +514,21 @@ class ImageSelector {
                 continue;
             }
 
-            const url = URL.createObjectURL(file);
-            file._url = url;
-            validFiles.push(file);
+            try {
+                const processedFile = await this._compressImage(file, this.config.quality);
+                
+                if (!processedFile._url) {
+                    processedFile._url = URL.createObjectURL(processedFile);
+                }
+                
+                processedFile._originalName = file.name;
+                
+                validFiles.push(processedFile);
+            } catch (error) {
+                console.error('Error processing image:', error);
+                alert(`Error processing file "${file.name}"`);
+                hasError = true;
+            }
         }
 
         if (hasError || validFiles.length === 0) {
@@ -505,7 +545,6 @@ class ImageSelector {
         }
 
         this._syncHiddenFileInput();
-
         this._renderGrid();
         this._updateSelectionInfo();
 
@@ -514,10 +553,6 @@ class ImageSelector {
         }
     }
 
-    /**
-     * Sync the hidden file input with selected files
-     * @private
-     */
     _syncHiddenFileInput() {
         if (!this._hiddenFileInput) return;
 
@@ -528,10 +563,6 @@ class ImageSelector {
         this._hiddenFileInput.files = dataTransfer.files;
     }
 
-    /**
-     * Render grid
-     * @private
-     */
     _renderGrid() {
         if (!this._grid) return;
 
@@ -612,10 +643,6 @@ class ImageSelector {
         this._updateSelectionInfo();
     }
 
-    /**
-     * Remove a file
-     * @private
-     */
     _removeFile(index) {
         if (this._selectedFiles[index] && this._selectedFiles[index]._url) {
             URL.revokeObjectURL(this._selectedFiles[index]._url);
@@ -633,10 +660,6 @@ class ImageSelector {
         }
     }
 
-    /**
-     * Update selection info
-     * @private
-     */
     _updateSelectionInfo() {
         const count = this._selectedFiles.length;
         if (this._infoText) {
@@ -650,10 +673,6 @@ class ImageSelector {
         this._displayCurrentImage();
     }
 
-    /**
-     * Display current image
-     * @private
-     */
     _displayCurrentImage() {
         if (!this._currentImageContainer) return;
 
@@ -708,10 +727,6 @@ class ImageSelector {
         this._currentImageContainer.classList.remove("imageselector-show");
     }
 
-    /**
-     * Confirm selection - updates the text input with file names
-     * @private
-     */
     _confirmSelection() {
         if (this._selectedFiles.length === 0) {
             this.setValue("");
@@ -733,10 +748,6 @@ class ImageSelector {
         this.close();
     }
 
-    /**
-     * Open preview
-     * @private
-     */
     _openPreview(image) {
         if (!this._previewOverlay) return;
 
@@ -749,20 +760,12 @@ class ImageSelector {
         document.body.style.overflow = "hidden";
     }
 
-    /**
-     * Close preview
-     * @private
-     */
     _closePreview() {
         if (!this._previewOverlay) return;
         this._previewOverlay.classList.remove("imageselector-show");
         document.body.style.overflow = "";
     }
 
-    /**
-     * Format file size
-     * @private
-     */
     _formatSize(bytes) {
         if (bytes === 0) return "0 B";
         const k = 1024;
@@ -771,10 +774,6 @@ class ImageSelector {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     }
 
-    /**
-     * Trigger callbacks
-     * @private
-     */
     _triggerCallbacks() {
         const value = this.getValue();
         this._callbacks.forEach(callback => {
@@ -786,12 +785,6 @@ class ImageSelector {
         });
     }
 
-    /**
-     * Static init method
-     */
-    /**
- * Static init method - supports both single and multiple elements
- */
     static init(element, config = {}) {
         if (typeof element === 'string') {
             const elements = document.querySelectorAll(element);
