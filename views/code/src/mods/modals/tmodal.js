@@ -300,6 +300,7 @@ class TModal {
 
                 Object.keys(data).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
+                    if(! input) return;
                     if(input.type == "file"){
                         let subti = form.querySelector(`#${key}`);
                         if(subti){
