@@ -349,6 +349,7 @@
     .tmodal-group-row {
         flex-direction: column;
         gap: 0;
+        margin-bottom: 0px;
     }
 
     .tmodal-group-row .tmodal-group {
