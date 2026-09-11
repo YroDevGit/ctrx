@@ -8,7 +8,7 @@
     --tmodal-border: 1px solid rgba(255, 255, 255, 0.15);
     --tmodal-header-bg: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
     --tmodal-header-border: 1px solid #f1f3f5;
-    --tmodal-header-padding: 24px 28px 16px 28px;
+    --tmodal-header-padding: 24px 20px 16px 20px;
     --tmodal-header-font-size: 18px;
     --tmodal-header-font-weight: 700;
     --tmodal-header-color: #0f172a;
@@ -19,7 +19,7 @@
     --tmodal-close-hover-color: #0f172a;
     --tmodal-close-size: 36px;
     --tmodal-close-font-size: 22px;
-    --tmodal-body-padding: 20px 28px 8px 28px;
+    --tmodal-body-padding: 20px 20px 8px 20px;
     --tmodal-body-max-height: 70vh;
     --tmodal-scrollbar-width: 4px;
     --tmodal-scrollbar-track: #f1f5f9;
@@ -120,6 +120,7 @@
         transform: scale(0.92) translateY(24px);
         opacity: 0;
     }
+
     to {
         transform: scale(1) translateY(0);
         opacity: 1;
@@ -195,6 +196,18 @@
 
 .tmodal-group {
     margin-bottom: var(--tmodal-group-margin);
+}
+
+.tmodal-group-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: var(--tmodal-group-margin);
+}
+
+.tmodal-group-row .tmodal-group {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
 }
 
 .tmodal-label {
@@ -330,6 +343,15 @@
     }
 
     .tmodal-group {
+        margin-bottom: 14px;
+    }
+
+    .tmodal-group-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .tmodal-group-row .tmodal-group {
         margin-bottom: 14px;
     }
 

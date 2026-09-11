@@ -11,7 +11,9 @@ const modal = TModal.init({
         form_id: "regForm",
         form: {
             email: {type: "text", label: "Enter email here:", validation:{email:true, maxChar: 50, label: "Email"}},
-            //add more fields
+            name: {type: "text", label: "Name", group: "row1"},
+            street: {type: "text", label: "Street", group: "row1"},
+            city: {type: "text", label: "City", group: "row1"},
         }
     });
 
@@ -288,7 +290,7 @@ class TModal {
                 return this._type;
             },
 
-            edit(data, meta, title = "Edit"){
+            edit(data, meta, title = "Edit") {
                 this.setTitle(title);
                 this.setMeta(meta);
                 this.show(data);
@@ -300,10 +302,10 @@ class TModal {
 
                 Object.keys(data).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
-                    if(! input) return;
-                    if(input.type == "file"){
+                    if (!input) return;
+                    if (input.type == "file") {
                         let subti = form.querySelector(`#${key}`);
-                        if(subti){
+                        if (subti) {
                             subti.value = data[key] || "";
                             return;
                         }
@@ -516,6 +518,19 @@ class TModal {
         instance.form = form;
 
         const formData = config.form || {};
+
+        const groups = {};
+
+        Object.keys(formData).forEach(key => {
+            const field = formData[key];
+            const groupName = field.group;
+            if (groupName) {
+                if (!groups[groupName]) {
+                    groups[groupName] = [];
+                }
+                groups[groupName].push(key);
+            }
+        });
 
         Object.keys(formData).forEach(async (key) => {
 
@@ -741,7 +756,27 @@ class TModal {
             wrapper.appendChild(input);
             wrapper.appendChild(err);
 
-            form.appendChild(wrapper);
+            if (field.group) {
+                const groupName = field.group;
+                const groupKeys = groups[groupName];
+                const indexInGroup = groupKeys.indexOf(key);
+                const isFirstInGroup = indexInGroup === 0;
+
+                if (isFirstInGroup) {
+                    const groupWrapper = document.createElement("div");
+                    groupWrapper.className = "tmodal-group-row";
+                    groupWrapper.dataset.group = groupName;
+                    form.appendChild(groupWrapper);
+                }
+
+                const groupWrapper = form.querySelector(`.tmodal-group-row[data-group="${groupName}"]`);
+                if (groupWrapper) {
+                    groupWrapper.appendChild(wrapper);
+                }
+            } else {
+                form.appendChild(wrapper);
+            }
+
             if (orgTag == "cimage") {
                 ImageSelector.init(input, field.config ?? {});
             }
