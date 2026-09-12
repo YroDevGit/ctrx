@@ -50,11 +50,12 @@ class Popmodal {
             }
         }
 
+        let elWidth = element.offsetWidth;
+
         if (element.classList && element.classList == "popmodal") {
             options.autoOpen = false;
         }
 
-        // Check if already wrapped
         let existingOverlay = element.closest('.popmodal-overlay');
         if (existingOverlay) {
             return this.instances[id];
@@ -62,16 +63,13 @@ class Popmodal {
 
         this.ensureStyle();
 
-        // Create overlay
         const overlay = document.createElement("div");
         overlay.className = "popmodal-overlay";
 
-        // Create modal container
         const modal = document.createElement("div");
         modal.className = `popmodal ${options.class || ''}`;
         modal.id = id;
 
-        // Create header
         const header = document.createElement("div");
         header.className = "popmodal-header";
 
@@ -98,37 +96,55 @@ class Popmodal {
         header.appendChild(titleContainer);
         header.appendChild(closeBtn);
 
-        // Create body
         const body = document.createElement("div");
         body.className = "popmodal-body";
 
-        // Move the content from the original element to the body
         const originalContent = element.innerHTML;
         body.innerHTML = originalContent;
+        let applyWidth = options.width || options.applyWidth || undefined;
+        if(options.bg){
+            body.style.background = options.bg;
+        }
+        if(options.padding && typeof options.padding == "string"){
+            body.style.padding = options.padding;
+        }
+        if (applyWidth == undefined || applyWidth == true) {
+            if(elWidth){
+                modal.style.width = `${elWidth}px`;
+            }else{
+                modal.style.width = "unset";
+            }
+        } else {
+            if (applyWidth && typeof applyWidth == "number") {
+                modal.style.width = `${options.applyWidth}%`;
+            }
+            if (applyWidth && typeof applyWidth == "string") {
+                modal.style.width = applyWidth;
+            }
+            if (applyWidth && (typeof applyWidth == "boolean" && applyWidth == false)) {
+                modal.style.width = "95%";
+            }
+        }
 
-        // Remove the original element from DOM
         if (element.parentNode) {
             element.parentNode.removeChild(element);
         }
 
-        // Create footer
         const footer = document.createElement("div");
         footer.className = "popmodal-footer";
 
         const footerText = document.createElement("span");
         footerText.className = "popmodal-footer-text";
-        footerText.innerHTML = options.footerText || 'Powered by <span>CTR-X Popmodal</span>';
+        footerText.innerHTML = options.footer || options.footerText || "CTRX MODAL";
 
         footer.appendChild(footerText);
 
-        // Assemble modal
         modal.appendChild(header);
         modal.appendChild(body);
         modal.appendChild(footer);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Instance object
         const instance = {
             element: element,
             overlay: overlay,
@@ -146,7 +162,7 @@ class Popmodal {
 
             show() {
                 overlay.style.display = 'flex';
-                overlay.offsetHeight; // Trigger reflow
+                overlay.offsetHeight;
                 overlay.classList.add("show");
                 document.body.style.overflow = 'hidden';
 
@@ -236,7 +252,6 @@ class Popmodal {
             }
         };
 
-        // Close button handler
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             instance.hide();
@@ -245,7 +260,6 @@ class Popmodal {
             }
         });
 
-        // Overlay click handler
         if (options.closeOnOverlayClick !== false) {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
@@ -257,7 +271,6 @@ class Popmodal {
             });
         }
 
-        // Escape key handler
         if (options.closeOnEscape !== false) {
             const escapeHandler = (e) => {
                 if (e.key === 'Escape' && instance.isVisible()) {
@@ -271,7 +284,6 @@ class Popmodal {
             instance._escapeHandler = escapeHandler;
         }
 
-        // Auto open
         if (options.autoOpen !== false) {
             instance.show();
         }
@@ -304,12 +316,6 @@ class Popmodal {
     }
 }
 
-// Browser global
-if (typeof window !== "undefined") {
-    window.Popmodal = Popmodal;
-}
-
-// Node.js export
 if (typeof module !== "undefined" && module.exports) {
     module.exports = Popmodal;
 }
