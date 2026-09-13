@@ -1,7 +1,7 @@
-import CtrDATE from "../date";
-import CImagePicker from "../picker/imagepicker";
-import ImageSelector from "../picker/imageselector";
-import Validator from "../validator";
+import CtrDATE from "../date.js";
+import CImagePicker from "../picker/imagepicker.js";
+import ImageSelector from "../picker/imageselector.js";
+import Validator from "../validator.js";
 
 /**
  //Use:

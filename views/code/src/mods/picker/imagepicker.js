@@ -1,4 +1,4 @@
-import Ctr from "../ctr";
+import Ctr from "../ctr.js";
 
 class CImagePicker {
     static styleId = "cimagepicker-style-ctrx";
