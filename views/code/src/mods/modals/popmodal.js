@@ -50,7 +50,7 @@ class Popmodal {
             }
         }
 
-        let elWidth = element.offsetWidth;
+        let elClass = element.className;
 
         if (element.classList && element.classList == "popmodal") {
             options.autoOpen = false;
@@ -97,7 +97,11 @@ class Popmodal {
         header.appendChild(closeBtn);
 
         const body = document.createElement("div");
-        body.className = "popmodal-body";
+        if(elClass){
+            body.className = `popmodal-body ${elClass}`;
+        }else{
+            body.className = "popmodal-body";
+        }
 
         const originalContent = element.innerHTML;
         body.innerHTML = originalContent;
@@ -108,15 +112,9 @@ class Popmodal {
         if(options.padding && typeof options.padding == "string"){
             body.style.padding = options.padding;
         }
-        if (applyWidth == undefined || applyWidth == true) {
-            if(elWidth){
-                modal.style.width = `${elWidth}px`;
-            }else{
-                modal.style.width = "unset";
-            }
-        } else {
+        if(applyWidth) {
             if (applyWidth && typeof applyWidth == "number") {
-                modal.style.width = `${options.applyWidth}%`;
+                modal.style.width = `${applyWidth}%`;
             }
             if (applyWidth && typeof applyWidth == "string") {
                 modal.style.width = applyWidth;

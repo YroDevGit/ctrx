@@ -19,7 +19,6 @@
 }
 
 .popmodal {
-    width: 95%;
     max-width: 550px;
     max-height: 90vh;
     background: #ffffff;
@@ -103,10 +102,7 @@
 }
 
 .popmodal-body {
-    padding: 24px;
     overflow-y: auto;
-    flex: 1;
-    background: #fafafa;
     max-height: 100%;
 }
 
@@ -173,8 +169,6 @@
     }
 
     .popmodal-body {
-        padding: 16px;
-        max-height: 100%;
         min-height: 80px;
     }
 
@@ -207,8 +201,6 @@
     }
 
     .popmodal-body {
-        padding: 12px;
-        max-height: 100%;
         min-height: 60px;
     }
 
