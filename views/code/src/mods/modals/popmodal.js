@@ -75,7 +75,7 @@ class Popmodal {
 
         const title = document.createElement("span");
         title.className = "popmodal-title";
-        title.innerText = options.title || "CTR-X";
+        title.innerText = options.title || element.getAttribute("popmodal-title") || "Title";
 
         const closeBtn = document.createElement("button");
         closeBtn.className = "popmodal-close";
@@ -97,15 +97,13 @@ class Popmodal {
         header.appendChild(closeBtn);
 
         const body = document.createElement("div");
-        if(elClass){
-            body.className = `popmodal-body ${elClass}`;
-        }else{
-            body.className = "popmodal-body";
-        }
+        body.className = "popmodal-body";
 
-        const originalContent = element.innerHTML;
-        body.innerHTML = originalContent;
+        element.removeAttribute('id');
+        
+        body.appendChild(element);
         let applyWidth = options.width || options.applyWidth || undefined;
+        options.bg = options.bg || element.getAttribute("bg") || undefined;
         if(options.bg){
             body.style.background = options.bg;
         }
@@ -124,16 +122,12 @@ class Popmodal {
             }
         }
 
-        if (element.parentNode) {
-            element.parentNode.removeChild(element);
-        }
-
         const footer = document.createElement("div");
         footer.className = "popmodal-footer";
 
         const footerText = document.createElement("span");
         footerText.className = "popmodal-footer-text";
-        footerText.innerHTML = options.footer || options.footerText || "CTRX MODAL";
+        footerText.innerHTML = options.footer || options.footerText || element.getAttribute("popmodal-footer") || "CTRX MODAL";
 
         footer.appendChild(footerText);
 
