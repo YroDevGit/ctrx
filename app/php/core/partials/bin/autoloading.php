@@ -176,11 +176,12 @@ if (!function_exists("js")) {
             if ($jsversion) {
                 $fl = $fl. '?v=' . $jsversion;
             }
-            if(! file_exists("views/js/".$gl)){
-                $GLOBALS['ctrx_js_includes_1993664_yro1'][$gl] = "views/js/".$gl;
+            $jsPath = $GLOBALS['ctrx_views_conf_a_vars']['build'] ?? "views/js/";
+            if(! file_exists($jsPath.$gl)){
+                $GLOBALS['ctrx_js_includes_1993664_yro1'][$gl] = $jsPath.$gl;
                 continue;
             }
-            $value = htmlspecialchars('/views/js/' . $fl, ENT_QUOTES);
+            $value = htmlspecialchars('/'.$jsPath. $fl, ENT_QUOTES);
             if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {
                 $GLOBALS['ctrx_js_includes_1993664_yro'][] = $value;
             }

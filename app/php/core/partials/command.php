@@ -17,6 +17,18 @@ function display_result(string $message, $end = false)
     }
 }
 
+function deleteFolderCommand($dir)
+{
+    if (!\Classes\Ctrx::file_exists_strict($dir)) return true;
+    if (!is_dir($dir)) return unlink($dir);
+
+    foreach (scandir($dir) as $item) {
+        if ($item == '.' || $item == '..') continue;
+        if (!deleteFolderCommand($dir . DIRECTORY_SEPARATOR . $item)) return false;
+    }
+    return rmdir($dir);
+}
+
 function AddAllBaseTable($dbname)
 {
     $pdo = pdo($dbname);
@@ -181,7 +193,7 @@ if ($route == "run" || $route == "server") {
         }
     }
 } else if ($route == "generate:testdb" || $route == "generate:test:db") {
-    if(! dir("views/pages/test/")){
+    if (! dir("views/pages/test/")) {
         @mkdir("views/pages/test/");
     }
     copy(
@@ -274,14 +286,97 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n✅ Done\n\n";
     exit;
-}else if($route == "generate:clean"){
+} else if ($route == "js:build") {
+    $sourceDir = 'views/js';
+    $destDir   = 'views/build';
+    if(is_dir($destDir)){
+        deleteFolderCommand($destDir);
+    }
+
+    if (!is_dir($sourceDir)) {
+        fwrite(STDERR, "Error: Source directory '$sourceDir' does not exist.\n");
+        exit(1);
+    }
+
+    $sourceDir = rtrim($sourceDir, '/\\');
+    $destDir   = rtrim($destDir, '/\\');
+
+    exec('npx terser --version 2>&1', $out, $code);
+    if ($code !== 0) {
+        fwrite(STDERR, "Error: 'npx terser' is not available. Install it with: npm install -g terser\n");
+        exit(1);
+    }
+    echo "Using terser: " . trim(implode(' ', $out)) . "\n\n";
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($sourceDir, FilesystemIterator::SKIP_DOTS)
+    );
+
+    $files = [];
+    foreach ($iterator as $file) {
+        if ($file->isFile() && strtolower($file->getExtension()) === 'js') {
+            if (preg_match('/\.min\.js$/i', $file->getFilename())) {
+                continue;
+            }
+            $files[] = $file->getPathname();
+        }
+    }
+
+    if (empty($files)) {
+        echo "No .js files found in '$sourceDir'.\n";
+        exit(0);
+    }
+
+    echo "Found " . count($files) . " JavaScript file(s).\n\n";
+
+    $successCount = 0;
+    $failCount    = 0;
+
+    foreach ($files as $srcFile) {
+        $relativePath = ltrim(substr($srcFile, strlen($sourceDir)), '/\\');
+
+        $destFile = $destDir . DIRECTORY_SEPARATOR . $relativePath;
+        $destDirPath = dirname($destFile);
+
+        if (!is_dir($destDirPath)) {
+            if (!mkdir($destDirPath, 0755, true)) {
+                fwrite(STDERR, "Failed to create directory: $destDirPath\n");
+                $failCount++;
+                continue;
+            }
+        }
+
+        $cmd = sprintf(
+            'npx terser %s -o %s -c -m --module 2>&1',
+            escapeshellarg($srcFile),
+            escapeshellarg($destFile)
+        );
+
+        exec($cmd, $output, $returnCode);
+
+        if ($returnCode === 0) {
+            echo "✓ $srcFile -> $destFile\n";
+            $successCount++;
+        } else {
+            fwrite(STDERR, "✗ Failed: $srcFile\n");
+            fwrite(STDERR, "  " . implode("\n  ", $output) . "\n");
+            $failCount++;
+        }
+        $output = [];
+    }
+
+    echo "\n";
+    echo "Done. Success: $successCount, Failed: $failCount\n";
+
+    exit($failCount > 0 ? 1 : 0);
+} else if ($route == "generate:clean") {
     $dir = ".vscode/";
-    if(! is_dir($dir)){
+    if (! is_dir($dir)) {
         @mkdir($dir);
     }
     $file = "settings.json";
-    $fullpath = $dir.$file;
-    if(! file_exists($fullpath)){
+    $fullpath = $dir . $file;
+    if (! file_exists($fullpath)) {
         file_put_contents($fullpath, <<<EOT
         {
             "files.exclude": {
@@ -314,7 +409,7 @@ if ($route == "run" || $route == "server") {
         echo "✅ Folder structure cleaner generated";
         exit;
     }
-}else if ($route == "reset:docker") {
+} else if ($route == "reset:docker") {
     if (file_exists("compose.yml")) {
         unlink("compose.yml");
     }
@@ -514,18 +609,6 @@ if ($route == "run" || $route == "server") {
 }
 if ($route == "update") {
     if ($filename == "classes") {
-        function deleteFolder($dir)
-        {
-            if (!\Classes\Ctrx::file_exists_strict($dir)) return true;
-            if (!is_dir($dir)) return unlink($dir);
-
-            foreach (scandir($dir) as $item) {
-                if ($item == '.' || $item == '..') continue;
-                if (!deleteFolder($dir . DIRECTORY_SEPARATOR . $item)) return false;
-            }
-            return rmdir($dir);
-        }
-
         function downloadFolder($apiUrl, $targetDir)
         {
             $opts = [
@@ -574,7 +657,7 @@ if ($route == "update") {
         $targetDir = $root . "/app/php/core/classes";
         $apiUrl = "https://api.github.com/repos/YroDevGit/CodeTazer/contents/_backend/core/partials/classes?ref=main";
 
-        deleteFolder($targetDir);
+        deleteFolderCommand($targetDir);
 
         downloadFolder($apiUrl, $targetDir);
 
@@ -737,7 +820,7 @@ if ($route == "update") {
             exit(1);
         }
     }
-}else if($route == "+helper"){
+} else if ($route == "+helper") {
     if ($filename == "") {
         echo "\n❌ Please provide a filename for the helper.\n\n";
         exit(1);
@@ -1139,8 +1222,9 @@ if ($route == "update") {
         exit;
     }
     $str = "SELECT CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone;";
-    if($filename == "--query"){
-        echo $str;exit;
+    if ($filename == "--query") {
+        echo $str;
+        exit;
     }
     $result = \Classes\DB::query($str);
     echo json_encode($result);
@@ -1155,20 +1239,21 @@ if ($route == "update") {
     date_default_timezone_set(env('time_zone'));
     $offset = date('P');
     $str = "SET GLOBAL time_zone = '$offset'";
-    if($filename == "--query"){
-        echo $str; exit;
+    if ($filename == "--query") {
+        echo $str;
+        exit;
     }
     \Classes\DB::query($str);
     echo "✅ Success";
     exit;
-}else if($route == "db:set:timezone"){
+} else if ($route == "db:set:timezone") {
     include_once "app/php/core/partials/backend.php";
     include_once "app/php/core/partials/envloader.php";
     if (! env("database")) {
         echo "❌ Database not set @env\n";
         exit;
     }
-    if(! $filename){
+    if (! $filename) {
         echo "❌ timezone is required";
     }
     $offset = $filename;
@@ -1208,7 +1293,7 @@ if ($route == "update") {
     }
     EOT;
 
-    $phpFile = "app/library/" . $phpFile.".php";
+    $phpFile = "app/library/" . $phpFile . ".php";
 
     if (\Classes\Ctrx::file_exists_strict($phpFile)) {
         echo "\n❌ File already exists. Please choose a different name.\n\n";
