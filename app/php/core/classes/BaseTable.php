@@ -3,6 +3,7 @@
 namespace Classes;
 
 use Exception;
+use stdClass;
 
 /**
  * This is Basixs BaseTable Extension
@@ -563,7 +564,7 @@ class BaseTable
         return $rc > 0 ? array_map([$self, 'hydrate'], $rows) : [];
     }
 
-    public static function paginatedFind(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
+    public static function paginatedWhere(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): stdClass
     {
         $where ??= [];
         $page = max(1, $page);
@@ -580,17 +581,34 @@ class BaseTable
 
         $results = self::find($where, $params);
 
+        $res = new stdClass();
+        $res->data = $results;
+        $res->current_page = self::$currentPage;
+        $res->per_page = $perPage;
+        $res->total_records = self::$totalRecords;
+        $res->total_pages = self::$totalPages;
+        $res->has_previous = self::$currentPage > 1;
+        $res->has_next = (self::$currentPage < self::$totalPages) ? 1 : 0;
+        $res->first_page = 1;
+        $res->last_page = self::$totalPages;
+        return $res;
+    }
+
+    public static function paginatedFind(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): array
+    {   
+        $self = self::paginatedWhere($where, $page, $perPage, $extra);
+
         return [
-            'data' => $results,
+            'data' => $self->data,
             'pagination' => [
-                'current_page' => self::$currentPage,
+                'current_page' => $self->current_page,
                 'per_page' => $perPage,
-                'total_records' => self::$totalRecords,
-                'total_pages' => self::$totalPages,
-                'has_previous' => self::$currentPage > 1,
-                'has_next' => (self::$currentPage < self::$totalPages) ? 1 : 0,
-                'first_page' => 1,
-                'last_page' => self::$totalPages
+                'total_records' => $self->total_records,
+                'total_pages' => $self->total_pages,
+                'has_previous' => $self->has_previous,
+                'has_next' => $self->has_next,
+                'first_page' => $self->first_page,
+                'last_page' => $self->last_page
             ]
         ];
     }
@@ -831,8 +849,12 @@ class BaseTable
         return self::update($where, $data);
     }
 
-    public static function update(array $where, array $data)
+    public static function update(array|int $where, array $data)
     {
+        if(is_int($where)){
+            $self = static::instance();
+            $where = [$self->primaryKey => $where];
+        }
         $self = static::instance();
         $data = $self->filterFillable($data);
         $ts = $self->timestamps;

@@ -2,6 +2,7 @@
 
 namespace Classes;
 
+use stdClass;
 use Throwable;
 
 class DB
@@ -289,6 +290,23 @@ class DB
                 'last_page' => self::$totalPages
             ]
         ];
+    }
+
+    public static function paginatedWhere(string $table, array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null){
+        $result = self::paginatedFind($table, $where, $page, $perPage, $extra);
+        $res = new stdClass();
+
+        $pagination = $result['pagination'];
+        $res->data = $result['data'];
+        $res->current_page = $pagination['current_page'];
+        $res->per_page = $pagination['per_page'];
+        $res->total_records = $pagination['total_records'];
+        $res->total_pages = $pagination['total_pages'];
+        $res->has_previous = $pagination['has_previous'];
+        $res->has_next = $pagination['has_next'];
+        $res->first_page = $pagination['first_page'];
+        $res->last_page = $pagination['last_page'];
+        return $res;
     }
 
     protected static function buildWhere(array $where, string $glue = "AND", &$bindings = [], &$paramIndex = 0): array
