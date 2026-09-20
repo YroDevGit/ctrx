@@ -5,6 +5,18 @@ namespace Classes;
 use stdClass;
 use Throwable;
 
+class PaginationCtrxDB{
+    public array|null $data = [];
+    public int|null $current_page = 1;
+    public int|null $per_page = 25;
+    public int|null $total_records = 0;
+    public int|null $total_pages = 0;
+    public int|null|bool $has_previous = false;
+    public int|null|bool $has_next = false;
+    public int|null $first_page = 1;
+    public int|null $last_page = 1;
+}
+
 class DB
 {
     private static $lastQuery;
@@ -279,33 +291,30 @@ class DB
 
         return [
             'data' => $results,
-            'pagination' => [
-                'current_page' => self::$currentPage,
-                'per_page' => $perPage,
-                'total_records' => self::$totalRecords,
-                'total_pages' => self::$totalPages,
-                'has_previous' => self::$currentPage > 1,
-                'has_next' => (self::$currentPage < self::$totalPages) ? 1 : 0,
-                'first_page' => 1,
-                'last_page' => self::$totalPages
-            ]
+            'current_page' => self::$currentPage,
+            'per_page' => $perPage,
+            'total_records' => self::$totalRecords,
+            'total_pages' => self::$totalPages,
+            'has_previous' => self::$currentPage > 1,
+            'has_next' => (self::$currentPage < self::$totalPages) ? 1 : 0,
+            'first_page' => 1,
+            'last_page' => self::$totalPages
         ];
     }
 
-    public static function paginatedWhere(string $table, array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null){
+    public static function paginatedWhere(string $table, array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): PaginationCtrxDB{
         $result = self::paginatedFind($table, $where, $page, $perPage, $extra);
-        $res = new stdClass();
+        $res = new PaginationCtrxDB();
 
-        $pagination = $result['pagination'];
         $res->data = $result['data'];
-        $res->current_page = $pagination['current_page'];
-        $res->per_page = $pagination['per_page'];
-        $res->total_records = $pagination['total_records'];
-        $res->total_pages = $pagination['total_pages'];
-        $res->has_previous = $pagination['has_previous'];
-        $res->has_next = $pagination['has_next'];
-        $res->first_page = $pagination['first_page'];
-        $res->last_page = $pagination['last_page'];
+        $res->current_page = $result['current_page'];
+        $res->per_page = $result['per_page'];
+        $res->total_records = $result['total_records'];
+        $res->total_pages = $result['total_pages'];
+        $res->has_previous = $result['has_previous'];
+        $res->has_next = $result['has_next'];
+        $res->first_page = $result['first_page'];
+        $res->last_page = $result['last_page'];
         return $res;
     }
 

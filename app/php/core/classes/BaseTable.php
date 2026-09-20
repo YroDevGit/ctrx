@@ -5,6 +5,18 @@ namespace Classes;
 use Exception;
 use stdClass;
 
+class PaginationCtrxBaseTable{
+    public array|null $data = [];
+    public int|null $current_page = 1;
+    public int|null $per_page = 25;
+    public int|null $total_records = 0;
+    public int|null $total_pages = 0;
+    public int|null|bool $has_previous = false;
+    public int|null|bool $has_next = false;
+    public int|null $first_page = 1;
+    public int|null $last_page = 1;
+}
+
 /**
  * This is Basixs BaseTable Extension
  * this is like table models ORM
@@ -564,7 +576,7 @@ class BaseTable
         return $rc > 0 ? array_map([$self, 'hydrate'], $rows) : [];
     }
 
-    public static function paginatedWhere(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): stdClass
+    public static function paginatedWhere(array|null $where, int $page = 1, int $perPage = 25, array|int|null $extra = null): PaginationCtrxBaseTable
     {
         $where ??= [];
         $page = max(1, $page);
@@ -581,7 +593,7 @@ class BaseTable
 
         $results = self::find($where, $params);
 
-        $res = new stdClass();
+        $res = new PaginationCtrxBaseTable();
         $res->data = $results;
         $res->current_page = self::$currentPage;
         $res->per_page = $perPage;
@@ -600,16 +612,14 @@ class BaseTable
 
         return [
             'data' => $self->data,
-            'pagination' => [
-                'current_page' => $self->current_page,
-                'per_page' => $perPage,
-                'total_records' => $self->total_records,
-                'total_pages' => $self->total_pages,
-                'has_previous' => $self->has_previous,
-                'has_next' => $self->has_next,
-                'first_page' => $self->first_page,
-                'last_page' => $self->last_page
-            ]
+            'current_page' => $self->current_page,
+            'per_page' => $perPage,
+            'total_records' => $self->total_records,
+            'total_pages' => $self->total_pages,
+            'has_previous' => $self->has_previous,
+            'has_next' => $self->has_next,
+            'first_page' => $self->first_page,
+            'last_page' => $self->last_page
         ];
     }
 
