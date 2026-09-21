@@ -1,4 +1,3 @@
-// FormValidator.js
 import Validator from "./validator";
 
 /**
@@ -40,18 +39,14 @@ class FormValidator {
     static _getFormElement(form) {
         if (!form) return null;
 
-        // If it's already an element
         if (form instanceof HTMLElement) {
             return form;
         }
 
-        // If it's a string
         if (typeof form === 'string') {
-            // If it starts with # or ., use querySelector
             if (form.startsWith('#') || form.startsWith('.')) {
                 return document.querySelector(form);
             }
-            // Otherwise treat as ID
             return document.getElementById(form);
         }
 
@@ -66,13 +61,11 @@ class FormValidator {
     static _clearFieldError(formElement, fieldName) {
         if (!formElement) return;
 
-        // Remove error class from input
         const input = formElement.querySelector(`[name="${fieldName}"]`);
         if (input) {
             input.classList.remove('err-field');
         }
 
-        // Clear error message
         const errorEl = formElement.querySelector(`#err_${fieldName}`);
         if (errorEl) {
             errorEl.textContent = '';
@@ -87,13 +80,10 @@ class FormValidator {
      * @returns {Object} { failed: boolean, errors: Object, data: Object }
      */
     static validate(data, rules, form = null) {
-        // Reset validator
         Validator.reset();
 
-        // Get form element if provided
         const formElement = form ? this._getFormElement(form) : null;
 
-        // Convert FormData to object if needed
         if (data instanceof FormData) {
             data = Object.fromEntries(data.entries());
         }
@@ -104,24 +94,19 @@ class FormValidator {
         const errors = {};
         const validatedData = {};
 
-        // First pass: validate all fields
         Object.keys(rules).forEach(fieldName => {
             const rule = rules[fieldName];
             const label = rule.label || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
 
-            // Build validator
             let validator = Validator.input(fieldName).label(label);
 
-            // Check if optional
             const isOptional = rule.optional || false;
             const value = data[fieldName];
 
-            // If optional and empty, skip validation
             if (isOptional && (value === undefined || value === null || value === '')) {
                 return;
             }
 
-            // Apply rules
             if (rule.required) validator.required();
             if (rule.email) validator.email();
             if (rule.number) validator.number();
@@ -147,7 +132,6 @@ class FormValidator {
             if (rule.in) validator.in(rule.in);
             if (rule.notIn) validator.notIn(rule.notIn);
 
-            // Run validation
             validator.validate();
 
             if (Validator.failed()) {
@@ -158,12 +142,9 @@ class FormValidator {
             }
         });
 
-        // Handle form errors display
         if (formElement) {
-            // Clear ALL errors first
             this.clearErrors(form);
 
-            // If there are errors, display them
             if (failed) {
                 this.displayErrors(errors, form, false);
             }
@@ -177,10 +158,10 @@ class FormValidator {
     }
 
     /**
- * Display errors on form fields
- * @param {Object} errors - Error object from validate()
- * @param {string|HTMLElement} form - Form element, ID, or selector
- */
+     * Display errors on form fields
+     * @param {Object} errors - Error object from validate()
+     * @param {string|HTMLElement} form - Form element, ID, or selector
+     */
     static displayErrors(errors, form, autoReset = true) {
 
         const formElement = this._getFormElement(form);
@@ -244,11 +225,9 @@ class FormValidator {
         const formElement = this._getFormElement(form);
         if (!formElement) return;
 
-        // Remove error class from all inputs
         formElement.querySelectorAll('.tmodal-input.error, .tmodal-textarea.error, .tmodal-select.error, .err-field')
             .forEach(el => el.classList.remove('err-field'));
 
-        // Clear all error messages
         formElement.querySelectorAll('.error_text')
             .forEach(el => {
                 el.textContent = '';
