@@ -1262,6 +1262,10 @@ if ($route == "update") {
 
     echo "✅ Success";
     exit;
+}else if($route == "php:shortcuts" || $route == "html:shortcuts"){
+    echo "\nSnippets: Configure User Snippets";
+    echo "\n\033[32mOpen: https://raw.githubusercontent.com/YroDevGit/ctrx_lib/refs/heads/main/vscode_setup/code_snippet/html.json\033[0m\n\n";
+    exit;
 } else if ($route == "+library") {
     if ($filename == "") {
         echo "\n❌ Please provide a filename for Library.\n\n";
