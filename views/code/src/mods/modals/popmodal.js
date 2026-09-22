@@ -164,6 +164,10 @@ class Popmodal {
                 return this;
             },
 
+            get open(){
+                this.show();
+            },
+
             hide() {
                 overlay.classList.remove("show");
                 setTimeout(() => {
@@ -176,7 +180,7 @@ class Popmodal {
                 return this;
             },
 
-            close() {
+            get close() {
                 return this.hide();
             },
 
