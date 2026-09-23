@@ -114,7 +114,7 @@ class BaseTable
         return "{$this->quoteIdentifier($column)}->>'$.{$path}'";
     }
 
-    protected function getJsonContains(string $column, string $value, string $path = null): string
+    protected function getJsonContains(string $column, string $value, string|null $path = null): string
     {
         if ($this->isMariaDB()) {
             if ($path) {
@@ -909,7 +909,7 @@ class BaseTable
         return $rwCount;
     }
 
-    protected function primaryKey(string $pk = null)
+    protected function primaryKey(string|null $pk = null)
     {
         if (! $pk) return $this->primaryKey;
         $this->primaryKey = $pk;

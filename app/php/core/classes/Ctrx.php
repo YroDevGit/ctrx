@@ -852,7 +852,7 @@ class Ctrx
         return substr($character, $index);
     }
 
-    public static function ctrx_save_previous_pages(string $previous_page = null)
+    public static function ctrx_save_previous_pages(string|null $previous_page = null)
     {
         $curr = current_page(true);
         if ($curr == self::box1()) {

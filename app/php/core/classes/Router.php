@@ -13,7 +13,7 @@ class Router
     private string $group = "";
     private array $arr = [];
 
-    public function __construct(string $var = null, $group = false, array $arr = [], $keys = [])
+    public function __construct(string|null $var = null, $group = false, array $arr = [], $keys = [])
     {
         if ($group) {
             $this->group = $var;
