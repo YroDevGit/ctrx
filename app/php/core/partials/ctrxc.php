@@ -207,41 +207,69 @@ if (! function_exists("ctrx_same_origin")) {
 
 if (! function_exists("ctrx_get_routes")) {
     function ctrx_get_routes($parent, $phpfile = false)
-    {
-        $ep = ctrx_endpoint();
-        $baseDir = "";
-        if ($ep == "FE") {
-            $baseDir = "views/pages/$parent";
-        } else {
-            $baseDir = "_controller/$parent";
-        }
+{
+    $isKabab = \Classes\Ctrx::_isKabab();
+    $ep = ctrx_endpoint();
 
-        $arrs = [];
-        if (! is_dir($baseDir)) {
-            throw new Exception("ctr_get_routes error: $baseDir not exist");
+    if ($ep == "FE") {
+        $baseDir = "views/pages";
+    } else {
+        $baseDir = "_controller";
+    }
+
+    if (! is_dir($baseDir)) {
+        throw new Exception("ctr_get_routes error: $baseDir not exist");
+    }
+
+    $arrs = [];
+
+    if ($isKabab) {
+        $prefix = $parent . "-";
+
+        foreach (glob("$baseDir/$prefix*.php") ?: [] as $file) {
+            if (! is_file($file)) {
+                continue;
+            }
+
+            $basename = basename($file);
+            $stripped = rem_php(substr($basename, strlen($prefix)));
+
+            if ($phpfile) {
+                $arrs[] = $basename;
+            } else {
+                $arrs[] = $parent . "/" . $stripped;
+            }
+        }
+    } else {
+        $folderDir = "$baseDir/$parent";
+
+        if (! is_dir($folderDir)) {
+            throw new Exception("ctr_get_routes error: $folderDir not exist");
         }
 
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator($folderDir, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($iterator as $item) {
-            $relativePath = str_replace($baseDir . DIRECTORY_SEPARATOR, '', $item->getPathname());
-
+            $relativePath = str_replace($folderDir . DIRECTORY_SEPARATOR, '', $item->getPathname());
             $relativePath = str_replace(DIRECTORY_SEPARATOR, "/", $relativePath);
+
             if ($item->isDir()) {
                 continue;
+            }
+
+            if ($phpfile) {
+                $arrs[] = $relativePath;
             } else {
-                if ($phpfile) {
-                    $arrs[] = $relativePath;
-                } else {
-                    $arrs[] = $parent . "/" . rem_php($relativePath);
-                }
+                $arrs[] = $parent . "/" . rem_php($relativePath);
             }
         }
-        return $arrs;
     }
+
+    return $arrs;
+}
 }
 
 

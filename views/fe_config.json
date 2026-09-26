@@ -5,6 +5,7 @@
     "dev_error_page": "dev_error",
     "forbidden_page": "forbidden",
     "unauthorize_page": "unauthorize",
+    "kebab_case": false,
     "role_filtering": false,
     "js_autoload": true,
     "default_logout": "/",

@@ -1130,6 +1130,125 @@ class Ctrx
         }
     }
 
+    static function _isKabab(){
+        $kabab = $GLOBALS['ctrx_views_conf_a_vars']['kebab_case'] ?? false;
+        return $kabab;
+    }
+
+    static function _makeKebab($string){
+        $string = str_replace("/", "-", $string);
+        return $string;
+    }
+
+    static function _checkKebab($string){
+        $kebab = $GLOBALS['ctrx_views_conf_a_vars']['kebab_case'] ?? false;
+        if($kebab){
+            $string = str_replace("/", "-", $string);
+            return $string;
+        }
+        else{
+            $string = str_replace("-", "/", $string);
+            return $string;
+        }
+    }
+
+    static function _convertStructure(string $path, string $separator, bool $dryRun = false, string $extension = ".php"): array
+    {
+        $path = rtrim($path, '/\\');
+        if (!is_dir($path)) {
+            throw new RuntimeException("Directory not found: $path");
+        }
+        if (!in_array($separator, ['-', '/'], true)) {
+            throw new InvalidArgumentException("Separator must be '-' or '/'");
+        }
+
+        $ext = ltrim($extension, '.');
+        if ($ext === '') {
+            throw new InvalidArgumentException("Extension cannot be empty");
+        }
+        $extDot = '.' . $ext;
+
+        $result = ['moved' => [], 'removed' => [], 'skipped' => [], 'errors' => []];
+
+        if ($separator === '/') {
+            foreach (glob("$path/*-*$extDot") as $file) {
+                $basename = basename($file);
+                $parts    = explode('-', pathinfo($basename, PATHINFO_FILENAME));
+
+                if (count($parts) !== 2 || trim($parts[0]) === '' || trim($parts[1]) === '') {
+                    $result['skipped'][] = $basename;
+                    continue;
+                }
+
+                [$section, $page] = array_map('trim', $parts);
+                $dir    = "$path/$section";
+                $target = "$dir/$page$extDot";
+
+                if (file_exists($target)) {
+                    $result['errors'][] = "$basename -> $section/$page$extDot (target exists)";
+                    continue;
+                }
+                if ($dryRun) {
+                    $result['moved'][] = "$basename -> $section/$page$extDot (dry run)";
+                    continue;
+                }
+                echo $file;
+                try {
+                    if(str_contains($file, "/_")) continue;
+                    if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                        throw new RuntimeException("cannot create $dir");
+                    }
+                    if (!rename($file, $target)) {
+                        throw new RuntimeException("rename failed");
+                    }
+                    $result['moved'][] = "$basename -> $section/$page$extDot";
+                } catch (Throwable $e) {
+                    $result['errors'][] = "$basename: {$e->getMessage()}";
+                }
+            }
+        } else {
+            foreach (glob("$path/*", GLOB_ONLYDIR) as $dir) {
+                $section = basename($dir);
+
+                foreach (glob("$dir/*$extDot") as $file) {
+                    $page   = basename($file);
+                    $target = "$path/{$section}-{$page}";
+
+                    if (file_exists($target)) {
+                        $result['errors'][] = "$section/$page -> {$section}-{$page} (target exists)";
+                        continue;
+                    }
+                    if ($dryRun) {
+                        $result['moved'][] = "$section/$page -> {$section}-{$page} (dry run)";
+                        continue;
+                    }
+                    try {
+                        if(str_contains($file, "/_")) continue;
+                        if (!rename($file, $target)) {
+                            throw new RuntimeException("rename failed");
+                        }
+                        $result['moved'][] = "$section/$page -> {$section}-{$page}";
+                    } catch (Throwable $e) {
+                        $result['errors'][] = "$section/$page: {$e->getMessage()}";
+                    }
+                }
+
+                if (is_dir($dir)) {
+                    $remaining = array_diff(scandir($dir), ['.', '..']);
+                    if (empty($remaining)) {
+                        if ($dryRun) {
+                            $result['removed'][] = "$section/ (dry run)";
+                        } elseif (rmdir($dir)) {
+                            $result['removed'][] = "$section/";
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
     public static function getPastDueCronJobs()
     {
         $tbl = 'ctrx_cron';

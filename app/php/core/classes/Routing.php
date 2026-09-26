@@ -118,8 +118,13 @@ class Routing
                 $parent = $exp[0];
                 return self::group_page(ctrx_get_routes($parent), ...$args);
             }
+            $kb = new \Classes\Ctrx;
             $pages = trim($pages, " /\\");
-            $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";        
+            $path = substr($pages, -4) === ".php" ? $pages : $pages . ".php";
+            if($kb::_isKabab()){
+                $pages = $kb::_makeKebab($pages);
+                $path = $kb::_makeKebab($path);
+            }     
             if (! \Classes\Ctrx::file_exists_strict("views/pages/$path")) {
                 throw new Exception("Group page error: $pages not exist");
             }
