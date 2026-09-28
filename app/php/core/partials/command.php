@@ -710,7 +710,7 @@ if ($route == "update") {
         }
 
         $root       = realpath(__DIR__ . '/../../');
-        $targetFile = $root . DIRECTORY_SEPARATOR . $extra;
+        $targetFile = str_replace('\\', '/', $extra);
         $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/" . str_replace('\\', '/', $extra);
 
         if ($extra == "index.php" || $extra == "index") {
@@ -721,7 +721,7 @@ if ($route == "update") {
             $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
             $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/app/php/core/partials/command.php";
         }
-        if ($ext == "--main") {
+        if ($extra == "--main") {
             $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
             $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/views/pages/main.php";
         }
