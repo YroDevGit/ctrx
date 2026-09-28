@@ -31,7 +31,11 @@
       ]
     },
     "changes" : [
-      "views/pages/main.php"
+      "app/php/core/partials/command.php",
+      "composer.json"
+    ],
+    "update": [
+
     ]
   }
   

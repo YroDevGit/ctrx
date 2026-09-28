@@ -609,7 +609,6 @@ if ($route == "run" || $route == "server") {
 }
 if ($route == "update") {
 
-    // Shared HTTP context builder for GitHub API / raw calls
     $ghHeaders =
         "User-Agent: PHP-CTRX-Updater\r\n" .
         "Accept: application/vnd.github+json\r\n";
@@ -823,7 +822,7 @@ if ($route == "update") {
 
             // Normalize slashes for both URL and local path
             $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
-            $targetFile   = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            $targetFile   = $relativePath;
             $rawUrl       = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/" . $relativePath;
 
             echo "⬇️  $p%  Updating: $relativePath\n";
