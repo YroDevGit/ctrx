@@ -608,85 +608,123 @@ if ($route == "run" || $route == "server") {
     exit;
 }
 if ($route == "update") {
+
+    // Shared HTTP context builder for GitHub API / raw calls
+    $ghHeaders =
+        "User-Agent: PHP-CTRX-Updater\r\n" .
+        "Accept: application/vnd.github+json\r\n";
+
     if ($filename == "classes") {
-        function downloadFolder($apiUrl, $targetDir)
+
+        function downloadFolder($apiUrl, $targetDir, $headers)
         {
             $opts = [
                 "http" => [
-                    "header" => "User-Agent: PHP\r\n"
+                    "method"          => "GET",
+                    "header"          => $headers,
+                    "ignore_errors"   => true,
+                    "timeout"         => 30,
                 ]
             ];
-            $context = stream_context_create($opts);
-            $response = file_get_contents($apiUrl, false, $context);
+            $context  = stream_context_create($opts);
+            $response = @file_get_contents($apiUrl, false, $context);
 
-            if ($response === FALSE) {
-                echo "❌ Error fetching $apiUrl";
-                exit;
+            // Pull HTTP status from $http_response_header
+            global $http_response_header;
+            $status = $http_response_header[0] ?? 'no response';
+
+            if ($response === false) {
+                echo "❌ Error fetching $apiUrl ($status)\n";
+                return;
             }
 
-            $items = json_decode($response, true);
-            if (!is_array($items)) {
-                echo "❌ Invalid API response";
-                exit;
+            $decoded = json_decode($response, true);
+            if ($decoded === null) {
+                echo "❌ Invalid JSON from $apiUrl ($status)\n";
+                return;
+            }
+
+            // Contents API returns an object for a single file, an array for a dir
+            if (isset($decoded['type'])) {
+                $items = [$decoded];
+            } elseif (is_array($decoded)) {
+                $items = $decoded;
+            } else {
+                echo "❌ Unexpected API shape from $apiUrl\n";
+                return;
             }
 
             @mkdir($targetDir, 0777, true);
 
-            echo "\n\CTRX\n\n";
-            echo "Updating classes....\n\n";
-            $sz = sizeof($items);
-            $ct = 1;
             foreach ($items as $item) {
-                $localPath = $targetDir . "/" . $item['name'];
-                $p = $ct / $sz;
-                $p = intval($p * 100);
+                if (!isset($item['name'], $item['type'])) {
+                    continue;
+                }
 
+                $localPath = $targetDir . DIRECTORY_SEPARATOR . $item['name'];
 
                 if ($item['type'] === 'file') {
-                    echo "⬇️  $p%  Downloading file: {$item['path']}\n";
-                    $content = file_get_contents($item['download_url']);
-                    file_put_contents($localPath, $content);
+                    $raw = $item['download_url'] ?? null;
+                    if (!$raw) {
+                        echo "❌ No download_url for {$item['path']}\n";
+                        continue;
+                    }
+                    $content = @file_get_contents($raw, false, stream_context_create([
+                        "http" => ["header" => "User-Agent: PHP-CTRX-Updater\r\n", "timeout" => 30]
+                    ]));
+                    if ($content === false) {
+                        echo "❌ Failed to download {$item['path']}\n";
+                        continue;
+                    }
+                    if (@file_put_contents($localPath, $content) === false) {
+                        echo "❌ Failed to write $localPath\n";
+                        continue;
+                    }
+                    echo "⬇️  {$item['path']}\n";
+
                 } elseif ($item['type'] === 'dir') {
-                    downloadFolder($item['url'], $localPath);
+                    // $item['url'] is already an api.github.com URL for the subdir
+                    downloadFolder($item['url'], $localPath, $headers);
                 }
-                $ct += 1;
             }
         }
 
-        $root = realpath(__DIR__ . '/../../');
-        $targetDir = $root . "/app/php/core/classes";
-        $apiUrl = "https://api.github.com/repos/YroDevGit/CodeTazer/contents/_backend/core/partials/classes?ref=main";
+        $root      = realpath(__DIR__ . '/../../');
+        $targetDir = "app/php/core/classes";
+        $apiUrl    = "https://api.github.com/repos/YroDevGit/ctrx/contents/app/php/core/classes?ref=main";
+
+        echo "\nCTRX\n\n";
+        echo "Updating classes....\n\n";
 
         deleteFolderCommand($targetDir);
+        downloadFolder($apiUrl, $targetDir, $ghHeaders);
 
-        downloadFolder($apiUrl, $targetDir);
-
-        echo "\n";
-        echo "🎉 CodeTazer App Classes updated!\n\n";
+        echo "\n🎉 CodeTazer App Classes updated!\n\n";
         exit;
+
     } else if ($filename == "file") {
+
         $updt = "";
         if ($extra == "") {
             echo "❌ Please enter the file relative path to update\n";
             exit;
         }
 
-        $root = realpath(__DIR__ . '/../../');
+        $root       = realpath(__DIR__ . '/../../');
         $targetFile = $root . DIRECTORY_SEPARATOR . $extra;
-        $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/" . str_replace('\\', '/', $extra);
+        $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/" . str_replace('\\', '/', $extra);
 
         if ($extra == "index.php" || $extra == "index") {
             $targetFile = $root . DIRECTORY_SEPARATOR . "index.php";
-            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/index.php";
+            $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/index.php";
         }
         if ($extra == "command") {
             $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
-            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/_backend/core/command";
+            $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/app/php/core/partials/command.php";
         }
-
         if ($ext == "--main") {
             $targetFile = $root . DIRECTORY_SEPARATOR . "_backend\core\command";
-            $rawUrl = "https://raw.githubusercontent.com/YroDevGit/CodeTazer/main/_frontend/pages/main.php";
+            $rawUrl     = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/views/pages/main.php";
         }
 
         if (!file_exists($targetFile)) {
@@ -712,7 +750,9 @@ if ($route == "update") {
 
         echo "🔃 Fetching new content from CodeTazer.....\n";
 
-        $content = file_get_contents($rawUrl);
+        $content = @file_get_contents($rawUrl, false, stream_context_create([
+            "http" => ["header" => "User-Agent: PHP-CTRX-Updater\r\n", "timeout" => 30]
+        ]));
         if ($content === false) {
             echo "❌ Failed to fetch content from $rawUrl\n";
             exit;
@@ -732,6 +772,103 @@ if ($route == "update") {
         }
         echo "✅ $targetFile is now updated!\n\n";
         exit;
+
+    } else if ($filename == "new") {
+
+        echo "\nCTRX\n\n";
+        echo "🔃 Fetching composer.json...\n";
+
+        $composerUrl = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/composer.json";
+        $composerRaw = @file_get_contents($composerUrl, false, stream_context_create([
+            "http" => [
+                "header"  => "User-Agent: PHP-CTRX-Updater\r\n",
+                "timeout" => 30,
+            ]
+        ]));
+
+        if ($composerRaw === false) {
+            echo "❌ Failed to fetch composer.json from $composerUrl\n";
+            echo "   (verify the file exists on the 'main' branch)\n";
+            exit;
+        }
+
+        $composerData = json_decode($composerRaw, true);
+        if (!is_array($composerData)) {
+            echo "❌ composer.json is not valid JSON\n";
+            exit;
+        }
+
+        if (!isset($composerData['changes']) || !is_array($composerData['changes'])) {
+            echo "❌ composer.json is missing a 'changes' array\n";
+            exit;
+        }
+
+        $changes = array_values(array_filter($composerData['changes'], 'is_string'));
+        $total   = count($changes);
+
+        if ($total === 0) {
+            echo "ℹ️  No files listed in composer.json 'changes'.\n";
+            exit;
+        }
+
+        echo "📦 Found $total file(s) to update.\n\n";
+
+        $root    = realpath(__DIR__ . '/../../');
+        $success = 0;
+        $failed  = [];
+
+        $ct = 1;
+        foreach ($changes as $relativePath) {
+            $p = intval(($ct / $total) * 100);
+
+            // Normalize slashes for both URL and local path
+            $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
+            $targetFile   = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            $rawUrl       = "https://raw.githubusercontent.com/YroDevGit/ctrx/main/" . $relativePath;
+
+            echo "⬇️  $p%  Updating: $relativePath\n";
+
+            $content = @file_get_contents($rawUrl, false, stream_context_create([
+                "http" => [
+                    "header"  => "User-Agent: PHP-CTRX-Updater\r\n",
+                    "timeout" => 30,
+                ]
+            ]));
+
+            if ($content === false) {
+                echo "   ❌ Failed to fetch $rawUrl\n";
+                $failed[] = $relativePath;
+                $ct++;
+                continue;
+            }
+
+            @mkdir(dirname($targetFile), 0777, true);
+
+            if (@file_put_contents($targetFile, $content) === false) {
+                echo "   ❌ Failed to write $targetFile\n";
+                $failed[] = $relativePath;
+                $ct++;
+                continue;
+            }
+
+            $success++;
+            $ct++;
+        }
+
+        echo "\n";
+        if ($success > 0) {
+            echo "✅ $success of $total file(s) updated successfully.\n";
+        }
+        if (!empty($failed)) {
+            echo "⚠️  Failed to update the following file(s):\n";
+            foreach ($failed as $f) {
+                echo "   - $f\n";
+            }
+        }
+
+        echo "\n🎉 CodeTazer App files updated!\n\n";
+        exit;
+
     } else {
         echo "❌ Invalid update parameter.";
         exit;

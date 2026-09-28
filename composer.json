@@ -29,6 +29,9 @@
        "post-create-project-cmd": [
         "php app/php/core/guide.php"
       ]
-    }
+    },
+    "changes" : [
+      "views/pages/main.php"
+    ]
   }
   
