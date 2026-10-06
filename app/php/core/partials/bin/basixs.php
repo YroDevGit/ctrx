@@ -1,6 +1,6 @@
 <?php
 //CodeYro
-function encrypt($data, string $key = null)
+function encrypt($data, string|null $key = null)
 {
     if ($data == null || $data == "") {
         return null;
@@ -32,7 +32,7 @@ function encrypt($data, string $key = null)
     return $encrypted_data;
 }
 
-function decrypt($encrypted_data, string $key = null)
+function decrypt($encrypted_data, string|null $key = null)
 {
     if ($encrypted_data == null || $encrypted_data == "") {
         return null;

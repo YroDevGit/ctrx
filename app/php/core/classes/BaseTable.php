@@ -1185,7 +1185,7 @@ class BaseTable
     public static function chunk(
         int $size,
         array $where = [],
-        callable $callback = null,
+        callable|null $callback = null,
         array|int|null $extra = null
     ) {
         if ($size <= 0) {

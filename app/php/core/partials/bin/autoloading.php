@@ -10,7 +10,7 @@
  */
 
 if (! function_exists("autoload_php")) {
-    function autoload_php(string|array $filename = null)
+    function autoload_php(string|array|null $filename = null)
     {
         if (!$filename) {
             return false;

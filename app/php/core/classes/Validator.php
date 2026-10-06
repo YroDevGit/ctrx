@@ -208,7 +208,7 @@ class Validator
         return $this;
     }
 
-    public function unique(string $tablecolumn, string $message = null): self
+    public function unique(string $tablecolumn, string|null $message = null): self
     {
         $this->rules[] = "unique:$tablecolumn";
         if ($message) self::$msg = $message;

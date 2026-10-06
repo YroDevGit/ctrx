@@ -764,14 +764,14 @@ if (! function_exists("use_middleware")) {
 }
 
 if (! function_exists("get_json")) {
-    function get_json(string $jsonfile, string $path = null)
+    function get_json(string $jsonfile, string|null $path = null)
     {
         if (! $path) {
             $ep = ctr_endpoint();
             if ($ep == "FE") {
-                $path = "_frontend/app/auto/json/";
+                $path = "app/auto/json/";
             } else {
-                $path = "_backend/application/json/";
+                $path = "views/app/auto/json/";
             }
         }
         $jsonfile = str_ends_with($jsonfile, ".json") ? $jsonfile : $jsonfile . ".json";

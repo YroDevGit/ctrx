@@ -59,7 +59,7 @@ if (! function_exists('json_response')) {
 }
 
 if (! function_exists('ctrx_response')) {
-    function ctrx_response(array $data, int $status = 200, Throwable|PDOException|Exception|InvalidArgumentException $error = null)
+    function ctrx_response(array $data, int $status = 200, Throwable|PDOException|Exception|InvalidArgumentException|null $error = null)
     {
         $fulltrace = env("full_trace");
         header('Content-Type: application/json');
@@ -157,7 +157,7 @@ if (! function_exists("error_text")) {
     }
 }
 
-function ctrx_log(string $message, string $parent, string $id = null, string $filename = null)
+function ctrx_log(string $message, string $parent, string|null $id = null, string|null $filename = null)
 {
     $needLogs = env('error_logs');
     if (! $needLogs || $needLogs != "yes") {
