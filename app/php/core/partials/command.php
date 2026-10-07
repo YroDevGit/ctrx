@@ -685,12 +685,12 @@ if ($route == "run" || $route == "server") {
         echo "❌ Failed";
     }
     exit;
-}else if ($route == "update") {
+}else if ($route == "generate:file" || $route == "generate:classes") {
     $ghHeaders =
         "User-Agent: PHP-CTRX-Updater\r\n" .
         "Accept: application/vnd.github+json\r\n";
 
-    if ($filename == "classes") {
+    if ($route == "generate:classes") {
 
         function downloadFolder($apiUrl, $targetDir, $headers)
         {
@@ -757,7 +757,6 @@ if ($route == "run" || $route == "server") {
                     echo "⬇️  {$item['path']}\n";
 
                 } elseif ($item['type'] === 'dir') {
-                    // $item['url'] is already an api.github.com URL for the subdir
                     downloadFolder($item['url'], $localPath, $headers);
                 }
             }
@@ -776,8 +775,9 @@ if ($route == "run" || $route == "server") {
         echo "\n🎉 CodeTazer App Classes updated!\n\n";
         exit;
 
-    } else if ($filename == "file") {
+    } else if ($route == "generate:file") {
 
+        $extra = $filename;
         $updt = "";
         if ($extra == "") {
             echo "❌ Please enter the file relative path to update\n";
@@ -802,18 +802,15 @@ if ($route == "run" || $route == "server") {
         }
 
         if (!file_exists($targetFile)) {
-            if ($exxr === "--mkdir" || $exxr === "--generate") {
-                $updt = "✅ $targetFile is created!\n\n";
+            if(! is_dir(dirname($targetFile))){
                 @mkdir(dirname($targetFile), 0777, true);
-                if (file_put_contents($targetFile, "...") === false) {
-                    echo "❌ Failed to create $targetFile\n";
-                    exit;
-                }
-                echo "📂 Directory created and placeholder file added: $targetFile\n";
-            } else {
-                echo "❌ File $targetFile does not exist (use --mkdir to create it)\n";
+            }
+
+            if (file_put_contents($targetFile, "...") === false) {
+                echo "❌ Failed to create $targetFile\n";
                 exit;
             }
+            echo "✅ File updated: $targetFile";
         } else {
             if (!is_file($targetFile)) {
                 echo "❌ $targetFile is a directory, not a file\n";
