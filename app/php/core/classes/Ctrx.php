@@ -965,6 +965,7 @@ class Ctrx
 
     public static function forbidden_page(string|null $backpage = null, $exit = true)
     {
+        \Classes\Ctrx::page_rate_limit(7, 60, "ctrx/admin1005/forbidden1y00r5o14");
         if (! defined("prev_page")) define("prev_page", prev_page());
         $backRoute = $backpage ?? prev_page ?? "/";
         if ($backRoute) {

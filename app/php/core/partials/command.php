@@ -376,6 +376,9 @@ if ($route == "run" || $route == "server") {
     }
     $file = "settings.json";
     $fullpath = $dir . $file;
+    if(file_exists($fullpath)){
+        unlink($fullpath);
+    }
     if (! file_exists($fullpath)) {
         file_put_contents($fullpath, <<<EOT
         {
@@ -384,17 +387,16 @@ if ($route == "run" || $route == "server") {
                 "app": false, // Backend
                 "views": false, // Frontend
         
-        
-        
-                "vendor": true,
+
+                "compose.yml": false,
+                "Dockerfile": false,
+                "favicon.ico": false,
                 ".gitignore": true,
-                "compose.yml": true,
+                "vendor": true,
                 "composer.json": true,
                 "composer.lock": true,
-                "Dockerfile": true,
                 "cli": true,
                 ".htaccess": true,
-                "favicon.ico": true,
                 "index.php": true,
                 "jsconfig.json": true,
             }

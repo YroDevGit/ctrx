@@ -311,6 +311,7 @@ if (str_starts_with($req, "api/")) {
         if (str_starts_with($req, "ctrx/database")) {
             $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
                 return;
@@ -329,6 +330,7 @@ if (str_starts_with($req, "api/")) {
         if (str_starts_with($req, "ctrx/logs")) {
             $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
                 return;
@@ -346,6 +348,7 @@ if (str_starts_with($req, "api/")) {
         if (str_starts_with($req, "ctrx/data")) {
             $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
                 return;
@@ -363,6 +366,7 @@ if (str_starts_with($req, "api/")) {
         if (str_starts_with($req, "ctrx/roles")) {
             $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
                 return;
@@ -381,6 +385,7 @@ if (str_starts_with($req, "api/")) {
             $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect($logoutPage, "page", 2);
                 return;
@@ -400,6 +405,7 @@ if (str_starts_with($req, "api/")) {
             $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/login1y00r5o14");
                 include_once "app/php/core/system/toollogin.php";
                 return;
             }
