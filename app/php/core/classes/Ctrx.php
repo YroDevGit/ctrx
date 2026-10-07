@@ -584,9 +584,9 @@ class Ctrx
      */
     public static function access_tools(string ...$tools)
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
         if (! $ctrxdata) {
-            throw new Exception("Access tools: invalid call without user data");
+            $ctrxdata = [];
         }
         if (! $tools) {
             $extraData = ["data", "translations", "database", "roles", "logs"];
@@ -594,8 +594,21 @@ class Ctrx
         } else {
             $ctrxdata = [...$ctrxdata, "access_ctrx_tools" => $tools];
         }
-        \Classes\Ccookie::add("ctrx_user_data", $ctrxdata, self::$lastDuration);
+        \Classes\Ccookie::add("ctrx_user_data_admin", $ctrxdata, self::$lastDuration);
         return true;
+    }
+
+    public static function set_admin_data(array $data){
+        $ctrxdata = \Classes\Ccookie::add("ctrx_user_data_admin", $data, 60);
+    }
+
+    public static function get_admin_data(){
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
+        return $ctrxdata;
+    }
+
+    public static function remove_admin_data(){
+        \Classes\Ccookie::delete("ctrx_user_data_admin");
     }
 
     /**
@@ -604,7 +617,7 @@ class Ctrx
      */
     public static function get_access_tools()
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data");
+        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
         if (! $ctrxdata) {
             return [];
         } else {
@@ -655,7 +668,7 @@ class Ctrx
         if ($currPage == "ctrx/logout") {
             return;
         }
-        if (str_starts_with($currPage, "ctrxtools")) {
+        if (str_starts_with($currPage, "ctrx")) {
             return;
         }
         if (! \Classes\SQLite::tableExists("ctrx_roles")) {
@@ -718,7 +731,7 @@ class Ctrx
         if ($route == "ctrx/logout") {
             return true;
         }
-        if (str_starts_with($route, "ctrxtools")) {
+        if (str_starts_with($route, "ctrx")) {
             return true;
         }
         $roleFilt = fe_config("role_filtering");
@@ -748,6 +761,12 @@ class Ctrx
             }
         }
         return false;
+    }
+
+    public static function hasAdminUser(){
+        $data = \Classes\SQLite::get("select * from users");
+        if(! $data) return false;
+        return true;
     }
 
     public static function has_user_data(): bool

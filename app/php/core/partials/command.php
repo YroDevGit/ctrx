@@ -606,9 +606,84 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n";
     exit;
-}
-if ($route == "update") {
+}else if($route == "account:add"){
+    if($filename == ""){
+        echo "❌ Please enter username:password";
+        exit;
+    }
+    $exp = explode(":", $filename);
+    $username = $exp[0] ?? null;
+    $password = $exp[1] ?? null;
 
+    if(! $username || ! $password){
+        echo "❌ Invalid username:password format";
+        exit;
+    }
+
+    $find = \Classes\SQLite::get("select * from users where username = '$username'");
+    if($find){
+        echo "❌ Username already exist";
+        exit;
+    }
+
+    $res = \Classes\SQLite::insert("users",[
+        "name" => strtoupper($username),
+        "username" => $username,
+        "password" => $password,
+        "active" => 1
+    ]);
+
+    if($res){
+        echo "✅ Account created";
+    }else{
+        echo "❌ Failed";
+    }
+    exit;
+}else if($route == "account:update"){
+    if($filename == ""){
+        echo "❌ Please enter username:password";
+        exit;
+    }
+    $exp = explode(":", $filename);
+    $username = $exp[0] ?? null;
+    $password = $exp[1] ?? null;
+
+    if(! $username || ! $password){
+        echo "❌ Invalid username:password format";
+        exit;
+    }
+
+    $find = \Classes\SQLite::get("select * from users where username = '$username'");
+    if(!$find){
+        echo "❌ Username not found";
+        exit;
+    }
+
+    $res = \Classes\SQLite::update("users", [
+        "password" => $password
+    ], "username = '$username'");
+
+    if($res){
+        echo "✅ Account password updated";
+    }else{
+        echo "❌ Failed";
+    }
+    exit;
+}else if($route == "account:delete"){
+    if($filename == ""){
+        echo "❌ Please enter username:password";
+        exit;
+    }
+
+    $username = trim($filename);
+    $del = \Classes\SQLite::delete("users", "username = '$username'");
+    if($del){
+        echo "✅ Account '$username' deleted";
+    }else{
+        echo "❌ Failed";
+    }
+    exit;
+}else if ($route == "update") {
     $ghHeaders =
         "User-Agent: PHP-CTRX-Updater\r\n" .
         "Accept: application/vnd.github+json\r\n";
@@ -628,7 +703,6 @@ if ($route == "update") {
             $context  = stream_context_create($opts);
             $response = @file_get_contents($apiUrl, false, $context);
 
-            // Pull HTTP status from $http_response_header
             global $http_response_header;
             $status = $http_response_header[0] ?? 'no response';
 
@@ -643,7 +717,6 @@ if ($route == "update") {
                 return;
             }
 
-            // Contents API returns an object for a single file, an array for a dir
             if (isset($decoded['type'])) {
                 $items = [$decoded];
             } elseif (is_array($decoded)) {
@@ -727,7 +800,7 @@ if ($route == "update") {
         }
 
         if (!file_exists($targetFile)) {
-            if ($exxr === "--mkdir") {
+            if ($exxr === "--mkdir" || $exxr === "--generate") {
                 $updt = "✅ $targetFile is created!\n\n";
                 @mkdir(dirname($targetFile), 0777, true);
                 if (file_put_contents($targetFile, "...") === false) {

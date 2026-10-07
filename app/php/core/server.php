@@ -74,8 +74,8 @@ include "app/php/core/system/loader.php";
 /**
  * Ctrx Game for devs
  */
-if (str_starts_with($req, "ctrxtools/game")) {
-    \Classes\Ctrx::use_tool("app/php/core/system/ctrxgame.php", "ctrxtools/game");
+if (str_starts_with($req, "ctrx/game")) {
+    \Classes\Ctrx::use_tool("app/php/core/system/ctrxgame.php", "ctrx/game");
     exit;
 }
 
@@ -297,11 +297,19 @@ if (str_starts_with($req, "api/")) {
             ctrx_save_cookies();
             redirect($page);
         }
+
+        if ($req == "ctrx/admin/logout") {
+            $lgt = fe_config("default_logout");
+            $page = "/";
+            \Classes\Ctrx::remove_admin_data();
+            ctrx_save_cookies();
+            redirect($page);
+        }
         /**
          * Ctrx DB tools for database management
          */
-        if (str_starts_with($req, "ctrxtools/database")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if (str_starts_with($req, "ctrx/database")) {
+            $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
@@ -318,8 +326,8 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx DB tools for database management
          */
-        if (str_starts_with($req, "ctrxtools/logs")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if (str_starts_with($req, "ctrx/logs")) {
+            $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
@@ -335,8 +343,8 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx DB tools for import export
          */
-        if (str_starts_with($req, "ctrxtools/data")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if (str_starts_with($req, "ctrx/data")) {
+            $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
@@ -352,8 +360,8 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx Translation tools for import export
          */
-        if (str_starts_with($req, "ctrxtools/roles")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if (str_starts_with($req, "ctrx/roles")) {
+            $data = \Classes\Ctrx::get_admin_data();
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
@@ -369,8 +377,8 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx Translation tools for import export
          */
-        if (str_starts_with($req, "ctrxtools/translations")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if (str_starts_with($req, "ctrx/translations")) {
+            $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
@@ -388,12 +396,11 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx Tools page
          */
-        if (str_starts_with($req, "ctrxtools")) {
-            $data = \Classes\Ctrx::get_user_data();
+        if ($req == "ctrx") {
+            $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
-                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
-                redirect($logoutPage, "page", 2);
+                include_once "app/php/core/system/toollogin.php";
                 return;
             }
             $userTools = \Classes\Ctrx::get_access_tools();

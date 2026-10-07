@@ -1350,7 +1350,7 @@ if ($tableExists) {
             <div class="activation-screen">
                 <p>⚡ The translation table is not yet activated. Click Activate to create the required database structure.</p>
                 <div class="activation-buttons">
-                    <a href="<?= $backpage ?? '/' ?>">
+                    <a href="/ctrx">
                         <span class="btn-cancel">← Back / Cancel</span>
                     </a>
                     <button type="button" class="btn-activate" id="activateTableBtn">⚡ Activate Translation System</button>
@@ -1567,7 +1567,7 @@ if ($tableExists) {
         <?php endif; ?>
 
         <div class="back-link">
-            <b><a href="<?= prev_page ?>">← Previous page</a></b>
+            <b><a href="/ctrx">← Previous page</a></b>
         </div>
 
         <div class="footer">

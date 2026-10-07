@@ -874,7 +874,7 @@ if (isset($_POST['import_table'])) {
 
     <div class="container">
         <div class="top-bar">
-            <a href="<?= prev_page ?>" class="back-btn">
+            <a href="/ctrx" class="back-btn">
                 <i>←</i> Back
             </a>
         </div>
@@ -986,7 +986,7 @@ if (isset($_POST['import_table'])) {
         </div>
 
         <div class="back-link">
-            <a href="<?= prev_page ?>">← Previous page</a>
+            <a href="/ctrx">← Previous page</a>
         </div>
 
         <footer>⚡ CTRX THUNDER EDGE • DATABASE FLOW</footer>

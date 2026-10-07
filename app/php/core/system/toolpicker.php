@@ -1,5 +1,11 @@
 <?php
 
+if (isset($_GET['logout']) && $_GET['logout'] == "yes") {
+  \Classes\Ctrx::remove_admin_data();
+  ctrx_save_cookies();
+  redirect("/");
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exec_value'])) {
   header('Content-Type: application/json');
   $value = $_POST['exec_value'];
@@ -554,7 +560,7 @@ $size = folderSize('app/php/logs');
 
     <div class="top-bar">
       <button class="back-btn" id="backButton" aria-label="Go back">
-        <i class="fas fa-arrow-left"></i> Back
+        <i class="fas fa-arrow-left"></i> Exit
       </button>
       <button class="execute-btn" id="executeButton" type="button">
         <i class="fas fa-refresh"></i> Update
@@ -574,28 +580,28 @@ $size = folderSize('app/php/logs');
     <?php endif; ?>
 
     <div class="tool-grid">
-      <div class="tool-item" data-tool="database" data-destination="/ctrxtools/database">
+      <div class="tool-item" data-tool="database" data-destination="/ctrx/database">
         <div class="tool-icon"><i class="fas fa-database"></i></div>
         <div class="tool-name">Database</div>
         <div class="tool-desc">Manage System database</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
-      <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/data">
+      <div class="tool-item" data-tool="import-export" data-destination="/ctrx/data">
         <div class="tool-icon"><i class="fas fa-file-import"></i></div>
         <div class="tool-name">Import &amp; Export</div>
         <div class="tool-desc">Import & Export table data</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
-      <div class="tool-item" data-tool="import-export" data-destination="/ctrxtools/roles">
+      <div class="tool-item" data-tool="import-export" data-destination="/ctrx/roles">
         <div class="tool-icon"><i class="fas fa-users"></i></div>
         <div class="tool-name">Roles</div>
         <div class="tool-desc">Manage user roles</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
-      <div class="tool-item" data-tool="translations" data-destination="/ctrxtools/translations">
+      <div class="tool-item" data-tool="translations" data-destination="/ctrx/translations">
         <div class="tool-icon"><i class="fas fa-language"></i></div>
         <div class="tool-name">Translations</div>
         <div class="tool-desc">Custom translations</div>
@@ -611,7 +617,7 @@ $size = folderSize('app/php/logs');
 
     <div class="footer-note">
       <div class="footer-actions">
-        <a href="/ctrxtools/logs" style="font-weight: bold;"><span><i class="fas fa-file"></i>File logs (<?= formatSize($size) ?>)</span></a>
+        <a href="/ctrx/logs" style="font-weight: bold;"><span><i class="fas fa-file"></i>File logs (<?= formatSize($size) ?>)</span></a>
       </div>
       <span class="badge-soft"><i class="fas fa-code"></i> no hardcoded links · you decide</span>
     </div>
@@ -666,11 +672,13 @@ $size = folderSize('app/php/logs');
 
       function goBack() {
 
-        backButton.style.background = '#dee2e6';
-        setTimeout(() => {
-          backButton.style.background = '';
-        }, 150);
-        location.href = '<?= prev_page ?>';
+        if (confirm("Are you sure to exit?")) {
+          backButton.style.background = '#dee2e6';
+          setTimeout(() => {
+            backButton.style.background = '';
+          }, 150);
+          location.href = '?logout=yes';
+        }
       }
 
       backButton.addEventListener('click', goBack);

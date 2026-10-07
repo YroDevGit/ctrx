@@ -1,4 +1,5 @@
 <?php $version = 5.8 ?>
+<?php if(! \Classes\Ctrx::hasAdminUser()) redirect("/ctrx"); ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
-  <?= assets_css("style") ?>
+  <?= assets_css("ctrx") ?>
 </head>
 
 <body>
