@@ -896,7 +896,7 @@ class DB
         string $table,
         int $size,
         array $where = [],
-        callable $callback = null,
+        callable|null $callback = null,
         array|int|null $extra = null
     ) {
         if ($size <= 0) {
