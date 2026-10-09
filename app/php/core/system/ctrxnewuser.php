@@ -35,8 +35,8 @@ if(isset($_POST['btn'])){
             "active" => 1
         ]);
         if($inserted){
-            $success = "Account created successfully. You can now login.";
-            redirect(path:"/ctrx", time:2, exit:false);
+            $success = "Account created successfully.";
+            redirect(path:"/ctrx/admin/logout", time:2, exit:false);
         } else {
             $error = "Something went wrong. Please try again.";
         }
