@@ -1,5 +1,16 @@
 <?php
 
+use Classes\Validator;
+
+$data = \Classes\Ctrx::get_admin_data();
+$data = $data[0] ?? null;
+if (! $data) {
+  redirect("/ctrx/admin/logout");
+}
+
+$username = $data['username'] ?? null;
+$id = $data['id'];
+
 if (isset($_GET['logout']) && $_GET['logout'] == "yes") {
   \Classes\Ctrx::remove_admin_data();
   ctrx_save_cookies();
@@ -12,6 +23,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exec_value'])) {
   $res = \Classes\Ctrx::updateFile($value);
   echo json_encode($res);
   exit;
+}
+
+$errors = [];
+$success = false;
+$error = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updatebtn'])) {
+  $get = \Classes\SQLite::get("select * from users where id = $id")[0] ?? null;
+  if(! $get){
+    redirect("/ctrx/admin/logout");
+  }
+  $username = trim($_POST['username'] ?? "");
+  $pass1 = Validator::post("password1")->trim()->label("Password")->required()->exec();
+  $pass2 = Validator::post("password2")->trim()->label("New password")->required()->minChars(8)->exec();
+  $pass3 = Validator::post("password3")->trim()->label("Re-enter password")->required()->minChars(8)->exec();
+
+  if($get['password'] !== $pass1){
+    Validator::set_error("password1", "Incorrect password");
+  }
+
+  if($pass2 !== $pass3){
+    Validator::set_error("password3", "Password not matched");
+  }
+
+  if($errors = Validator::errors()){
+    //
+  }else{
+    $change = \Classes\SQLite::update("users", ["username"=>$username, "password"=>$pass2], "id=$id");
+    if($change){
+      $success = true;
+    }else{
+      $error = true;
+    }
+  }
+
 }
 
 if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testdb") {
@@ -100,6 +146,38 @@ $size = folderSize('app/php/logs');
       color: #212529;
     }
 
+    #dialogmodal {
+      position: absolute;
+      margin-left: auto;
+      margin-right: auto;
+      align-self: center;
+      width: 25rem;
+
+      >div {
+        padding: 10px;
+      }
+    }
+
+    .btn {
+      padding: 5px 10px;
+      background-color: #0b5ed7;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btnc {
+      cursor: pointer;
+      padding: 5px 10px;
+      background-color: red;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      font-size: 16px;
+    }
+
     .tools-container {
       max-width: 1100px;
       width: 100%;
@@ -119,6 +197,37 @@ $size = folderSize('app/php/logs');
       display: flex;
       align-items: center;
       gap: 0.6rem;
+    }
+    
+    .actions-btn{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      >div{
+        text-align: center;
+      }
+    }
+
+    .form-control {
+      border: solid 1px gray;
+      display: block;
+      width: 100%;
+      padding: .375rem .75rem;
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #212529;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-color: #fff;
+      background-clip: padding-box;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out
+    }
+
+    .form-group {
+      padding: 5px 0px;
     }
 
     .page-title i {
@@ -563,7 +672,7 @@ $size = folderSize('app/php/logs');
         <i class="fas fa-arrow-left"></i> Exit
       </button>
       <button class="execute-btn" id="executeButton" type="button">
-        <i class="fas fa-refresh"></i> Update
+        <i class="fas fa-user"></i> Account
       </button>
     </div>
 
@@ -637,6 +746,66 @@ $size = folderSize('app/php/logs');
       </form>
     </div>
   </div>
+
+  <dialog id="dialogmodal">
+    <div>
+      <div align='center'>
+        <h2>Admin Credentials</h2>
+      </div>
+
+      <?php if($error): ?>
+        <div class="form-group">
+          <div style="background: red; color: white;text-align:center;">Error updating credentials</div>
+        </div>
+      <?php endif; ?>
+
+      <?php if($success): ?>
+        <div class="form-group">
+          <div style="background: green; color: white;text-align:center;">Success</div>
+        </div>
+      <?php endif; ?>
+
+      <form action="" method="post">
+        <div class="form-group">
+          <div><label for="">Username: </label></div>
+          <div><input class="form-control" name="username" placeholder="Enter username" type="text" value="<?= old_value('username') ?? $username ?>"></div>
+          <?php if(isset($errors['username'])): ?>
+            <div style="color:red"><?= $errors['username'] ?></div>
+          <?php endif; ?>
+        </div>
+        <div class="form-group">
+          <div><label for="">Current password: </label></div>
+          <div><input class="form-control" name="password1" placeholder="Enter password" type="password"></div>
+          <?php if(isset($errors['password1'])): ?>
+            <div style="color:red"><?= $errors['password1'] ?></div>
+          <?php endif; ?>
+        </div>
+
+        <div class="form-group">
+          <div><label for="">New Password: </label></div>
+          <div><input class="form-control" name="password2" placeholder="Enter password" type="password"></div>
+          <?php if(isset($errors['password2'])): ?>
+            <div style="color:red"><?= $errors['password2'] ?></div>
+          <?php endif; ?>
+        </div>
+
+        <div class="form-group">
+          <div><label for="">Re-enter password: </label></div>
+          <div><input class="form-control" name="password3" placeholder="Enter password" type="password"></div>
+          <?php if(isset($errors['password3'])): ?>
+            <div style="color:red"><?= $errors['password3'] ?></div>
+          <?php endif; ?>
+        </div>
+
+        <div class="form-group actions-btn">
+          <div><button type="button" class="btnc" onclick="document.querySelector('#dialogmodal').close();" name="updatebtn">CANCEL</button></div>
+          <div><button class="btn" name="updatebtn">UPDATE</button></div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+
 
   <script>
     (function() {
@@ -733,9 +902,7 @@ $size = folderSize('app/php/logs');
       });
 
       function openModal() {
-        modal.classList.add('active');
-        inputField.value = '';
-        inputField.focus();
+        document.querySelector("#dialogmodal").showModal();
       }
 
       function closeModal() {

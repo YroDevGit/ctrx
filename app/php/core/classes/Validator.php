@@ -725,6 +725,16 @@ class Validator
         self::addErrs($post, $message);
     }
 
+    public static function set_error(string $post, string $message)
+    {
+        if(isset(self::$errors[$post]) && self::$errors[$post] != ""){
+            return false;
+        }
+        self::$errors[$post] = $message;
+        self::$failed = true;
+        self::addErrs($post, $message);
+    }
+
     protected static function addErrs(string $post, string $message)
     {
         self::$ers[$post] = $message;

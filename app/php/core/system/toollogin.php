@@ -14,6 +14,7 @@ if(! $existing){
 $error = null;
 $errors = [];
 if (isset($_POST['btn'])) {
+    \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/adm1nFld100505/l0g1n1y00r5o14");
     $username = Validator::post("uname")->label("Username")->required()->exec();
     $password = Validator::post("pword")->label("Password")->required()->exec();
     if ($errors = Validator::errors()) {

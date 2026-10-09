@@ -196,6 +196,12 @@ if (! function_exists("post")) {
     }
 }
 
+if(! function_exists("old_value")){
+    function old_value(string|null $inputname = null, bool|null|string|float $trim = true){
+        return post($inputname, $trim);
+    }
+}
+
 if (! function_exists("postdata")) {
     /** (Any) returns the value of the post */
     function postdata()

@@ -405,7 +405,7 @@ if (str_starts_with($req, "api/")) {
             $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
             if (! $data) {
-                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/login1y00r5o14");
+                \Classes\Ctrx::page_rate_limit(10, 60, "ctrx/adm1n100505/l0g1n1y00r5o14");
                 include_once "app/php/core/system/toollogin.php";
                 return;
             }
