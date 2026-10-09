@@ -1017,6 +1017,12 @@ if (! function_exists("_bootstrap_js")) {
     }
 }
 
+if(! function_exists("ctrx_icons")){
+    function ctrx_icons(){
+        return "<link rel='stylesheet' href='/views/code/src/font/icons.css'>";
+    }
+}
+
 if(! function_exists("str_img_as_array")){
     function str_img_as_array(string|null $imageString, $seperator = "||"): array{
         if(! $imageString) return [];

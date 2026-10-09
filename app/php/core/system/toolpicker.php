@@ -11,6 +11,340 @@ if (! $data) {
 $username = $data['username'] ?? null;
 $id = $data['id'];
 
+
+$errmsg = "";
+$succmsg = "";
+
+if (isset($_GET['importConfig']) && $_GET['importConfig'] == "true") {
+  $file = 'ctrx.db';
+  if (! file_exists($file)) {
+    $errmsg = "Failed to import configs: ctrx.db not found";
+    redirect(path: "/ctrx", time: 2, exit: false);
+  } else {
+    @copy($file, 'app/php/db/ctrx.db');
+    @unlink($file);
+    $succmsg = "Import config success, the page will restart, please wait...";
+    redirect(path: "ctrx/admin/logout", time: 2, exit: false);
+  }
+}
+
+if (isset($_GET['exportConfig']) && $_GET['exportConfig'] == "true") {
+  $file = 'app/php/db/ctrx.db';
+
+  header('Content-Type: application/octet-stream');
+  header('Content-Disposition: attachment; filename="ctrx.db"');
+  header('Content-Length: ' . filesize($file));
+
+  readfile($file);
+  exit;
+}
+
+function ctrx_zip($srcDir, $zipFile, $rootInZip = '')
+{
+  if (!is_dir($srcDir)) return "source dir not found";
+
+  $srcDir = rtrim($srcDir, '/\\');
+  $rootInZip = trim(str_replace('\\', '/', $rootInZip), '/');
+  if ($rootInZip !== '') $rootInZip .= '/';
+
+  $files = [];
+  $it = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS),
+    RecursiveIteratorIterator::SELF_FIRST
+  );
+  foreach ($it as $path) {
+    if ($path->isFile()) {
+      $files[] = $path->getPathname();
+    }
+  }
+
+  $fp = fopen($zipFile, 'wb');
+  if (!$fp) return "cannot create zip";
+
+  $central = '';
+  $offset  = 0;
+  $count   = 0;
+
+  foreach ($files as $file) {
+    $content = file_get_contents($file);
+    if ($content === false) {
+      fclose($fp);
+      return "cannot read $file";
+    }
+
+    $localName = $rootInZip . ltrim(str_replace('\\', '/', substr($file, strlen($srcDir))), '/');
+    $crc       = crc32($content);
+    $usize     = strlen($content);
+    $csize     = $usize;
+    $nameLen   = strlen($localName);
+
+    $lfh  = "PK\x03\x04";
+    $lfh .= pack('v', 20);
+    $lfh .= pack('v', 0);
+    $lfh .= pack('v', 0);
+    $lfh .= pack('v', 0);
+    $lfh .= pack('v', 0);
+    $lfh .= pack('V', $crc);
+    $lfh .= pack('V', $csize);
+    $lfh .= pack('V', $usize);
+    $lfh .= pack('v', $nameLen);
+    $lfh .= pack('v', 0);
+    $lfh .= $localName;
+
+    fwrite($fp, $lfh);
+    fwrite($fp, $content);
+
+    $cd  = "PK\x01\x02";
+    $cd .= pack('v', 20);
+    $cd .= pack('v', 20);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('V', $crc);
+    $cd .= pack('V', $csize);
+    $cd .= pack('V', $usize);
+    $cd .= pack('v', $nameLen);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('v', 0);
+    $cd .= pack('V', 0);
+    $cd .= pack('V', $offset);
+    $cd .= $localName;
+
+    $central .= $cd;
+    $offset  += strlen($lfh) + strlen($content);
+    $count++;
+  }
+
+  $cdOffset = $offset;
+  $cdSize   = strlen($central);
+
+  $eocd  = "PK\x05\x06";
+  $eocd .= pack('v', 0);
+  $eocd .= pack('v', 0);
+  $eocd .= pack('v', $count);
+  $eocd .= pack('v', $count);
+  $eocd .= pack('V', $cdSize);
+  $eocd .= pack('V', $cdOffset);
+  $eocd .= pack('v', 0);
+
+  fwrite($fp, $central);
+  fwrite($fp, $eocd);
+  fclose($fp);
+
+  return $count > 0 ? true : "no files to zip";
+}
+
+function ctrx_unzip($zipFile, $destDir)
+{
+  $data = file_get_contents($zipFile);
+  if ($data === false) return "cannot read zip";
+
+  $len = strlen($data);
+
+  $eocdPos = false;
+  $scanLimit = min($len, 65557);
+  for ($i = $len - 22; $i >= $len - $scanLimit && $i >= 0; $i--) {
+    if (substr($data, $i, 4) === "PK\x05\x06") {
+      $eocdPos = $i;
+      break;
+    }
+  }
+  if ($eocdPos === false) return "invalid zip (no EOCD)";
+
+  $eocd = unpack(
+    "vdisk/vcddisk/vcdcount/vtotal/Vcdsize/Vcdoffset/vcommentlen",
+    substr($data, $eocdPos + 4, 18)
+  );
+
+  $cdOffset = $eocd['cdoffset'];
+  $cdCount  = $eocd['total'];
+
+  $entries = [];
+  $p = $cdOffset;
+  for ($i = 0; $i < $cdCount; $i++) {
+    if (substr($data, $p, 4) !== "PK\x01\x02") break;
+
+    $cd = unpack(
+      "vversionmade/vversionneed/vflags/vmethod/vmtime/vmdate/" .
+        "Vcrc/Vcsize/Vusize/vnamelen/vextralen/vcommentlen/" .
+        "vdiskstart/vinternalattr/Vexternalattr/Vlocaloffset",
+      substr($data, $p + 4, 42)
+    );
+    $p += 46;
+
+    $name = substr($data, $p, $cd['namelen']);
+    $p += $cd['namelen'] + $cd['extralen'] + $cd['commentlen'];
+
+    $entries[] = [
+      'name'   => str_replace('\\', '/', $name),
+      'method' => $cd['method'],
+      'csize'  => $cd['csize'],
+      'usize'  => $cd['usize'],
+      'offset' => $cd['localoffset'],
+    ];
+  }
+
+  if (empty($entries)) return "no entries found";
+
+  $firstSeg = null;
+  $allShare = true;
+  foreach ($entries as $e) {
+    $n = ltrim($e['name'], '/');
+    if ($n === '' || substr($n, -1) === '/') continue;
+    $seg = explode('/', $n, 2)[0];
+    if ($firstSeg === null) {
+      $firstSeg = $seg;
+    } elseif ($seg !== $firstSeg) {
+      $allShare = false;
+      break;
+    }
+  }
+  $stripPrefix = ($allShare && $firstSeg !== null) ? $firstSeg . '/' : '';
+
+  $count = 0;
+  foreach ($entries as $e) {
+    $name = ltrim($e['name'], '/');
+    if ($name === '' || substr($name, -1) === '/') continue;
+
+    if ($stripPrefix !== '' && strpos($name, $stripPrefix) === 0) {
+      $name = substr($name, strlen($stripPrefix));
+    }
+    if ($name === '') continue;
+
+    if (strpos($name, '..') !== false || strpos($name, '/') === 0) {
+      return "unsafe path: " . $name;
+    }
+
+    $lo = $e['offset'];
+    if (substr($data, $lo, 4) !== "PK\x03\x04") {
+      return "bad local header for " . $e['name'];
+    }
+    $lh = unpack(
+      "vversion/vflags/vmethod/vmtime/vmdate/Vcrc/Vcsize/Vusize/vnamelen/vextralen",
+      substr($data, $lo + 4, 26)
+    );
+    $payloadPos = $lo + 30 + $lh['namelen'] + $lh['extralen'];
+
+    $csize = $e['csize'];
+    $raw   = substr($data, $payloadPos, $csize);
+
+    if ($e['method'] === 8) {
+      $content = @gzinflate($raw);
+      if ($content === false) {
+        return "inflate failed for " . $e['name'] . " (method 8, csize=" . $csize . ")";
+      }
+    } elseif ($e['method'] === 0) {
+      $content = $raw;
+    } else {
+      return "unsupported compression method " . $e['method'] . " for " . $e['name'];
+    }
+
+    $target = rtrim($destDir, '/\\') . DIRECTORY_SEPARATOR . $name;
+    @mkdir(dirname($target), 0755, true);
+    if (file_put_contents($target, $content) === false) {
+      return "cannot write " . $target;
+    }
+    $count++;
+  }
+
+  return $count > 0 ? true : "no entries extracted";
+}
+
+if (isset($_GET['exportStorage']) && $_GET['exportStorage'] == "true") {
+  $dir = 'views/core/partials/storage';
+
+  if (!is_dir($dir)) {
+    $errmsg = "Failed to export storage: folder not found";
+    redirect(path: "/ctrx", time: 2, exit: false);
+  } else {
+    $tmpZip = tempnam(sys_get_temp_dir(), 'storage_') . '.zip';
+    $result = ctrx_zip($dir, $tmpZip, 'storage');
+
+    if ($result !== true) {
+      @unlink($tmpZip);
+      $errmsg = "Failed to export storage: " . $result;
+      redirect(path: "/ctrx", time: 2, exit: false);
+    }
+
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="storage.zip"');
+    header('Content-Length: ' . filesize($tmpZip));
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    readfile($tmpZip);
+    @unlink($tmpZip);
+    exit;
+  }
+}
+
+if (isset($_POST['importStorage']) && $_POST['importStorage'] == "true") {
+  if (empty($_FILES['storage_zip']) || $_FILES['storage_zip']['error'] !== UPLOAD_ERR_OK) {
+    $errmsg = "Failed to import storage: no file uploaded";
+    redirect(path: "/ctrx", time: 2, exit: false);
+  } else {
+    $extractDir = 'views/core/partials/storage';
+    if (!is_dir($extractDir)) {
+      @mkdir($extractDir, 0755, true);
+    }
+
+    $tmpZip = tempnam(sys_get_temp_dir(), 'storage_') . '.zip';
+    if (!move_uploaded_file($_FILES['storage_zip']['tmp_name'], $tmpZip)) {
+      $errmsg = "Failed to import storage: could not save upload";
+    }
+
+    $result = ctrx_unzip($tmpZip, $extractDir);
+    @unlink($tmpZip);
+
+    if ($result !== true) {
+      $errmsg = "Failed to import storage: " . $result;
+    }
+
+    $succmsg = "Import storage success";
+  }
+}
+
+if (isset($_POST['importDb']) && $_POST['importDb'] == "true") {
+  if (empty($_FILES['db_file']) || $_FILES['db_file']['error'] !== UPLOAD_ERR_OK) {
+    $errmsg = "Failed to import configs: no file uploaded";
+    redirect(path: "/ctrx", time: 2, exit: false);
+  } else {
+    $tmp = $_FILES['db_file']['tmp_name'];
+
+    $fh = fopen($tmp, 'rb');
+    $magic = fread($fh, 16);
+    fclose($fh);
+
+    if ($magic !== "SQLite format 3\x00") {
+      $errmsg = "Failed to import configs: not a valid SQLite database";
+      redirect(path: "/ctrx", time: 2, exit: false);
+    }
+
+    $dest = 'app/php/db/ctrx.db';
+
+    if (!is_dir(dirname($dest))) {
+      @mkdir(dirname($dest), 0755, true);
+    }
+
+    if (file_exists($dest)) {
+      @copy($dest, $dest . '.bak');
+    }
+
+    unlink($dest);
+
+    if (!move_uploaded_file($tmp, $dest)) {
+      $errmsg = "Failed to import configs: could not save file";
+      redirect(path: "/ctrx", time: 2, exit: false);
+    }
+
+    $succmsg = "Import configs success, the page will restart, please wait...";
+    redirect(path: "ctrx/admin/logout", time: 2, exit: false);
+  }
+}
+
 if (isset($_GET['logout']) && $_GET['logout'] == "yes") {
   \Classes\Ctrx::remove_admin_data();
   ctrx_save_cookies();
@@ -29,9 +363,11 @@ $errors = [];
 $success = false;
 $error = false;
 
+$submitd = false;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updatebtn'])) {
   $get = \Classes\SQLite::get("select * from users where id = $id")[0] ?? null;
-  if(! $get){
+  if (! $get) {
     redirect("/ctrx/admin/logout");
   }
   $username = trim($_POST['username'] ?? "");
@@ -39,25 +375,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updatebtn'])) {
   $pass2 = Validator::post("password2")->trim()->label("New password")->required()->minChars(8)->exec();
   $pass3 = Validator::post("password3")->trim()->label("Re-enter password")->required()->minChars(8)->exec();
 
-  if($get['password'] !== $pass1){
+  if ($get['password'] !== $pass1) {
     Validator::set_error("password1", "Incorrect password");
   }
 
-  if($pass2 !== $pass3){
+  if ($pass2 !== $pass3) {
     Validator::set_error("password3", "Password not matched");
   }
 
-  if($errors = Validator::errors()){
-    //
-  }else{
-    $change = \Classes\SQLite::update("users", ["username"=>$username, "password"=>$pass2], "id=$id");
-    if($change){
+  if ($errors = Validator::errors()) {
+  } else {
+    $change = \Classes\SQLite::update("users", ["username" => $username, "password" => $pass2], "id=$id");
+    if ($change) {
       $success = true;
-    }else{
+    } else {
       $error = true;
     }
   }
-
+  $submitd = true;
 }
 
 if (isset($_GET['deltestdb']) && $_GET['deltestdb'] == "testdb") {
@@ -125,7 +460,7 @@ $size = folderSize('app/php/logs');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ctrx · Tools</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <?=ctrx_icons()?>
   <style>
     * {
       margin: 0;
@@ -147,6 +482,13 @@ $size = folderSize('app/php/logs');
     }
 
     #dialogmodal {
+      border: none;
+      border-radius: 1rem;
+      padding: 0;
+      width: 26rem;
+      max-width: 92vw;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      background: #ffffff;
       position: absolute;
       margin-left: auto;
       margin-right: auto;
@@ -156,6 +498,174 @@ $size = folderSize('app/php/logs');
       >div {
         padding: 10px;
       }
+    }
+
+    #dialogmodal::backdrop {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(3px);
+    }
+
+    #dialogmodal>div {
+      padding: 1.75rem 1.75rem 1.5rem;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .modal-header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e8f0ff, #d6e4ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0d6efd;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .modal-header-text h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #0d1b2a;
+      line-height: 1.2;
+    }
+
+    .modal-header-text p {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-top: 0.15rem;
+    }
+
+    .field {
+      margin-bottom: 0.95rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.01em;
+    }
+
+    .field .input-wrap {
+      position: relative;
+    }
+
+    .field .input-wrap i.field-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #adb5bd;
+      font-size: 0.85rem;
+      pointer-events: none;
+      transition: color 0.15s;
+    }
+
+    .field input.form-control {
+      width: 100%;
+      padding: 0.6rem 0.85rem 0.6rem 2.35rem;
+      font-size: 0.9rem;
+      color: #212529;
+      background: #f9fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 0.5rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+
+    .field input.form-control:focus {
+      background: #ffffff;
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
+    }
+
+    .field input.form-control:focus~i.field-icon,
+    .field .input-wrap:focus-within i.field-icon {
+      color: #0d6efd;
+    }
+
+    .field .err {
+      color: #dc3545;
+      font-size: 0.75rem;
+      margin-top: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .alert {
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.5rem;
+      font-size: 0.82rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .alert-success {
+      background: #e7f6ec;
+      color: #1a7f37;
+      border: 1px solid #c3e9cf;
+    }
+
+    .alert-error {
+      background: #fdecec;
+      color: #b02a37;
+      border: 1px solid #f5c2c7;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      margin-top: 1.4rem;
+      padding-top: 1.1rem;
+      border-top: 1px solid #eef2f7;
+    }
+
+    .modal-footer button {
+      padding: 0.55rem 1.35rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .modal-footer .btn-cancel {
+      background: #ffffff;
+      border-color: #d9dee5;
+      color: #495057;
+    }
+
+    .modal-footer .btn-cancel:hover {
+      background: #f3f5f9;
+      border-color: #c5ccd6;
+    }
+
+    .modal-footer .btn-save {
+      background: #0d6efd;
+      color: #fff;
+    }
+
+    .modal-footer .btn-save:hover {
+      background: #0b5ed7;
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.28);
     }
 
     .btn {
@@ -198,11 +708,12 @@ $size = folderSize('app/php/logs');
       align-items: center;
       gap: 0.6rem;
     }
-    
-    .actions-btn{
+
+    .actions-btn {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      >div{
+
+      >div {
         text-align: center;
       }
     }
@@ -540,7 +1051,8 @@ $size = folderSize('app/php/logs');
       color: #212529;
     }
 
-    .modal-box input[type="text"] {
+    .modal-box input[type="text"],
+    .modal-box input[type="file"] {
       width: 100%;
       padding: 0.6rem 1rem;
       border: 1px solid #ced4da;
@@ -548,9 +1060,11 @@ $size = folderSize('app/php/logs');
       margin: 0.4rem 0 1.2rem;
       font-size: 1rem;
       transition: 0.15s;
+      background: #fff;
     }
 
-    .modal-box input[type="text"]:focus {
+    .modal-box input[type="text"]:focus,
+    .modal-box input[type="file"]:focus {
       border-color: #0d6efd;
       outline: 0;
       box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
@@ -669,12 +1183,44 @@ $size = folderSize('app/php/logs');
 
     <div class="top-bar">
       <button class="back-btn" id="backButton" aria-label="Go back">
-        <i class="fas fa-arrow-left"></i> Exit
+      <span class="icon"></span> Exit
       </button>
-      <button class="execute-btn" id="executeButton" type="button">
-        <i class="fas fa-user"></i> Account
-      </button>
+      <div>
+        <button class="execute-btn" type="button" id="importDbButton">
+        <span class="icon"></span> Import config
+        </button>
+        <a href="?exportConfig=true" onclick="return confirm('Proceed to export configs?')" style="text-decoration: none;">
+          <button class="execute-btn" type="button">
+          <span class="icon"></span> Export configs
+          </button>
+        </a>
+        <a href="?importConfig=true" onclick="return confirm('Do you want to proceed importing configs?');" style="text-decoration: none;">
+          <button class="execute-btn" type="button">
+          <span class="icon"></span> Load configs
+          </button>
+        </a>
+        <button class="execute-btn" type="button" id="importStorageButton">
+        <span class="icon"></span> Import storage
+        </button>
+        <a href="?exportStorage=true" onclick="return confirm('Proceed to export storage?')" style="text-decoration: none;">
+          <button class="execute-btn" type="button">
+          <span class="icon"></span> Export storage
+          </button>
+        </a>
+        <button class="execute-btn" id="executeButton" type="button">
+        <span class="icon"></span> Account
+        </button>
+      </div>
+
     </div>
+
+    <?php if ($errmsg): ?>
+      <div style="background:red; color: white; text-align:center;"><?= $errmsg ?></div>
+    <?php endif; ?>
+
+    <?php if ($succmsg): ?>
+      <div style="background:green; color: white; text-align:center;"><?= $succmsg ?></div>
+    <?php endif; ?>
 
     <?php if (file_exists("views/pages/test/db.php")): ?>
       <div style="color:red;">
@@ -690,28 +1236,28 @@ $size = folderSize('app/php/logs');
 
     <div class="tool-grid">
       <div class="tool-item" data-tool="database" data-destination="/ctrx/database">
-        <div class="tool-icon"><i class="fas fa-database"></i></div>
+        <div class="tool-icon"><span class="icon"></span></div>
         <div class="tool-name">Database</div>
         <div class="tool-desc">Manage System database</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
       <div class="tool-item" data-tool="import-export" data-destination="/ctrx/data">
-        <div class="tool-icon"><i class="fas fa-file-import"></i></div>
+        <div class="tool-icon"><span class="icon"></span></div>
         <div class="tool-name">Import &amp; Export</div>
         <div class="tool-desc">Import & Export table data</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
       <div class="tool-item" data-tool="import-export" data-destination="/ctrx/roles">
-        <div class="tool-icon"><i class="fas fa-users"></i></div>
+        <div class="tool-icon"><span class="icon"></span></div>
         <div class="tool-name">Roles</div>
         <div class="tool-desc">Manage user roles</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
       </div>
 
       <div class="tool-item" data-tool="translations" data-destination="/ctrx/translations">
-        <div class="tool-icon"><i class="fas fa-language"></i></div>
+        <div class="tool-icon"><span class="icon"></span></div>
         <div class="tool-name">Translations</div>
         <div class="tool-desc">Custom translations</div>
         <span class="click-badge"><i class="far fa-hand-pointer"></i> click</span>
@@ -720,15 +1266,15 @@ $size = folderSize('app/php/logs');
 
     <div class="back-section">
       <div class="back-hint">
-        <i class="fas fa-arrow-left"></i> Use the Back button above to return
+      <span class="icon"></span> Use the Back button above to return
       </div>
     </div>
 
     <div class="footer-note">
       <div class="footer-actions">
-        <a href="/ctrx/logs" style="font-weight: bold;"><span><i class="fas fa-file"></i>File logs (<?= formatSize($size) ?>)</span></a>
+        <a href="/ctrx/logs" style="font-weight: bold;"><span><span class="icon"></span>File logs (<?= formatSize($size) ?>)</span></a>
       </div>
-      <span class="badge-soft"><i class="fas fa-code"></i> no hardcoded links · you decide</span>
+      <span class="badge-soft"><span class="icon"></span> no hardcoded links · you decide</span>
     </div>
   </div>
 
@@ -747,65 +1293,118 @@ $size = folderSize('app/php/logs');
     </div>
   </div>
 
+  <div class="modal-overlay" id="importDbModal">
+    <div class="modal-box">
+      <h3><span class="icon"></span> Import Configs</h3>
+      <p>Upload a .db or .sqlite file to replace app/php/db/ctrx.db</p>
+      <form id="importDbForm" method="post" action="" enctype="multipart/form-data">
+        <input type="hidden" name="importDb" value="true">
+        <label for="dbFile">SQLite file</label>
+        <input type="file" id="dbFile" name="db_file" accept=".db,.sqlite,.sqlite3" required>
+        <div class="modal-actions" style="margin-top:1.2rem;">
+          <button type="button" class="btn-cancel" id="importDbCancel">Cancel</button>
+          <button type="submit" class="btn-submit" onclick="return confirm('This will overwrite the current configs database. Continue?');"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="importStorageModal">
+    <div class="modal-box">
+      <h3><span class="icon" style="color:#0d6efd; margin-right:8px;"></span> Import storage</h3>
+      <p>Upload a .zip file to extract into views/core/partials/storage/</p>
+      <form id="importStorageForm" method="post" action="" enctype="multipart/form-data">
+        <input type="hidden" name="importStorage" value="true">
+        <label for="storageZip">Zip file</label>
+        <input type="file" id="storageZip" name="storage_zip" accept=".zip" required>
+        <div class="modal-actions" style="margin-top:1.2rem;">
+          <button type="button" class="btn-cancel" id="importStorageCancel">Cancel</button>
+          <button type="submit" class="btn-submit"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <dialog id="dialogmodal">
     <div>
-      <div align='center'>
-        <h2>Admin Credentials</h2>
+      <div class="modal-header">
+        <div class="modal-header-icon"><span class="icon"></span></div>
+        <div class="modal-header-text">
+          <h2>Admin Credentials</h2>
+          <p>Update your username and password</p>
+        </div>
       </div>
 
-      <?php if($error): ?>
-        <div class="form-group">
-          <div style="background: red; color: white;text-align:center;">Error updating credentials</div>
+      <?php if ($error): ?>
+        <div class="alert alert-error">
+          <i class="fas fa-circle-exclamation"></i> Error updating credentials
         </div>
       <?php endif; ?>
 
-      <?php if($success): ?>
-        <div class="form-group">
-          <div style="background: green; color: white;text-align:center;">Success</div>
+      <?php if ($success): ?>
+        <div class="alert alert-success">
+          <i class="fas fa-circle-check"></i> Credentials updated successfully
         </div>
       <?php endif; ?>
 
       <form action="" method="post">
-        <div class="form-group">
-          <div><label for="">Username: </label></div>
-          <div><input class="form-control" name="username" placeholder="Enter username" type="text" value="<?= old_value('username') ?? $username ?>"></div>
-          <?php if(isset($errors['username'])): ?>
-            <div style="color:red"><?= $errors['username'] ?></div>
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <input class="form-control" id="username" name="username" placeholder="Enter username" type="text" value="<?= old_value('username') ?? $username ?>">
+            <i class="icon field-icon"></i>
+          </div>
+          <?php if (isset($errors['username'])): ?>
+            <div class="err"><i class="fas fa-circle-exclamation"></i><?= $errors['username'] ?></div>
           <?php endif; ?>
         </div>
-        <div class="form-group">
-          <div><label for="">Current password: </label></div>
-          <div><input class="form-control" name="password1" placeholder="Enter password" type="password"></div>
-          <?php if(isset($errors['password1'])): ?>
-            <div style="color:red"><?= $errors['password1'] ?></div>
-          <?php endif; ?>
-        </div>
-
-        <div class="form-group">
-          <div><label for="">New Password: </label></div>
-          <div><input class="form-control" name="password2" placeholder="Enter password" type="password"></div>
-          <?php if(isset($errors['password2'])): ?>
-            <div style="color:red"><?= $errors['password2'] ?></div>
-          <?php endif; ?>
-        </div>
-
-        <div class="form-group">
-          <div><label for="">Re-enter password: </label></div>
-          <div><input class="form-control" name="password3" placeholder="Enter password" type="password"></div>
-          <?php if(isset($errors['password3'])): ?>
-            <div style="color:red"><?= $errors['password3'] ?></div>
+        <div class="field">
+          <label for="password1">Current password</label>
+          <div class="input-wrap">
+            <input class="form-control" id="password1" name="password1" placeholder="Enter current password" type="password">
+            <i class="icon field-icon"></i>
+          </div>
+          <?php if (isset($errors['password1'])): ?>
+            <div class="err"><i class="fas fa-circle-exclamation"></i><?= $errors['password1'] ?></div>
           <?php endif; ?>
         </div>
 
-        <div class="form-group actions-btn">
-          <div><button type="button" class="btnc" onclick="document.querySelector('#dialogmodal').close();" name="updatebtn">CANCEL</button></div>
-          <div><button class="btn" name="updatebtn">UPDATE</button></div>
+        <div class="field">
+          <label for="password2">New password</label>
+          <div class="input-wrap">
+            <input class="form-control" id="password2" name="password2" placeholder="Enter new password" type="password">
+            <i class="icon field-icon"></i>
+          </div>
+          <?php if (isset($errors['password2'])): ?>
+            <div class="err"><i class="fas fa-circle-exclamation"></i><?= $errors['password2'] ?></div>
+          <?php endif; ?>
+        </div>
+
+        <div class="field">
+          <label for="password3">Re-enter password</label>
+          <div class="input-wrap">
+            <input class="form-control" id="password3" name="password3" placeholder="Re-enter new password" type="password">
+            <i class="icon field-icon"></i>
+          </div>
+          <?php if (isset($errors['password3'])): ?>
+            <div class="err"><i class="fas fa-circle-exclamation"></i><?= $errors['password3'] ?></div>
+          <?php endif; ?>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="document.querySelector('#dialogmodal').close();">Cancel</button>
+          <button type="submit" class="btn-save" name="updatebtn">Save changes</button>
         </div>
       </form>
     </div>
   </dialog>
 
 
+  <?php if ($submitd): ?>
+    <script>
+      document.querySelector("#dialogmodal").showModal();
+    </script>
+  <?php endif; ?>
 
   <script>
     (function() {
@@ -919,6 +1518,54 @@ $size = folderSize('app/php/logs');
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && modal.classList.contains('active')) {
           closeModal();
+        }
+      });
+
+      const importStorageButton = document.getElementById('importStorageButton');
+      const importStorageModal = document.getElementById('importStorageModal');
+      const importStorageCancel = document.getElementById('importStorageCancel');
+
+      importStorageButton.addEventListener('click', function() {
+        importStorageModal.classList.add('active');
+      });
+
+      importStorageCancel.addEventListener('click', function() {
+        importStorageModal.classList.remove('active');
+      });
+
+      importStorageModal.addEventListener('click', function(e) {
+        if (e.target === importStorageModal) {
+          importStorageModal.classList.remove('active');
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && importStorageModal.classList.contains('active')) {
+          importStorageModal.classList.remove('active');
+        }
+      });
+
+      const importDbButton = document.getElementById('importDbButton');
+      const importDbModal = document.getElementById('importDbModal');
+      const importDbCancel = document.getElementById('importDbCancel');
+
+      importDbButton.addEventListener('click', function() {
+        importDbModal.classList.add('active');
+      });
+
+      importDbCancel.addEventListener('click', function() {
+        importDbModal.classList.remove('active');
+      });
+
+      importDbModal.addEventListener('click', function(e) {
+        if (e.target === importDbModal) {
+          importDbModal.classList.remove('active');
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && importDbModal.classList.contains('active')) {
+          importDbModal.classList.remove('active');
         }
       });
     })();

@@ -641,6 +641,27 @@ if ($route == "run" || $route == "server") {
         echo "❌ Failed";
     }
     exit;
+}else if($route == "export:configs"){
+    $res = \Classes\Ctrx::_exportConfig();
+    if($res){
+        echo "✅ ctrx.db exported";
+    }else{
+        echo "❌ Failed to export";
+    }
+    exit;
+}else if($route == "import:configs"){
+    if ($filename == "") {
+        $filename = "ctrx.db";
+    }
+    $import = \Classes\Ctrx::_importConfigs($filename);
+    if($import == 1 || $import == 2){
+        echo "✅ Config import successful\n";
+    }else if($import == 404){
+        echo "❌ $filename not found";
+    }else{
+        echo "❌ Failed to import configs";
+    }
+    exit;
 }else if($route == "account:update"){
     if($filename == ""){
         echo "❌ Please enter username:password";

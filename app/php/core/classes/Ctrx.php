@@ -399,7 +399,8 @@ class Ctrx
         return in_array($file, scandir($dir), true);
     }
 
-    public static function CachedHeader(int $age, $privacy = "private"){
+    public static function CachedHeader(int $age, $privacy = "private")
+    {
         $allowed = ['private', 'public'];
         if (!in_array($privacy, $allowed)) {
             $privacy = 'private';
@@ -505,10 +506,10 @@ class Ctrx
 
     public static function get_logout_page(): null|int|string
     {
-        try{
+        try {
             $ctrxdata = \Classes\Ccookie::get("ctrx_user_logout_page") ?? null;
             return $ctrxdata;
-        }catch(Throwable $e){
+        } catch (Throwable $e) {
             add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
             return null;
         }
@@ -598,16 +599,109 @@ class Ctrx
         return true;
     }
 
-    public static function set_admin_data(array $data){
+    public static function _importConfigs(string|null $filename)
+    {
+        if ($filename == "--ctrx") {
+            return self::_downloadMyConfig();
+        }
+
+        if (! file_exists($filename)) {
+            return 404;
+        }
+
+        @unlink("app/php/db/ctrx.db");
+        @copy($filename, "app/php/db/ctrx.db");
+        return 1;
+    }
+
+    private static function _exportConfig()
+    {
+        @copy("app/php/db/ctrx.db", "ctrx.db");
+        return true;
+    }
+
+    public static function _importStorage()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['archive'])) {
+            die('No file uploaded.');
+        }
+
+        $file = $_FILES['archive'];
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            die('Upload failed, error code: ' . $file['error']);
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'zip') {
+            die('Only .zip files are allowed.');
+        }
+
+        $extractDir = 'views/core/partials/storage';
+
+        if (!is_dir($extractDir) && !mkdir($extractDir, 0755, true) && !is_dir($extractDir)) {
+            die('Could not create: ' . $extractDir);
+        }
+
+        if (!is_writable($extractDir)) {
+            die('Not writable: ' . $extractDir);
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($file['tmp_name']) !== true) {
+            die('Could not open ZIP archive.');
+        }
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (str_contains($name, '..') || str_starts_with($name, '/')) {
+                $zip->close();
+                die('Unsafe path in archive: ' . htmlspecialchars($name));
+            }
+        }
+
+        if (!$zip->extractTo($extractDir)) {
+            $zip->close();
+            die('Extraction failed.');
+        }
+
+        $count = $zip->numFiles;
+        $zip->close();
+    }
+
+    private static function _downloadMyConfig()
+    {
+        $url = 'https://raw.githubusercontent.com/YroDevGit/ctrx/main/app/php/db/ctrx.db';
+        $destPath  = 'app/php/db/ctrx.db';
+
+        if (!is_dir(dirname($destPath))) {
+            @mkdir(dirname($destPath), 0755, true);
+        }
+
+        $data = @file_get_contents($url);
+
+        if ($data === false) {
+            die("Download failed.\n");
+        }
+
+        @unlink("app/php/db/ctrx.db");
+        @file_put_contents($destPath, $data);
+        return 2;
+    }
+
+    public static function set_admin_data(array $data)
+    {
         $ctrxdata = \Classes\Ccookie::add("ctrx_user_data_admin", $data, 60);
     }
 
-    public static function get_admin_data(){
+    public static function get_admin_data()
+    {
         $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
         return $ctrxdata;
     }
 
-    public static function remove_admin_data(){
+    public static function remove_admin_data()
+    {
         \Classes\Ccookie::delete("ctrx_user_data_admin");
     }
 
@@ -763,9 +857,10 @@ class Ctrx
         return false;
     }
 
-    public static function hasAdminUser(){
+    public static function hasAdminUser()
+    {
         $data = \Classes\SQLite::get("select * from users");
-        if(! $data) return false;
+        if (! $data) return false;
         return true;
     }
 
@@ -1150,23 +1245,25 @@ class Ctrx
         }
     }
 
-    static function _isKabab(){
+    static function _isKabab()
+    {
         $kabab = $GLOBALS['ctrx_views_conf_a_vars']['kebab_case'] ?? false;
         return $kabab;
     }
 
-    static function _makeKebab($string){
+    static function _makeKebab($string)
+    {
         $string = str_replace("/", "-", $string);
         return $string;
     }
 
-    static function _checkKebab($string){
+    static function _checkKebab($string)
+    {
         $kebab = $GLOBALS['ctrx_views_conf_a_vars']['kebab_case'] ?? false;
-        if($kebab){
+        if ($kebab) {
             $string = str_replace("/", "-", $string);
             return $string;
-        }
-        else{
+        } else {
             $string = str_replace("-", "/", $string);
             return $string;
         }
@@ -1214,7 +1311,7 @@ class Ctrx
                 }
                 echo $file;
                 try {
-                    if(str_contains($file, "/_")) continue;
+                    if (str_contains($file, "/_")) continue;
                     if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
                         throw new RuntimeException("cannot create $dir");
                     }
@@ -1243,7 +1340,7 @@ class Ctrx
                         continue;
                     }
                     try {
-                        if(str_contains($file, "/_")) continue;
+                        if (str_contains($file, "/_")) continue;
                         if (!rename($file, $target)) {
                             throw new RuntimeException("rename failed");
                         }

@@ -1,0 +1,1260 @@
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
+namespace splitbrain\PHPArchive;
+
+use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\TestCase;
+
+class ZipTestCase extends TestCase
+{
+    /** @var int callback counter */
+    protected $counter = 0;
+
+    /** @inheritdoc */
+    protected function setUp() : void
+    {
+        vfsStream::setup('home_root_path');
+    }
+
+    /**
+     * Returns the current dir with Linux style separator (/)
+     *
+     * This makes it easier to run the tests on Windows as well.
+     *
+     * @return string
+     */
+    protected function getDir()
+    {
+        return str_replace('\\', '/', __DIR__);
+    }
+
+    /**
+     * Callback check function
+     * @param FileInfo $fileinfo
+     */
+    public function increaseCounter($fileinfo) {
+        $this->assertInstanceOf('\\splitbrain\\PHPArchive\\FileInfo', $fileinfo);
+        $this->counter++;
+    }
+
+    /*
+     * dependency for tests needing zip extension to pass
+     */
+    public function testExtZipIsInstalled()
+    {
+        $this->assertTrue(function_exists('zip_open'));
+    }
+
+    public function testMissing()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $tar = new Zip();
+        $tar->open('nope.zip');
+    }
+
+    /**
+     * Feeding a file without an End-of-Central-Directory signature must raise
+     * ArchiveCorruptedException, not bubble up PHP warnings from unpack().
+     */
+    public function testNotAZip()
+    {
+        $tmp = sys_get_temp_dir() . '/phpa-bad-' . md5(uniqid('', true)) . '.bin';
+        file_put_contents($tmp, str_repeat('this is not a zip file ', 50));
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            iterator_to_array($zip->yieldContents());
+        } finally {
+            try {
+                $zip->close();
+            } catch(\Exception $e) {
+                /* already errored */
+            }
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * A truncated file (smaller than the EOCD record) must also fail cleanly.
+     */
+    public function testTruncatedFile()
+    {
+        $tmp = sys_get_temp_dir() . '/phpa-trunc-' . md5(uniqid('', true)) . '.bin';
+        file_put_contents($tmp, "PK\x03\x04");
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            iterator_to_array($zip->yieldContents());
+        } finally {
+            try {
+                $zip->close();
+            } catch(\Exception $e) {
+                /* already errored */
+            }
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * A file ending right after the End-of-Central-Directory signature must fail cleanly.
+     */
+    public function testTruncatedCentralDirectoryRecord()
+    {
+        $tmp = sys_get_temp_dir() . '/phpa-eocd-' . md5(uniqid('', true)) . '.bin';
+        file_put_contents($tmp, "PK\x05\x06");
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $this->expectExceptionMessage('Could not read end of central directory record');
+            iterator_to_array($zip->yieldContents());
+        } finally {
+            try {
+                $zip->close();
+            } catch(\Exception $e) {
+                /* already errored */
+            }
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * Create a single entry ZIP archive with the given raw header values
+     *
+     * @param string $name the file name of the entry
+     * @param string $data the raw file data of the entry
+     * @param int $compression the compression method to declare
+     * @param int $compressed_size the compressed size to declare
+     * @param int $size the uncompressed size to declare
+     * @param int $crc the CRC32 checksum to declare
+     * @param int $header_offset the position of the local file header to declare
+     * @return string the binary content of the archive
+     */
+    protected function craftZip($name, $data, $compression, $compressed_size, $size, $crc = 0, $header_offset = 0)
+    {
+        $lfh  = "PK\x03\x04" . pack('v', 20) . pack('v', 0) . pack('v', $compression);
+        $lfh .= pack('v', 0) . pack('v', 0);
+        $lfh .= pack('V', $crc) . pack('V', $compressed_size) . pack('V', $size);
+        $lfh .= pack('v', strlen($name)) . pack('v', 0) . $name;
+        $blob = $lfh . $data;
+
+        $cfh  = "PK\x01\x02" . pack('v', 20) . pack('v', 20) . pack('v', 0) . pack('v', $compression);
+        $cfh .= pack('v', 0) . pack('v', 0);
+        $cfh .= pack('V', $crc) . pack('V', $compressed_size) . pack('V', $size);
+        $cfh .= pack('v', strlen($name)) . pack('v', 0) . pack('v', 0) . pack('v', 0);
+        $cfh .= pack('v', 0) . pack('V', 0) . pack('V', $header_offset) . $name;
+
+        $cd_offset = strlen($blob);
+        $blob .= $cfh;
+        $blob .= "PK\x05\x06" . pack('v', 0) . pack('v', 0) . pack('v', 1) . pack('v', 1);
+        $blob .= pack('V', strlen($cfh)) . pack('V', $cd_offset) . pack('v', 0);
+
+        return $blob;
+    }
+
+    /**
+     * A stored entry that declares more data than the archive contains must be rejected.
+     */
+    public function testStoredEntryExceedingArchiveSize()
+    {
+        $declared = 1048576; // 1 MiB claimed for a single byte of data
+
+        $tmp = sys_get_temp_dir() . '/phpa-stored-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-stored-out-' . md5(uniqid('', true));
+        file_put_contents($tmp, $this->craftZip('tiny.txt', 'A', 0, $declared, $declared));
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $zip->extract($out);
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * A deflated entry shorter than its declared uncompressed size must be rejected.
+     */
+    public function testCompressedEntrySmallerThanDeclaredSize()
+    {
+        $raw      = 'hello';
+        $deflated = gzdeflate($raw, 9);
+        $declared = 1048576; // 1 MiB claimed uncompressed size
+
+        $tmp = sys_get_temp_dir() . '/phpa-comp-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-comp-out-' . md5(uniqid('', true));
+        file_put_contents(
+            $tmp,
+            $this->craftZip('small.txt', $deflated, 8, strlen($deflated), $declared, crc32($raw))
+        );
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $zip->extract($out);
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * An excluded entry is never read, so a broken header must not abort the extraction.
+     */
+    public function testBrokenEntryIsIgnoredWhenExcluded()
+    {
+        $declared = 1048576; // 1 MiB claimed for a single byte of data
+
+        $tmp = sys_get_temp_dir() . '/phpa-excluded-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-excluded-out-' . md5(uniqid('', true));
+        file_put_contents($tmp, $this->craftZip('tiny.txt', 'A', 0, $declared, $declared));
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->assertCount(0, $zip->extract($out, '', '/^tiny\.txt$/'));
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * An entry using a compression method other than store or deflate must be rejected.
+     */
+    public function testUnsupportedCompressionMethod()
+    {
+        $data = 'pretend this is bzip2 data';
+
+        $tmp = sys_get_temp_dir() . '/phpa-method-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-method-out-' . md5(uniqid('', true));
+        // the declared size is smaller than the data, so no other check rejects the entry first
+        file_put_contents($tmp, $this->craftZip('bzip2.txt', $data, 12, strlen($data), 10, crc32($data)));
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $zip->extract($out);
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * A central directory outside of the archive must be rejected without leaking warnings.
+     */
+    public function testCentralDirectoryOutsideArchive()
+    {
+        // an end of central directory record claiming an entry far outside the file
+        $blob  = "PK\x05\x06" . pack('v', 0) . pack('v', 0) . pack('v', 1) . pack('v', 1);
+        $blob .= pack('V', 46) . pack('V', 0xFFFF0000) . pack('v', 0);
+
+        $tmp = sys_get_temp_dir() . '/phpa-cdir-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-cdir-out-' . md5(uniqid('', true));
+        file_put_contents($tmp, $blob);
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $this->expectExceptionMessage('Could not read the central file header');
+            $zip->extract($out);
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * A local file header outside of the archive must be rejected without leaking warnings.
+     */
+    public function testLocalHeaderOutsideArchive()
+    {
+        $tmp = sys_get_temp_dir() . '/phpa-lfh-' . md5(uniqid('', true)) . '.zip';
+        $out = sys_get_temp_dir() . '/phpa-lfh-out-' . md5(uniqid('', true));
+        file_put_contents($tmp, $this->craftZip('tiny.txt', 'A', 0, 1, 1, crc32('A'), 0xFFFF0000));
+
+        $zip = new Zip();
+        $zip->open($tmp);
+        try {
+            $this->expectException(ArchiveCorruptedException::class);
+            $this->expectExceptionMessage('Could not read the local file header');
+            $zip->extract($out);
+        } finally {
+            self::RDelete($out);
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * simple test that checks that the given filenames and contents can be grepped from
+     * the uncompressed zip stream
+     *
+     * No check for format correctness
+     * @depends testExtZipIsInstalled
+     */
+    public function testCreateDynamic()
+    {
+        $zip = new Zip();
+
+        $dir = $this->getDir() . '/zip';
+        $tdir = ltrim($dir, '/');
+
+        $zip->create();
+        $zip->setCompression(0);
+        $zip->AddFile("$dir/testdata1.txt", "$dir/testdata1.txt");
+        $zip->AddFile("$dir/foobar/testdata2.txt", 'noway/testdata2.txt');
+        $zip->addData('another/testdata3.txt', 'testcontent3');
+
+        $data = $zip->getArchive();
+
+        $this->assertTrue(strpos($data, 'testcontent1') !== false, 'Content 1 in ZIP');
+        $this->assertTrue(strpos($data, 'testcontent2') !== false, 'Content 2 in ZIP');
+        $this->assertTrue(strpos($data, 'testcontent3') !== false, 'Content 3 in ZIP');
+
+        // fullpath might be too long to be stored as full path FS#2802
+        $this->assertTrue(strpos($data, "$tdir") !== false, 'Path in ZIP');
+        $this->assertTrue(strpos($data, "testdata1.txt") !== false, 'File in ZIP');
+
+        $this->assertTrue(strpos($data, 'noway/testdata2.txt') !== false, 'Path in ZIP');
+        $this->assertTrue(strpos($data, 'another/testdata3.txt') !== false, 'Path in ZIP');
+
+        // fullpath might be too long to be stored as full path FS#2802
+        $this->assertTrue(strpos($data, "$tdir/foobar") === false, 'Path not in ZIP');
+        $this->assertTrue(strpos($data, "foobar.txt") === false, 'File not in ZIP');
+
+        $this->assertTrue(strpos($data, "foobar") === false, 'Path not in ZIP');
+    }
+
+    /**
+     * simple test that checks that the given filenames and contents can be grepped from the
+     * uncompressed zip file
+     *
+     * No check for format correctness
+     * @depends testExtZipIsInstalled
+     */
+    public function testCreateFile()
+    {
+        $zip = new Zip();
+
+        $dir = $this->getDir() . '/zip';
+        $tdir = ltrim($dir, '/');
+        $tmp = vfsStream::url('home_root_path/test.zip');
+
+        $zip->create($tmp);
+        $zip->setCompression(0);
+        $zip->addFile("$dir/testdata1.txt", "$dir/testdata1.txt");
+        $zip->addFile("$dir/foobar/testdata2.txt", 'noway/testdata2.txt');
+        $zip->addData('another/testdata3.txt', 'testcontent3');
+        $zip->close();
+
+        $this->assertTrue(filesize($tmp) > 30); //arbitrary non-zero number
+        $data = file_get_contents($tmp);
+
+        $this->assertTrue(strpos($data, 'testcontent1') !== false, 'Content in ZIP');
+        $this->assertTrue(strpos($data, 'testcontent2') !== false, 'Content in ZIP');
+        $this->assertTrue(strpos($data, 'testcontent3') !== false, 'Content in ZIP');
+
+        // fullpath might be too long to be stored as full path FS#2802
+        $this->assertTrue(strpos($data, "$tdir") !== false, "Path in ZIP '$tdir'");
+        $this->assertTrue(strpos($data, "testdata1.txt") !== false, 'File in ZIP');
+
+        $this->assertTrue(strpos($data, 'noway/testdata2.txt') !== false, 'Path in ZIP');
+        $this->assertTrue(strpos($data, 'another/testdata3.txt') !== false, 'Path in ZIP');
+
+        // fullpath might be too long to be stored as full path FS#2802
+        $this->assertTrue(strpos($data, "$tdir/foobar") === false, 'Path not in ZIP');
+        $this->assertTrue(strpos($data, "foobar.txt") === false, 'File not in ZIP');
+
+        $this->assertTrue(strpos($data, "foobar") === false, 'Path not in ZIP');
+    }
+
+    public function testCreateWithInvalidFilePath()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $zip = new Zip();
+        $tmp = vfsStream::url('invalid_root_path/test.zip');
+        $zip->create($tmp);
+    }
+
+    public function testAddFileWithArchiveStreamIsClosed()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $zip = new Zip();
+        $dir = $this->getDir() . '/zip';
+        $zip->setCompression(0);
+        $zip->close();
+        $zip->addFile("$dir/testdata1.txt", "$dir/testdata1.txt");
+    }
+
+    public function testAddFileWithInvalidFile()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $zip = new Zip();
+        $tmp = vfsStream::url('home_root_path/test.zip');
+        $zip->create($tmp);
+        $zip->setCompression(0);
+        $zip->addFile('invalid_file', false);
+        $zip->close();
+    }
+
+    /**
+     * List the contents of the prebuilt ZIP file
+     * @depends testExtZipIsInstalled
+     */
+    public function testZipContent()
+    {
+        $dir = $this->getDir() . '/zip';
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $content = $zip->contents();
+
+        $this->assertCount(5, $content, "Contents of $file");
+        $this->assertEquals('zip/testdata1.txt', $content[2]->getPath(), "Contents of $file");
+        $this->assertEquals(13, $content[2]->getSize(), "Contents of $file");
+
+        $this->assertEquals('zip/foobar/testdata2.txt', $content[4]->getPath(), "Contents of $file");
+        $this->assertEquals(13, $content[4]->getSize(), "Contents of $file");
+    }
+
+    public function testZipContentWithArchiveStreamIsClosed()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $dir = $this->getDir() . '/zip';
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+        $zip->open($file);
+        $zip->close();
+        $zip->contents();
+    }
+
+    /**
+     * Create an archive and unpack it again
+     * @depends testExtZipIsInstalled
+     */
+    public function testDogFood()
+    {
+        $input = glob($this->getDir() . '/../src/*');
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $extract = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+
+        $this->counter = 0;
+        $zip = new Zip();
+        $zip->setCallback(array($this, 'increaseCounter'));
+        $zip->create($archive);
+        foreach ($input as $path) {
+            $file = basename($path);
+            $zip->addFile($path, $file);
+        }
+        $zip->close();
+        $this->assertFileExists($archive);
+        $this->assertEquals(count($input), $this->counter);
+
+        $this->counter = 0;
+        $zip = new Zip();
+        $zip->setCallback(array($this, 'increaseCounter'));
+        $zip->open($archive);
+        $zip->extract($extract, '', '/FileInfo\\.php/', '/.*\\.php/');
+
+        $this->assertFileExists("$extract/Tar.php");
+        $this->assertFileExists("$extract/Zip.php");
+        $this->assertFileNotExists("$extract/FileInfo.php");
+
+        $this->assertEquals(count($input) - 1, $this->counter);
+
+        $this->nativeCheck($archive);
+        $this->native7ZipCheck($archive);
+
+        self::RDelete($extract);
+        unlink($archive);
+    }
+
+    /**
+     * Add a zero byte file to a zip and extract it again
+     */
+    public function testZeroByteFile() {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $extract = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addFile($this->getDir() . '/zip/zero.txt', 'foo/zero.txt');
+        $zip->close();
+        $this->assertFileExists($archive);
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $contents = $zip->contents();
+
+        $this->assertEquals(1, count($contents));
+        $this->assertEquals('foo/zero.txt', ($contents[0])->getPath());
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($extract);
+        $zip->close();
+
+        $this->assertFileExists("$extract/foo/zero.txt");
+        $this->assertEquals(0, filesize("$extract/foo/zero.txt"));
+
+        self::RDelete($extract);
+        unlink($archive);
+    }
+
+    /**
+     * @depends testExtZipIsInstalled
+     */
+    public function testUtf8()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $extract = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addData('tüst.txt', 'test');
+        $zip->addData('snowy☃.txt', 'test');
+        $zip->close();
+        $this->assertFileExists($archive);
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($extract);
+
+        $this->assertFileExists($extract . '/tüst.txt');
+        $this->assertFileExists($extract . '/snowy☃.txt');
+
+        $this->nativeCheck($archive);
+        $this->native7ZipCheck($archive);
+
+        self::RDelete($extract);
+        unlink($archive);
+    }
+
+    /**
+     * Names outside the ASCII range are stored as UTF-8 and flagged as such
+     *
+     * @depends testExtZipIsInstalled
+     */
+    public function testUtf8Flag()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addData('тестов_файл.txt', 'testcontent1');
+        $zip->addData('plain.txt', 'testcontent2');
+        $zip->close();
+
+        // the name has to be in the header as it was given, with bit 11 set
+        $raw = file_get_contents($archive);
+        $flag = unpack('v', substr($raw, 6, 2));
+        $this->assertSame(Zip::FLAG_UTF8, $flag[1] & Zip::FLAG_UTF8, 'UTF-8 flag not set');
+        $this->assertContains('тестов_файл.txt', array($this->localHeaderName($raw, 0)));
+
+        // an independent reader has to see the same name
+        $native = new \ZipArchive();
+        $native->open($archive);
+        $this->assertEquals('тестов_файл.txt', $native->getNameIndex(0));
+        $this->assertEquals('plain.txt', $native->getNameIndex(1));
+        $native->close();
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $content = $zip->contents();
+
+        $this->assertEquals('тестов_файл.txt', $content[0]->getPath());
+        $this->assertEquals('plain.txt', $content[1]->getPath());
+
+        $this->nativeCheck($archive);
+        $this->native7ZipCheck($archive);
+
+        unlink($archive);
+    }
+
+    /**
+     * Plain ASCII names need no flag
+     *
+     * @depends testExtZipIsInstalled
+     */
+    public function testAsciiHasNoUtf8Flag()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addData('plain.txt', 'testcontent1');
+        $zip->close();
+
+        $raw = file_get_contents($archive);
+        $flag = unpack('v', substr($raw, 6, 2));
+        $this->assertSame(0, $flag[1] & Zip::FLAG_UTF8);
+
+        unlink($archive);
+    }
+
+    /**
+     * Names of an archive flagged as UTF-8 are taken as they are
+     */
+    public function testUtf8FlagExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $zip->open("$dir/utf8-flag.zip");
+        $content = $zip->contents();
+
+        $this->assertCount(2, $content);
+        $this->assertEquals('тестов_файл.txt', $content[0]->getPath());
+        $this->assertEquals('snowy☃.txt', $content[1]->getPath());
+
+        $zip = new Zip();
+        $zip->open("$dir/utf8-flag.zip");
+        $zip->extract($out);
+
+        clearstatcache();
+
+        $this->assertEquals("testcontent1\n", file_get_contents($out . '/тестов_файл.txt'));
+        $this->assertEquals("testcontent2\n", file_get_contents($out . '/snowy☃.txt'));
+
+        self::RDelete($out);
+    }
+
+    /**
+     * Archives written by older versions keep their names in a unicode path extra field
+     */
+    public function testLegacyUtf8PathExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $zip->open("$dir/legacy-utf8path.zip");
+        $content = $zip->contents();
+
+        $this->assertCount(2, $content);
+        $this->assertEquals('тестов_файл.txt', $content[0]->getPath());
+        $this->assertEquals('täst.txt', $content[1]->getPath());
+
+        $zip = new Zip();
+        $zip->open("$dir/legacy-utf8path.zip");
+        $zip->extract($out);
+
+        clearstatcache();
+
+        $this->assertEquals("testcontent1\n", file_get_contents($out . '/тестов_файл.txt'));
+        $this->assertEquals("testcontent2\n", file_get_contents($out . '/täst.txt'));
+
+        self::RDelete($out);
+    }
+
+    /**
+     * Directories are stored as empty entries with a trailing slash
+     *
+     * @depends testExtZipIsInstalled
+     */
+    public function testAddDirectory()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+        $source = sys_get_temp_dir() . '/dwziptest' . md5(time() + 2);
+
+        mkdir($source);
+        chmod($source, 0750);
+
+        $fileinfo = new FileInfo('given');
+        $fileinfo->setIsdir(true);
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addData($fileinfo, '');
+        $zip->addFile($source, 'fromdisk'); // adding a directory reads no content
+        $zip->addData('sub/file.txt', 'testcontent1');
+        $zip->close();
+
+        $raw = file_get_contents($archive);
+        $this->assertEquals('given/', $this->localHeaderName($raw, 0));
+
+        // a directory holds no data, so it is stored and not deflated
+        $header = unpack('vcompression/vmtime/vmdate/Vcrc/Vcompressed_size/Vsize', substr($raw, 8, 18));
+        $this->assertSame(0, $header['compression']);
+        $this->assertSame(0, $header['size']);
+        $this->assertSame(0, $header['compressed_size']);
+
+        // a reader that only looks at the name has to see a directory as well
+        $native = new \ZipArchive();
+        $native->open($archive);
+        $this->assertEquals('given/', $native->getNameIndex(0));
+        $this->assertEquals('fromdisk/', $native->getNameIndex(1));
+        $native->close();
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $content = $zip->contents();
+
+        $this->assertEquals('given', $content[0]->getPath());
+        $this->assertTrue($content[0]->getIsdir());
+        $this->assertTrue($content[1]->getIsdir());
+        // Windows ignores chmod(), so the expected mode is taken from the source directory
+        $this->assertEquals(fileperms($source) & 0777, $content[1]->getMode());
+        $this->assertFalse($content[2]->getIsdir());
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($out);
+
+        clearstatcache();
+
+        $this->assertDirectoryExists("$out/given");
+        $this->assertDirectoryExists("$out/fromdisk");
+        $this->assertEquals('testcontent1', file_get_contents("$out/sub/file.txt"));
+
+        self::RDelete($out);
+        rmdir($source);
+        unlink($archive);
+    }
+
+    /**
+     * File modes are stored in the external attributes and restored when extracting
+     */
+    public function testFilePermissions()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+        $source = sys_get_temp_dir() . '/dwziptest' . md5(time() + 2) . '.txt';
+
+        file_put_contents($source, 'testcontent1');
+        chmod($source, 0600);
+        $mode = fileperms($source) & 0777; // Windows ignores chmod()
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->addFile($source, 'secret.txt');
+        $zip->addData(new FileInfo('script.sh'), "#!/bin/sh\n");
+        $zip->close();
+
+        // the mode belongs into the upper half of the external attributes, together with the
+        // file type bits telling readers this is a regular file
+        $this->assertSame(
+            0100000 | $mode,
+            $this->centralHeaderAttributes(file_get_contents($archive), 0) >> 16
+        );
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $content = $zip->contents();
+
+        $this->assertEquals($mode, $content[0]->getMode());
+        $this->assertEquals(0664, $content[1]->getMode()); // the FileInfo default
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($out);
+
+        clearstatcache();
+
+        // only Unix-like systems can restore a mode
+        if (DIRECTORY_SEPARATOR === '/') {
+            $this->assertSame(0600, fileperms("$out/secret.txt") & 07777);
+            $this->assertSame(0664, fileperms("$out/script.sh") & 07777);
+        }
+
+        self::RDelete($out);
+        unlink($archive);
+        unlink($source);
+    }
+
+    /**
+     * Archives that were not created on Unix hold no mode, entries keep the default
+     */
+    public function testFilePermissionsWithoutMode()
+    {
+        $dir = $this->getDir() . '/zip';
+
+        $zip = new Zip();
+        $zip->open("$dir/issue14-windows.zip");
+        $content = $zip->contents();
+
+        $this->assertEquals(0664, $content[0]->getMode());
+        $this->assertFalse($content[0]->getIsdir());
+    }
+
+    /**
+     * Directories are recognized and keep their mode
+     */
+    public function testDirectoryPermissions()
+    {
+        $dir = $this->getDir() . '/zip';
+
+        $zip = new Zip();
+        $zip->open("$dir/test.zip");
+        $content = $zip->contents();
+
+        $modes = array();
+        foreach ($content as $fileinfo) {
+            $modes[$fileinfo->getPath()] = array($fileinfo->getIsdir(), $fileinfo->getMode());
+        }
+
+        $this->assertSame(array(true, 0755), $modes['zip']);
+        $this->assertSame(array(true, 0755), $modes['zip/foobar']);
+        $this->assertSame(array(false, 0644), $modes['zip/testdata1.txt']);
+    }
+
+    /**
+     * Returns the external file attributes of the central file header at the given index
+     *
+     * @param string $raw the raw archive data
+     * @param int $index position of the entry in the central directory
+     * @return int
+     */
+    protected function centralHeaderAttributes($raw, $index)
+    {
+        $offset = -1;
+        for ($i = 0; $i <= $index; $i++) {
+            $offset = strpos($raw, Zip::SIG_CENTRAL_FILE_HEADER, $offset + 1);
+            $this->assertNotFalse($offset, 'central file header not found');
+        }
+
+        $attributes = unpack('V', substr($raw, $offset + 38, 4));
+        return $attributes[1];
+    }
+
+    /**
+     * Returns the file name stored in the local file header at the given offset
+     *
+     * @param string $raw the raw archive data
+     * @param int $offset position of the local file header
+     * @return string
+     */
+    protected function localHeaderName($raw, $offset)
+    {
+        $length = unpack('v', substr($raw, $offset + 26, 2));
+        return substr($raw, $offset + 30, $length[1]);
+    }
+
+    public function testAddDataWithArchiveStreamIsClosed()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->close();
+        $zip->addData('tüst.txt', 'test');
+    }
+
+    public function testCloseWithArchiveStreamIsClosed()
+    {
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->close();
+
+        $zip->close();
+        $this->assertTrue(true); // succeed if no exception, yet
+    }
+
+    public function testSaveArchiveFile()
+    {
+        $dir = $this->getDir() . '/tar';
+        $zip = new zip();
+        $zip->setCompression(-1);
+        $zip->create();
+        $zip->addFile("$dir/zero.txt", 'zero.txt');
+
+        $zip->save(vfsStream::url('home_root_path/archive_file'));
+        $this->assertTrue(true); // succeed if no exception, yet
+    }
+
+    public function testSaveWithInvalidFilePath()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+
+        $zip = new Zip();
+        $zip->create($archive);
+        $zip->save(vfsStream::url('invalid_root_path/save.zip'));
+    }
+
+    /**
+     * Test the given archive with a native zip installation (if available)
+     *
+     * @param $archive
+     */
+    protected function nativeCheck($archive)
+    {
+        if (!is_executable('/usr/bin/zipinfo')) {
+            return;
+        }
+        $archive = escapeshellarg($archive);
+
+        $return = 0;
+        $output = array();
+        $ok = exec("/usr/bin/zipinfo $archive 2>&1 >/dev/null", $output, $return);
+        $output = join("\n", $output);
+
+        $this->assertNotFalse($ok, "native zip execution for $archive failed:\n$output");
+        $this->assertSame(0, $return, "native zip execution for $archive had non-zero exit code $return:\n$output");
+        $this->assertSame('', $output, "native zip execution for $archive had non-empty output:\n$output");
+    }
+
+    /**
+     * Test the given archive with a native 7zip installation (if available)
+     *
+     * @param $archive
+     */
+    protected function native7ZipCheck($archive)
+    {
+        if (!is_executable('/usr/bin/7z')) {
+            return;
+        }
+        $archive = escapeshellarg($archive);
+
+        $return = 0;
+        $output = array();
+        $ok = exec("/usr/bin/7z t $archive 2>&1 >/dev/null", $output, $return);
+        $output = join("\n", $output);
+
+        $this->assertNotFalse($ok, "native 7zip execution for $archive failed:\n$output");
+        $this->assertSame(0, $return, "native 7zip execution for $archive had non-zero exit code $return:\n$output");
+        $this->assertSame('', $output, "native 7zip execution for $archive had non-empty output:\n$output");
+    }
+
+    /**
+     * Extract the prebuilt zip files
+     * @depends testExtZipIsInstalled
+     */
+    public function testZipExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->extract($out);
+
+        clearstatcache();
+
+        $this->assertFileExists($out . '/zip/testdata1.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/zip/testdata1.txt'), "Extracted $file");
+
+        $this->assertFileExists($out . '/zip/foobar/testdata2.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/zip/foobar/testdata2.txt'), "Extracted $file");
+
+        $this->assertFileExists($out . '/zip/compressable.txt', "Extracted $file");
+        $this->assertEquals(1836, filesize($out . '/zip/compressable.txt'), "Extracted $file");
+        $this->assertFileNotExists($out . '/zip/compressable.txt.gz', "Extracted $file");
+
+        self::RDelete($out);
+    }
+
+    public function testZipExtractWithArchiveStreamIsClosed()
+    {
+        $this->expectException(ArchiveIOException::class);
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->close();
+        $zip->extract($out);
+    }
+
+    /**
+     * Extract the prebuilt zip files with component stripping
+     * @depends testExtZipIsInstalled
+     */
+    public function testCompStripExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->extract($out, 1);
+
+        clearstatcache();
+
+        $this->assertFileExists($out . '/testdata1.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/testdata1.txt'), "Extracted $file");
+
+        $this->assertFileExists($out . '/foobar/testdata2.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/foobar/testdata2.txt'), "Extracted $file");
+
+        self::RDelete($out);
+    }
+
+    /**
+     * Extract the prebuilt zip files with prefix stripping
+     * @depends testExtZipIsInstalled
+     */
+    public function testPrefixStripExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->extract($out, 'zip/foobar/');
+
+        clearstatcache();
+
+        $this->assertFileExists($out . '/zip/testdata1.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/zip/testdata1.txt'), "Extracted $file");
+
+        $this->assertFileExists($out . '/testdata2.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/testdata2.txt'), "Extracted $file");
+
+        self::RDelete($out);
+    }
+
+    /**
+     * Extract the prebuilt zip files with include regex
+     * @depends testExtZipIsInstalled
+     */
+    public function testIncludeExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->extract($out, '', '', '/\/foobar\//');
+
+        clearstatcache();
+
+        $this->assertFileNotExists($out . '/zip/testdata1.txt', "Extracted $file");
+
+        $this->assertFileExists($out . '/zip/foobar/testdata2.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/zip/foobar/testdata2.txt'), "Extracted $file");
+
+        self::RDelete($out);
+    }
+
+    /**
+     * Extract the prebuilt zip files with exclude regex
+     * @depends testExtZipIsInstalled
+     */
+    public function testExcludeExtract()
+    {
+        $dir = $this->getDir() . '/zip';
+        $out = sys_get_temp_dir() . '/dwziptest' . md5(time());
+
+        $zip = new Zip();
+        $file = "$dir/test.zip";
+
+        $zip->open($file);
+        $zip->extract($out, '', '/\/foobar\//');
+
+        clearstatcache();
+
+        $this->assertFileExists($out . '/zip/testdata1.txt', "Extracted $file");
+        $this->assertEquals(13, filesize($out . '/zip/testdata1.txt'), "Extracted $file");
+
+        $this->assertFileNotExists($out . '/zip/foobar/testdata2.txt', "Extracted $file");
+
+        self::RDelete($out);
+    }
+
+    /**
+     * @depends testExtZipIsInstalled
+     */
+    public function testUmlautWinrar()
+    {
+        $out = vfsStream::url('home_root_path/dwtartest' . md5(time()));
+
+        $zip = new Zip();
+        $zip->open($this->getDir() . '/zip/issue14-winrar.zip');
+        $zip->extract($out);
+        $this->assertFileExists("$out/tüst.txt");
+    }
+
+    /**
+     * @depends testExtZipIsInstalled
+     */
+    public function testUmlautWindows()
+    {
+        $out = vfsStream::url('home_root_path/dwtartest' . md5(time()));
+
+        $zip = new Zip();
+        $zip->open($this->getDir() . '/zip/issue14-windows.zip');
+        $zip->extract($out);
+        $this->assertFileExists("$out/täst.txt");
+    }
+
+    /**
+     * Create an archive, extract it, and compare file properties
+     */
+    public function testFilePropertiesPreservation()
+    {
+        $input = glob($this->getDir() . '/../src/*');
+        $archive = sys_get_temp_dir() . '/dwtartest' . md5(time()) . '.zip';
+        $extract = sys_get_temp_dir() . '/dwtartest' . md5(time() + 1);
+
+        // Create archive
+        $zip = new Zip();
+        $zip->create($archive);
+        foreach ($input as $path) {
+            $file = basename($path);
+            $zip->addFile($path, $file);
+        }
+        $zip->close();
+        $this->assertFileExists($archive);
+
+        // Extract archive
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($extract);
+        $zip->close();
+
+        // Compare file properties
+        foreach ($input as $originalPath) {
+            $filename = basename($originalPath);
+            $extractedPath = $extract . '/' . $filename;
+
+            $this->assertFileExists($extractedPath, "Extracted file should exist: $filename");
+
+            // Compare file sizes
+            $originalSize = filesize($originalPath);
+            $extractedSize = filesize($extractedPath);
+            $this->assertEquals($originalSize, $extractedSize, "File size should match for: $filename");
+
+            // Compare file contents
+            $originalContent = file_get_contents($originalPath);
+            $extractedContent = file_get_contents($extractedPath);
+            $this->assertEquals($originalContent, $extractedContent, "File content should match for: $filename");
+
+            // Compare modification times (allow small difference due to tar format limitations)
+            $originalMtime = filemtime($originalPath);
+            $extractedMtime = filemtime($extractedPath);
+            $this->assertLessThanOrEqual(1, abs($originalMtime - $extractedMtime),
+                "Modification time should be preserved (within 1 second) for: $filename");
+
+            // Compare file permissions (only on Unix-like systems)
+            if (DIRECTORY_SEPARATOR === '/') {
+                $originalPerms = fileperms($originalPath) & 0777;
+                $extractedPerms = fileperms($extractedPath) & 0777;
+                $this->assertEquals($originalPerms, $extractedPerms,
+                    "File permissions should match for: $filename");
+            }
+        }
+
+        self::RDelete($extract);
+        unlink($archive);
+    }
+
+    /**
+     * An in-memory archive with a preceding entry followed by an addFile() entry must
+     * round-trip cleanly.
+     *
+     * addFile() back-patches CRC and sizes into the local file header via writebytesAt().
+     * For in-memory archives that patch only lands correctly when the entry sits at a
+     * non-zero offset, so a leading addData() entry is required to expose the bug.
+     *
+     * @depends testExtZipIsInstalled
+     */
+    public function testInMemoryAddFileAfterPreviousEntry()
+    {
+        $dir = $this->getDir() . '/zip';
+        $archive = sys_get_temp_dir() . '/dwziptest' . md5(time()) . '.zip';
+        $extract = sys_get_temp_dir() . '/dwziptest' . md5(time() + 1);
+
+        $source = file_get_contents("$dir/block.txt");
+
+        $zip = new Zip();
+        $zip->create(); // in memory, no filename
+        $zip->addData('manifest.json', '{"a":"b"}'); // gives the next entry a non-zero offset
+        $zip->addFile("$dir/block.txt", 'block.txt');
+        $data = $zip->getArchive();
+        file_put_contents($archive, $data);
+
+        // The local file header of the streamed entry must carry the back-patched CRC and
+        // sizes. A failed patch leaves them zero, which the library's own extract() would
+        // still tolerate (it reads the central directory), so assert on the header directly.
+        $header = $this->localFileHeader($data, 'block.txt');
+        $this->assertNotEquals(0, $header['crc'], 'Local file header CRC must be patched');
+        $this->assertNotEquals(0, $header['csize'], 'Local file header compressed size must be patched');
+        $this->assertEquals(strlen($source), $header['size'], 'Local file header uncompressed size must be patched');
+
+        $zip = new Zip();
+        $zip->open($archive);
+        $zip->extract($extract);
+        $zip->close();
+
+        $this->assertFileExists("$extract/block.txt");
+        $this->assertEquals($source, file_get_contents("$extract/block.txt"),
+            'Extracted file must be byte-identical to the source');
+
+        $this->nativeCheck($archive);
+        $this->native7ZipCheck($archive);
+
+        self::RDelete($extract);
+        unlink($archive);
+    }
+
+
+    /**
+     * Locate a local file header by name and return its CRC and size fields
+     *
+     * @param string $data raw ZIP archive
+     * @param string $name entry name to look for
+     * @return array{crc: int, csize: int, size: int}
+     */
+    protected function localFileHeader($data, $name)
+    {
+        $offset = 0;
+        while (($offset = strpos($data, Zip::SIG_LOCAL_FILE_HEADER, $offset)) !== false) {
+            $fields  = unpack('Vcrc/Vcsize/Vsize/vnamelen', substr($data, $offset + 14, 14));
+            $entry   = substr($data, $offset + 30, $fields['namelen']);
+            if ($entry === $name) {
+                return array('crc' => $fields['crc'], 'csize' => $fields['csize'], 'size' => $fields['size']);
+            }
+            $offset += 4;
+        }
+        $this->fail("No local file header for '$name' found in archive");
+    }
+
+    /**
+     * recursive rmdir()/unlink()
+     *
+     * @static
+     * @param $target string
+     */
+    public static function RDelete($target)
+    {
+        if (!is_dir($target)) {
+            unlink($target);
+        } else {
+            $dh = dir($target);
+            while (false !== ($entry = $dh->read())) {
+                if ($entry == '.' || $entry == '..') {
+                    continue;
+                }
+                self::RDelete("$target/$entry");
+            }
+            $dh->close();
+            rmdir($target);
+        }
+    }
+}
