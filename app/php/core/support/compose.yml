@@ -3,17 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ctrx_app
+    container_name: ctrx_app #change this
     ports:
-      - "8081:80"
+      - "8081:80" #change this (optional)
     volumes:
       - .:/var/www/html
     depends_on:
       - docker_db
       - docker_redis
     environment:
-      - REDIS_HOST=ctrx_redis
-      - REDIS_PORT=6379
+      - REDIS_HOST=ctrx_redis #change this (optional)
+      - REDIS_PORT=6379 
       - REDIS_PASSWORD=ctrx
       - REDIS_DATABASE=0
       - REDIS_TIMEOUT=0.2
@@ -23,19 +23,19 @@ services:
     container_name: ctrx_db
     restart: unless-stopped
     environment:
-      TZ: Asia/Manila
+      TZ: Asia/Manila #change this (optional)
       MARIADB_ROOT_PASSWORD: password
     ports:
-      - "3309:3306"
+      - "3309:3306" #change this (optional)
     volumes:
       - ctrx_db_data:/var/lib/mysql
 
   docker_redis:
     image: redis:7.2-alpine
-    container_name: ctrx_redis
+    container_name: ctrx_redis #change this
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6379:6379" #change this (optional)
     volumes:
       - ctrx_redis_data:/data
     command: redis-server --appendonly yes
