@@ -726,8 +726,8 @@ if ($route == "run" || $route == "server") {
             $context  = stream_context_create($opts);
             $response = @file_get_contents($apiUrl, false, $context);
 
-            global $http_response_header;
-            $status = $http_response_header[0] ?? 'no response';
+            $http__header = http_get_last_response_headers();
+            $status = $http__header[0] ?? 'no response';
 
             if ($response === false) {
                 echo "❌ Error fetching $apiUrl ($status)\n";
