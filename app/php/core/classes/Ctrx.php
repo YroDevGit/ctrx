@@ -620,6 +620,24 @@ class Ctrx
         return true;
     }
 
+    static function ctrx_version(){
+        $data = ctrx_details();
+        if($data){
+            return $data['version'];
+        }else{
+            return "UNKNOWN";
+        }
+    }
+
+    static function ctrx_details(){
+        $view_config = file_get_contents("views/core/partials/info.json");
+        $view_config = json_decode($view_config, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+           return $view_config;
+        }
+        return null;
+    }
+
     public static function _importStorage()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['archive'])) {

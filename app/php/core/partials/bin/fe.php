@@ -1017,6 +1017,18 @@ if (! function_exists("_bootstrap_js")) {
     }
 }
 
+if(! function_exists("ctrx_version")){
+    function ctrx_details(){
+        return \Classes\Ctrx::ctrx_details();
+    }
+}
+
+if(! function_exists("ctrx_version")){
+    function ctrx_version(){
+        return \Classes\Ctrx::ctrx_version();
+    }
+}
+
 if(! function_exists("ctrx_icons")){
     function ctrx_icons(){
         return "<link rel='stylesheet' href='/views/code/src/font/icons.css'>";

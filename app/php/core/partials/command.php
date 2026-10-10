@@ -1306,6 +1306,117 @@ if ($route == "run" || $route == "server") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
+}else if ($route == "update:ctrx") {
+    echo "\n";
+
+    $owner = 'YroDevGit';
+    $repo  = 'ctrx';
+
+    $localTag = \Classes\Ctrx::ctrx_version();
+
+    if (empty($localTag)) {
+        echo "❌ Could not determine local version.\n\n";
+        exit(1);
+    }
+
+    include "app/php/core/system/updator.php";
+    $remt = CtrxUpdater::getLatestAndPreviousTags("YroDevGit", "ctrx");
+
+    if ($remt['latest'] === null) {
+        die("Could not fetch tags for {$owner}/{$repo}.\n");
+    }
+
+    $remoteTag = $remt['latest'];
+
+    if (empty($remoteTag)) {
+        echo "❌ Could not determine the latest remote tag.\n\n";
+        exit(1);
+    }
+
+    if ($remoteTag === $localTag) {
+        echo "✅ Already on the latest version ({$localTag}). Nothing to do.\n\n";
+        exit(0);
+    }
+
+    echo "🔄 Syncing {$localTag} → {$remoteTag} ...\n\n";
+    $changedFiles = CtrxUpdater::getChangedFiles($owner, $repo, $localTag, $remoteTag);
+
+    if (empty($changedFiles)) {
+        echo "ℹ️  No file changes detected between {$localTag} and {$remoteTag}.\n\n";
+        exit(0);
+    }
+
+    $summary = CtrxUpdater::summarizeByStatus($changedFiles);
+    echo "Total files changed: " . count($changedFiles) . "\n";
+    foreach ($summary as $status => $count) {
+        echo sprintf("  %-10s %d\n", $status . ':', $count);
+    }
+    echo "\n";
+
+    $failed = [];
+
+    foreach ($changedFiles as $file) {
+        $status   = $file['status']   ?? 'unknown';
+        $filename = $file['filename'] ?? '';
+
+        if ($filename === '') {
+            continue;
+        }
+
+        if ($status === 'renamed' && !empty($file['previous_filename'])) {
+            $old = $file['previous_filename'];
+            if (file_exists($old)) {
+                @unlink($old);
+                echo "➖ Removed (renamed from): {$old}\n";
+            }
+        }
+
+        if ($status === 'removed') {
+            if (file_exists($filename)) {
+                if (@unlink($filename)) {
+                    echo "➖ Removed: {$filename}\n";
+                } else {
+                    echo "❌ Failed to remove: {$filename}\n";
+                    $failed[] = $filename;
+                }
+            } else {
+                echo "ℹ️  Skipped (already absent): {$filename}\n";
+            }
+            continue;
+        }
+
+        $ret = \Classes\Ctrx::updateFile($filename);
+
+        if (isset($ret['success']) && $ret['success'] === true) {
+            $icon = match ($status) {
+                'added'   => "➕ Added",
+                'modified'=> "🔄 Updated",
+                'renamed' => "🔀 Renamed",
+                default   => "✔️  Applied",
+            };
+            echo "{$icon}: {$filename}\n";
+        } else {
+            $err = $ret['message'] ?? "Error";
+            echo "❌ {$filename}: {$err}\n";
+            $failed[] = $filename;
+        }
+    }
+
+    echo "\n";
+
+    if (empty($failed)) {
+        \Classes\Ctrx::setCurrentVersion($remoteTag);
+
+        echo "✅ Synced " . count($changedFiles) . " file(s) from {$localTag} → {$remoteTag}.\n\n";
+        exit(0);
+    }
+
+    echo "⚠️  Completed with " . count($failed) . " failure(s):\n";
+    foreach ($failed as $f) {
+        echo "   - {$f}\n";
+    }
+    echo "\n";
+    exit(1);
 } else if ($route == "dl:testmemory" || $route == "dl:test:memory") {
     $targetDir = 'views/pages/test/';
 
