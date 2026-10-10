@@ -1,4 +1,4 @@
-<?php $version = 5.9 ?>
+<?php $version = ctrx_version() ?>
 <?php if(! \Classes\Ctrx::hasAdminUser()) redirect("/ctrx"); ?>
 <!DOCTYPE html>
 <html lang="en">

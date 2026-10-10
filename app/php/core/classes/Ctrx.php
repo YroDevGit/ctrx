@@ -625,7 +625,7 @@ class Ctrx
         if($data){
             return $data['version'];
         }else{
-            return "UNKNOWN";
+            return NULL;
         }
     }
 
