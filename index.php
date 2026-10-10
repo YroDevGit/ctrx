@@ -62,7 +62,7 @@ if (str_starts_with($uri, "/views/js/")) {
  * This load javascript from frontend (js) folder (views/code/*)
  */
 if (str_starts_with($uri, "/views/code/src/") || str_starts_with($uri, "/views/code/script/")) {
-    if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css")) {
+    if (! str_ends_with($uri, ".js") && ! str_ends_with($uri, ".css") && ! str_ends_with($uri, ".otf") && ! str_ends_with($uri, ".ttf") && ! str_ends_with($uri, ".woff")) {
         $uri = $uri . ".js";
         $uri = trim($uri, "/");
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
