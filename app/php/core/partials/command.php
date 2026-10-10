@@ -1308,7 +1308,6 @@ if ($route == "run" || $route == "server") {
     exit;
 }else if ($route == "update:ctrx") {
     echo "\n";
-
     $owner = 'YroDevGit';
     $repo  = 'ctrx';
 
