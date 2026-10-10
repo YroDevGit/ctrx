@@ -621,7 +621,7 @@ class Ctrx
     }
 
     static function ctrx_version(){
-        $data = ctrx_details();
+        $data = self::ctrx_details();
         if($data){
             return $data['version'];
         }else{
@@ -706,6 +706,25 @@ class Ctrx
         @file_put_contents($destPath, $data);
         return 2;
     }
+
+    public static function setCurrentVersion(string $newVersion): bool
+    {
+        $path = "views/core/partials/info.json";
+
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return false;
+            }
+        }
+
+        $data = ['version' => $newVersion];
+
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        return @file_put_contents($path, $json . PHP_EOL) !== false;
+    }
+
 
     public static function set_admin_data(array $data)
     {
