@@ -1274,6 +1274,14 @@ if ($route == "run" || $route == "server") {
         echo $vv . "\n";
     }
     exit;
+}else if($route == "stop:winnat"){
+    $output = null;
+    $res = @exec("net stop winnat", $output);
+    echo $output;exit;
+}else if($route == "start:winnat"){
+    $output = null;
+    $res = @exec("net start winnat", $output);
+    echo $output;exit;
 } else if ($route == "sync:tables" || $route == "db:sync") {
     include "app/php/core/partials/envloader.php";
     $dbname = env("database");
