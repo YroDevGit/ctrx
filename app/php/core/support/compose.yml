@@ -20,11 +20,11 @@ services:
 
   docker_db:
     image: mariadb:10.11
-    container_name: ctrx_db
+    container_name: ctrx_db #change this : this is database hostname
     restart: unless-stopped
     environment:
       TZ: Asia/Manila #change this (optional)
-      MARIADB_ROOT_PASSWORD: password
+      MARIADB_ROOT_PASSWORD: password #change this (optional) : this is database password
     ports:
       - "3309:3306" #change this (optional)
     volumes:
