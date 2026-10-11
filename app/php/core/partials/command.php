@@ -1414,7 +1414,7 @@ if ($route == "run" || $route == "server") {
         }
 
         if ($status === 'modified' && $isBak($filename)) {
-            $ret = \Classes\Ctrx::updateFile($filename, true);
+            $ret = \Classes\Ctrx::updateFile($filename, "m");
             if (isset($ret['success']) && $ret['success'] === true) {
                 echo "📄 Copied (protected): {$filename} → {$filename}.new\n";
             } else {
@@ -1425,7 +1425,7 @@ if ($route == "run" || $route == "server") {
             continue;
         }
 
-        $ret = \Classes\Ctrx::updateFile($filename);
+        $ret = \Classes\Ctrx::updateFile($filename, "n");
 
         if (isset($ret['success']) && $ret['success'] === true) {
             $icon = match ($status) {

@@ -1203,7 +1203,7 @@ class Ctrx
         }
     }
 
-    public static function updateFile(string $filePath, $new = false)
+    public static function updateFile(string $filePath, $new = "m")
     {
         include_once "app/php/core/partials/envloader.php";
         $filePath = trim($filePath, " /\\");
@@ -1217,7 +1217,7 @@ class Ctrx
         $rawUrl = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
 
-        if ($new) {
+        if ($new == "m") {
             $dir = dirname($localFilePath);
             if (!is_dir($dir)) {
                 if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
@@ -1225,6 +1225,13 @@ class Ctrx
                 }
             }
             $localFilePath = $localFilePath . ".new";
+        }else if($new == "n"){
+            $dir = dirname($localFilePath);
+            if (!is_dir($dir)) {
+                if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                    return ["success" => false, "message" => "Failed to create directory {$dir}."];
+                }
+            }
         }
 
         if (!self::remoteFileExists($rawUrl)) {
@@ -1235,13 +1242,6 @@ class Ctrx
 
         if ($newContent === false) {
             return ["success" => false, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
-        }
-
-        $dir = dirname($localFilePath);
-        if (!is_dir($dir)) {
-            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
-                return ["success" => false, "message" => "Failed to create directory {$dir}."];
-            }
         }
 
         $bytes = @file_put_contents($localFilePath, $newContent);
