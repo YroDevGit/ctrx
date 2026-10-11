@@ -1360,7 +1360,7 @@ if ($route == "run" || $route == "server") {
         "views/code/src/style/*",
         "views/code/tyrax/config.js",
         "app/php/db/ctrx.db",
-        "app/_controller/*"
+        "app/_controller/*",
     ];
 
     $isBak = function ($path) use ($bak) {

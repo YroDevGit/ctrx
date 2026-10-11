@@ -620,20 +620,22 @@ class Ctrx
         return true;
     }
 
-    static function ctrx_version(){
+    static function ctrx_version()
+    {
         $data = self::ctrx_details();
-        if($data){
+        if ($data) {
             return $data['version'];
-        }else{
+        } else {
             return NULL;
         }
     }
 
-    static function ctrx_details(){
+    static function ctrx_details()
+    {
         $view_config = file_get_contents("views/core/partials/info.json");
         $view_config = json_decode($view_config, true);
         if (json_last_error() === JSON_ERROR_NONE) {
-           return $view_config;
+            return $view_config;
         }
         return null;
     }
@@ -1215,34 +1217,41 @@ class Ctrx
         $rawUrl = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
 
-        if($new){
-            $localFilePath = $localFilePath.".new";
+        if ($new) {
+            $dir = dirname($localFilePath);
+            if (!is_dir($dir)) {
+                if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                    return ["success" => false, "message" => "Failed to create directory {$dir}."];
+                }
+            }
+            $localFilePath = $localFilePath . ".new";
         }
 
         if (!self::remoteFileExists($rawUrl)) {
             return ["success" => false, "message" => "File not found in repository.!"];
         }
 
-        $newContent = null;
-        try {
-            $newContent = file_get_contents($rawUrl);
-        } catch (Throwable $e) {
-            return ["success" => false, "message" => $e->getMessage()];
-        } catch (ErrorException $e) {
-            return ["success" => false, "message" => $e->getMessage()];
-        } catch (Exception $e) {
-            return ["success" => false, "message" => $e->getMessage()];
+        $newContent = @file_get_contents($rawUrl);
+
+        if ($newContent === false) {
+            return ["success" => false, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
         }
 
-        if ($newContent !== false) {
-            if (file_put_contents($localFilePath, $newContent)) {
-                return ["success" => true, "message" => "Successfully updated {$filePath} from CTRX."];
-            } else {
-                return ["success" => false, "message" => "Failed to write to the local file. Check file permissions."];
+        $dir = dirname($localFilePath);
+        if (!is_dir($dir)) {
+            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return ["success" => false, "message" => "Failed to create directory {$dir}."];
             }
-        } else {
-            return ["success" => true, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
         }
+
+        $bytes = @file_put_contents($localFilePath, $newContent);
+
+        if ($bytes === false) {
+            $err = error_get_last();
+            return ["success" => false, "message" => "Failed to write to {$localFilePath}. " . ($err['message'] ?? "Check file permissions.")];
+        }
+
+        return ["success" => true, "message" => "Successfully updated {$filePath} from CTRX."];
     }
 
     public static function systemMaintenance($variables = [], $page = "maintenance", $exit = true)
