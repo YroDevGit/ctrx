@@ -1414,7 +1414,7 @@ if ($route == "run" || $route == "server") {
         }
 
         if ($status === 'modified' && $isBak($filename)) {
-            $ret = \Classes\Ctrx::updateFile($filename . '.new');
+            $ret = \Classes\Ctrx::updateFile($filename, true);
             if (isset($ret['success']) && $ret['success'] === true) {
                 echo "📄 Copied (protected): {$filename} → {$filename}.new\n";
             } else {

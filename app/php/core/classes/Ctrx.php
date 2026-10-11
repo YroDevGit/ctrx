@@ -1201,7 +1201,7 @@ class Ctrx
         }
     }
 
-    public static function updateFile(string $filePath)
+    public static function updateFile(string $filePath, $new = false)
     {
         include_once "app/php/core/partials/envloader.php";
         $filePath = trim($filePath, " /\\");
@@ -1214,6 +1214,10 @@ class Ctrx
         $repo = str_replace("\\", "/", $repo);
         $rawUrl = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
+
+        if($new){
+            $localFilePath = $localFilePath.".new";
+        }
 
         if (!self::remoteFileExists($rawUrl)) {
             return ["success" => false, "message" => "File not found in repository.!"];
