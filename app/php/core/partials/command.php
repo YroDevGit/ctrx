@@ -1354,6 +1354,31 @@ if ($route == "run" || $route == "server") {
 
     $failed = [];
 
+    $bak = [
+        "app/config/*",
+        "app/picker/*",
+        "views/code/src/style/*",
+        "views/code/tyrax/config.js",
+        "app/php/db/ctrx.db",
+        "app/_controller/*"
+    ];
+
+    $isBak = function ($path) use ($bak) {
+        foreach ($bak as $pattern) {
+            if (str_ends_with($pattern, '/*')) {
+                $prefix = substr($pattern, 0, -1);
+                if (str_starts_with($path, $prefix)) {
+                    return true;
+                }
+            } else {
+                if ($path === $pattern) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     foreach ($changedFiles as $file) {
         $status   = $file['status']   ?? 'unknown';
         $filename = $file['filename'] ?? '';
@@ -1364,13 +1389,17 @@ if ($route == "run" || $route == "server") {
 
         if ($status === 'renamed' && !empty($file['previous_filename'])) {
             $old = $file['previous_filename'];
-            if (file_exists($old)) {
+            if (!$isBak($old) && file_exists($old)) {
                 @unlink($old);
                 echo "➖ Removed (renamed from): {$old}\n";
             }
         }
 
         if ($status === 'removed') {
+            if ($isBak($filename)) {
+                echo "ℹ️  Skipped (protected, not removed): {$filename}\n";
+                continue;
+            }
             if (file_exists($filename)) {
                 if (@unlink($filename)) {
                     echo "➖ Removed: {$filename}\n";
@@ -1380,6 +1409,18 @@ if ($route == "run" || $route == "server") {
                 }
             } else {
                 echo "ℹ️  Skipped (already absent): {$filename}\n";
+            }
+            continue;
+        }
+
+        if ($status === 'modified' && $isBak($filename)) {
+            $ret = \Classes\Ctrx::updateFile($filename . '.new');
+            if (isset($ret['success']) && $ret['success'] === true) {
+                echo "📄 Copied (protected): {$filename} → {$filename}.new\n";
+            } else {
+                $err = $ret['message'] ?? "Error";
+                echo "❌ {$filename}.new: {$err}\n";
+                $failed[] = $filename . '.new';
             }
             continue;
         }
@@ -1416,7 +1457,7 @@ if ($route == "run" || $route == "server") {
     }
     echo "\n";
     exit(1);
-} else if ($route == "dl:testmemory" || $route == "dl:test:memory") {
+}else if ($route == "dl:testmemory" || $route == "dl:test:memory") {
     $targetDir = 'views/pages/test/';
 
     if (!is_dir($targetDir)) {

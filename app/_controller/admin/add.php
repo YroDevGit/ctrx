@@ -4,4 +4,4 @@
 
 use Classes\Response;
 
-Response::code(200)->send();
+Response::code(200)->send(); 
