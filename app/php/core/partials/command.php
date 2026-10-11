@@ -1369,6 +1369,12 @@ if ($route == "run" || $route == "server") {
         "views/code/tyrax/config.js",
         "app/php/db/ctrx.db",
         "app/_controller/*",
+        ".env",
+        "favicon.ico",
+        "composer.json",
+        "app/php/db/*",
+        "app/_routes/*"
+
     ];
 
     $isBak = function ($path) use ($bak) {
@@ -1427,8 +1433,8 @@ if ($route == "run" || $route == "server") {
                 echo "📄 Copied (protected): {$filename} → {$filename}.new\n";
             } else {
                 $err = $ret['message'] ?? "Error";
-                echo "❌ {$filename}.new: {$err}\n";
-                $failed[] = $filename . '.new';
+                echo "❌ ;{$filename}: {$err}\n";
+                $failed[] = ";".$filename;
             }
             continue;
         }
