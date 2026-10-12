@@ -1314,6 +1314,9 @@ if ($route == "run" || $route == "server") {
     $err = $ret['message'] ?? "Error";
     echo "❌ " . $err . "\n\n";
     exit;
+}else if($route == "ctrx:version"){
+    $localTag = \Classes\Ctrx::ctrx_version();
+    echo "⭐ CTRX ".$localTag."\n";
 }else if ($route == "update:ctrx") {
     echo "\n";
     $owner = 'YroDevGit';
