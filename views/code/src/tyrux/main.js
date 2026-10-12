@@ -194,51 +194,53 @@ const opt = {
 
 const tyrax = { // tyrux default config :: CodeTazeR
     config: {},
-    api(op) {
-        tyrux(configure._mergeOptions(op, this));
-    },
 
-    post(option = opt) {
-        option.method = "POST";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    put(option = opt) {
-        option.method = "PUT";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    get(option = opt) {
-        option.method = "GET";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    patch(option = opt) {
-        option.method = "PATCH";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    delete(option = opt) {
-        option.method = "DELETE";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    head(option = opt) {
-        option.method = "HEAD";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    options(option = opt) {
-        option.method = "OPTIONS";
-        tyrux(configure._mergeOptions(option, this));
-    },
-
-    async(option = opt) {
+    _request(option, method) {
+        option.method = method;
         return new Promise((resolve, reject) => {
+            tyrux(configure._mergeOptions({
+                ...option,
+                response: (res) => { option.response?.(res); resolve(res); }
+            }, this));
+        });
+    },
+
+    api(options)       { return this._request(options, options.method || "GET"); },
+    post(options = opt) { return this._request(options, "POST"); },
+    put(options = opt)  { return this._request(options, "PUT"); },
+    get(options = opt)  { return this._request(options, "GET"); },
+    async get_result(url, where, others = null) {
+        let options = opt;
+        options.url = url;
+        if(typeof where == "object"){
+            options.where = where;
+        }else{
+            options.where = {"q":where};
+        }
+        if(others){
+            options = {...options, ...others};
+        }
+
+        let result = await this._request(options, "GET");
+        return result ?? [];
+    },
+    async get_data(url, where, others = null){
+        let res = await this.get_result(url, where, others);
+        return res.data ?? [];
+    },
+    patch(options = opt){ return this._request(options, "PATCH"); },
+    delete(options = opt){ return this._request(options, "DELETE"); },
+    head(options = opt) { return this._request(options, "HEAD"); },
+    options(options = opt){ return this._request(options, "OPTIONS"); },
+
+    async(option = opt, autoResolve = false) {
+        return new Promise((resolve, reject) => {
+            if(autoResolve){
+                option.error = (err)=>{if(option.dataOnly){console.error(err);resolve([]);}else{reject(err);}};
+            }
             tyrux({
                 ...option,
                 response: res => {if(option.dataOnly){resolve(res.data ?? []);}else{resolve(res);}},
-                error: err => {if(option.dataOnly){console.error(err);resolve([]);}else{reject(err);}}
             });
         });
     },
