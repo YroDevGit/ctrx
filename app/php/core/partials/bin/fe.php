@@ -477,9 +477,22 @@ if (! function_exists("has_internet_connection")) {
 }
 
 if (! function_exists("get")) {
-    function get(string $key)
+    function get(string|null $key = null, string|bool $trim = false)
     {
-        return isset($_GET[$key]) ? $_GET[$key] : null;
+        $ret = null;
+        if(! $key){
+            $ret = isset($_GET['q']) ? $_GET['q'] : null;
+        }else{
+            $ret = isset($_GET[$key]) ? $_GET[$key] : null;
+        }
+        if($trim && $ret){
+            if(is_bool($trim)){
+                $ret = trim($ret);
+            }else{
+                $ret = trim($ret, $trim);
+            }
+        }
+        return $ret;
     }
 }
 
