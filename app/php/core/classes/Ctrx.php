@@ -1224,7 +1224,7 @@ class Ctrx
                     return ["success" => false, "message" => "Failed to create directory {$dir}."];
                 }
             }
-            $localFilePath = $localFilePath . ".new";
+            $localFilePath = ";".$localFilePath;
         }else if($new == "n"){
             $dir = dirname($localFilePath);
             if (!is_dir($dir)) {

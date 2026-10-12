@@ -1433,10 +1433,10 @@ if ($route == "run" || $route == "server") {
         if ($status === 'modified' && $isBak($filename)) {
             $ret = \Classes\Ctrx::updateFile($filename, "m");
             if (isset($ret['success']) && $ret['success'] === true) {
-                echo "📄 Copied (protected): {$filename} → {$filename}.new\n";
+                echo "📄 Copied (protected): $filename → ;$filename\n";
             } else {
                 $err = $ret['message'] ?? "Error";
-                echo "❌ ;{$filename}: {$err}\n";
+                echo "❌ ;$filename: $err\n";
                 $failed[] = ";".$filename;
             }
             continue;
