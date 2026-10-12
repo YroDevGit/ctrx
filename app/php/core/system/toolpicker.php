@@ -32,7 +32,7 @@ if (isset($_GET['exportConfig']) && $_GET['exportConfig'] == "true") {
   $file = 'app/php/db/ctrx.db';
   $env = env("environment") ? "_".env("environment") : "";
   header('Content-Type: application/octet-stream');
-  header("Content-Disposition: attachment; filename='ctrx".$env.".db'");
+  header("Content-Disposition: attachment; filename=ctrx".$env.".db");
   header('Content-Length: ' . filesize($file));
   readfile($file);
   exit;
