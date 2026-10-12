@@ -30,9 +30,9 @@ if (isset($_GET['importConfig']) && $_GET['importConfig'] == "true") {
 
 if (isset($_GET['exportConfig']) && $_GET['exportConfig'] == "true") {
   $file = 'app/php/db/ctrx.db';
-
+  $env = env("environment") ? "_".env("environment") : "";
   header('Content-Type: application/octet-stream');
-  header('Content-Disposition: attachment; filename="ctrx.db"');
+  header("Content-Disposition: attachment; filename='ctrx".$env.".db'");
   header('Content-Length: ' . filesize($file));
 
   readfile($file);
