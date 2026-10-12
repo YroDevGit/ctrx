@@ -1316,7 +1316,7 @@ if ($route == "run" || $route == "server") {
     exit;
 }else if($route == "ctrx:version"){
     $localTag = \Classes\Ctrx::ctrx_version();
-    echo "⭐ CTRX ".$localTag."\n";
+    echo "\n⭐ CTRX ".$localTag."\n\n";
 }else if ($route == "update:ctrx") {
     echo "\n";
     $owner = 'YroDevGit';
