@@ -268,8 +268,9 @@ if (isset($_GET['exportStorage']) && $_GET['exportStorage'] == "true") {
       redirect(path: "/ctrx", time: 2, exit: false);
     }
 
+    $env = env("environment") ? "_".env("environment") : "";
     header('Content-Type: application/zip');
-    header('Content-Disposition: attachment; filename="storage.zip"');
+    header("Content-Disposition: attachment; filename=storage_$env.zip");
     header('Content-Length: ' . filesize($tmpZip));
     header('Pragma: no-cache');
     header('Expires: 0');
