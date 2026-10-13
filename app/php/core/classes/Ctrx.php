@@ -97,10 +97,10 @@ class Ctrx
         return self::x_rate_limit($limit, $seconds, "");
     }
 
-    public static function throttle_this(int $limit, int $seconds = 60, string|int $route)
+    public static function throttle_this(string|int $name, int $limit, int $seconds = 60)
     {
-        $route = current_be()."_".strval($route);
-        return self::x_rate_limit($limit, $seconds, $route);
+        $name = current_be()."_".strval($name);
+        return self::x_rate_limit($limit, $seconds, $name);
     }
 
     public static function x_rate_details(string|null $route = "")
