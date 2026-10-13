@@ -1380,7 +1380,6 @@ if ($route == "run" || $route == "server") {
         "composer.json",
         "app/php/db/*",
         "app/_routes/*"
-
     ];
 
     $isBak = function ($path) use ($bak) {
@@ -1399,67 +1398,157 @@ if ($route == "run" || $route == "server") {
         return false;
     };
 
+    $detailed = ($filename === "--detailed");
+
+    $total   = count($changedFiles);
+    $current = 0;
+
+    $renderBar = function (int $done, int $total, string $label = '') use (&$renderBar) {
+        static $lastLen = 0;
+        $width   = 30;
+        $percent = $total > 0 ? (int) floor(($done / $total) * 100) : 100;
+        $filled  = (int) floor(($percent / 100) * $width);
+        $empty   = $width - $filled;
+
+        $bar = "[" . str_repeat("█", $filled) . str_repeat("░", $empty) . "]";
+        $line = sprintf("  %s %3d%%  %s", $bar, $percent, $label);
+
+        $pad = max(0, $lastLen - strlen($line));
+        $lastLen = strlen($line);
+
+        echo "\r" . $line . str_repeat(" ", $pad);
+        if (function_exists('flush')) {
+            @flush();
+        }
+    };
+    
     foreach ($changedFiles as $file) {
         $status   = $file['status']   ?? 'unknown';
         $filename = $file['filename'] ?? '';
 
         if ($filename === '') {
+            $current++;
             continue;
         }
 
-        if ($status === 'renamed' && !empty($file['previous_filename'])) {
-            $old = $file['previous_filename'];
-            if (!$isBak($old) && file_exists($old)) {
-                @unlink($old);
-                echo "➖ Removed (renamed from): {$old}\n";
-            }
+        $label = "";
+        if ($detailed) {
+            $label = $filename;
+        } else {
+            $label = match ($status) {
+                'added'    => "adding",
+                'modified' => "updating",
+                'removed'  => "removing",
+                'renamed'  => "renaming",
+                default    => "applying",
+            } . " files…";
         }
 
-        if ($status === 'removed') {
-            if ($isBak($filename)) {
-                echo "ℹ️  Skipped (protected, not removed): {$filename}\n";
+        if ($detailed) {
+            if ($status === 'renamed' && !empty($file['previous_filename'])) {
+                $old = $file['previous_filename'];
+                if (!$isBak($old) && file_exists($old)) {
+                    @unlink($old);
+                    echo "➖ Removed (renamed from): {$old}\n";
+                }
+            }
+
+            if ($status === 'removed') {
+                if ($isBak($filename)) {
+                    echo "ℹ️  Skipped (protected, not removed): {$filename}\n";
+                    $current++;
+                    continue;
+                }
+                if (file_exists($filename)) {
+                    if (@unlink($filename)) {
+                        echo "➖ Removed: {$filename}\n";
+                    } else {
+                        echo "❌ Failed to remove: {$filename}\n";
+                        $failed[] = $filename;
+                    }
+                } else {
+                    echo "ℹ️  Skipped (already absent): {$filename}\n";
+                }
+                $current++;
                 continue;
             }
-            if (file_exists($filename)) {
-                if (@unlink($filename)) {
-                    echo "➖ Removed: {$filename}\n";
-                } else {
-                    echo "❌ Failed to remove: {$filename}\n";
-                    $failed[] = $filename;
-                }
-            } else {
-                echo "ℹ️  Skipped (already absent): {$filename}\n";
-            }
-            continue;
-        }
 
-        if ($status === 'modified' && $isBak($filename)) {
-            $ret = \Classes\Ctrx::updateFile($filename, "m");
+            if ($status === 'modified' && $isBak($filename)) {
+                $ret = \Classes\Ctrx::updateFile($filename, "m");
+                if (isset($ret['success']) && $ret['success'] === true) {
+                    echo "📄 Copied (protected): $filename → ;$filename\n";
+                } else {
+                    $err = $ret['message'] ?? "Error";
+                    echo "❌ ;$filename: $err\n";
+                    $failed[] = ";".$filename;
+                }
+                $current++;
+                continue;
+            }
+
+            $ret = \Classes\Ctrx::updateFile($filename, "n");
+
             if (isset($ret['success']) && $ret['success'] === true) {
-                echo "📄 Copied (protected): $filename → ;$filename\n";
+                $icon = match ($status) {
+                    'added'   => "➕ Added",
+                    'modified'=> "🔄 Updated",
+                    'renamed' => "🔀 Renamed",
+                    default   => "✔️  Applied",
+                };
+                echo "{$icon}: {$filename}\n";
             } else {
                 $err = $ret['message'] ?? "Error";
-                echo "❌ ;$filename: $err\n";
-                $failed[] = ";".$filename;
+                echo "❌ {$filename}: {$err}\n";
+                $failed[] = $filename;
             }
-            continue;
-        }
-
-        $ret = \Classes\Ctrx::updateFile($filename, "n");
-
-        if (isset($ret['success']) && $ret['success'] === true) {
-            $icon = match ($status) {
-                'added'   => "➕ Added",
-                'modified'=> "🔄 Updated",
-                'renamed' => "🔀 Renamed",
-                default   => "✔️  Applied",
-            };
-            echo "{$icon}: {$filename}\n";
         } else {
-            $err = $ret['message'] ?? "Error";
-            echo "❌ {$filename}: {$err}\n";
-            $failed[] = $filename;
+            if ($status === 'renamed' && !empty($file['previous_filename'])) {
+                $old = $file['previous_filename'];
+                if (!$isBak($old) && file_exists($old)) {
+                    @unlink($old);
+                }
+            }
+
+            if ($status === 'removed') {
+                if ($isBak($filename)) {
+                    $current++;
+                    $renderBar($current, $total, $label);
+                    continue;
+                }
+                if (file_exists($filename)) {
+                    if (!@unlink($filename)) {
+                        $failed[] = $filename;
+                    }
+                }
+                $current++;
+                $renderBar($current, $total, $label);
+                continue;
+            }
+
+            if ($status === 'modified' && $isBak($filename)) {
+                $ret = \Classes\Ctrx::updateFile($filename, "m");
+                if (!isset($ret['success']) || $ret['success'] !== true) {
+                    $failed[] = ";".$filename;
+                }
+                $current++;
+                $renderBar($current, $total, $label);
+                continue;
+            }
+
+            $ret = \Classes\Ctrx::updateFile($filename, "n");
+            if (!isset($ret['success']) || $ret['success'] !== true) {
+                $failed[] = $filename;
+            }
         }
+
+        $current++;
+        if (!$detailed) {
+            $renderBar($current, $total, $label);
+        }
+    }
+
+    if (!$detailed) {
+        echo "\n";
     }
 
     echo "\n";
