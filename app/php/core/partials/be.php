@@ -734,15 +734,15 @@ if (! function_exists("get_user_data")) {
     }
 }
 
-if (! function_exists("myId")) {
-    function myID(string $column = "id")
+if (! function_exists("my_id")) {
+    function my_id(string $column = "id")
     {
         return get_user_data($column) ?? null;
     }
 }
 
-if (! function_exists("dateLocal")) {
-    function dateLocal($date, $timezone = null)
+if (! function_exists("date_local")) {
+    function date_local($date, $timezone = null)
     {
         return \Classes\Date::local($date, $timezone);
     }
