@@ -4,7 +4,12 @@ use Classes\Validator;
 
 $data = \Classes\Ctrx::get_admin_data();
 $data = $data[0] ?? null;
-if (! $data) {
+
+if (! $data || ! isset($data['id']) || ! isset($data['username'])) {
+  redirect("/ctrx/admin/logout");
+}
+
+if($data['active'] != 1){
   redirect("/ctrx/admin/logout");
 }
 

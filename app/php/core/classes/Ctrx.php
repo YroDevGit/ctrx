@@ -733,10 +733,19 @@ class Ctrx
         $ctrxdata = \Classes\Ccookie::add("ctrx_user_data_admin", $data, 60);
     }
 
-    public static function get_admin_data()
+    public static function get_admin_data(string|int $key = "*")
     {
-        $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
-        return $ctrxdata;
+        try {
+            $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
+            if (! $ctrxdata) return null;
+            if ($key == "*") {
+                return $ctrxdata;
+            }
+            return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
+        } catch (Throwable $e) {
+            add_sql_log("User data decryption error", "server_errors", "DECRYPTION ERROR");
+            return null;
+        }
     }
 
     public static function remove_admin_data()
