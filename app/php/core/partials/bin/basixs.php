@@ -11,10 +11,10 @@ function encrypt($data, string|null $key = null)
     $encrypted_data = null;
     if ($key == null || $key == "") {
         $enc = env("encrypt_key") ?? "ctrx_yro";
-        $ky = "ctrxyro_salt_".$enc;
+        $ky = "yro_".$enc;
         $encrypted_data = openssl_encrypt($data, $cipher, $ky , 0, $iv);
     } else {
-        $ky = "ctrxyro_salt_".$key;
+        $ky = "yro_".$key;
         $encrypted_data = openssl_encrypt($data, $cipher, $ky, 0, $iv);
     }
 
@@ -64,7 +64,7 @@ function decrypt($encrypted_data, string|null $key = null)
     $encrypted_data = substr($decoded_data, $iv_length);
 
     $decryption_key = $key ?: env("encrypt_key");
-    $newDec = "ctrxyro_salt_". $decryption_key;
+    $newDec = "yro_". $decryption_key;
     $decrypted_data = openssl_decrypt($encrypted_data, $cipher, $newDec, 0, $iv);
 
     if ($decrypted_data === false || !mb_check_encoding($decrypted_data, 'UTF-8')) {

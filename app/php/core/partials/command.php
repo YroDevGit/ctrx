@@ -1112,6 +1112,9 @@ if ($route == "run" || $route == "server") {
     $tyroneEmzname = "Tyrone Limen Malocon 2025";
     echo "\033[32m$tyroneEmzname\033[0m\n";
     exit;
+}else if($route == "generate:hash"){
+    $hash = \Classes\hash::hash(\Classes\Random::string("10"));
+    echo $hash;exit;
 } else if ($route == "run:cron") {
     require_once 'vendor/autoload.php';
     include_once "app/php/core/partials/envloader.php";
