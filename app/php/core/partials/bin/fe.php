@@ -487,6 +487,15 @@ if(! function_exists("pagedir")){
     }
 }
 
+if(! function_exists("pagedir_include")){
+    function pagedir_include($page){
+        $page = pagedir($page);
+        $page = append_php($page);
+        $page = trim($page, " /\\");
+        include $page;
+    }
+}
+
 if(! function_exists("pagedir_css")){
     function pagedir_css(string $file){
         $newfile = pagedir($file);
