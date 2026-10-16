@@ -480,8 +480,8 @@ if(! function_exists("pagedir")){
     function pagedir(string|null $file = null){
         $fe = current_page();
         $fe = trim($fe, " /\\");
-        $file = "/views/pages/". $fe.".php";
-        $dir = dirname($file);
+        $fkfile = "/views/pages/". $fe.".php";
+        $dir = dirname($fkfile);
         if(! $file) return $dir;
         return $dir."/".$file;
     }
@@ -489,8 +489,7 @@ if(! function_exists("pagedir")){
 
 if(! function_exists("pagedir_css")){
     function pagedir_css(string $file){
-        $dir = pagedir($file);
-        $newfile = $dir."/".$file;
+        $newfile = pagedir($file);
         if(! str_ends_with($newfile, ".css")){
             $newfile = $newfile.".css";
         }
@@ -500,8 +499,7 @@ if(! function_exists("pagedir_css")){
 
 if(! function_exists("pagedir_js")){
     function pagedir_js(string $file){
-        $dir = pagedir($file);
-        $newfile = $dir."/".$file;
+        $newfile = pagedir($file);
         if(! str_ends_with($newfile, ".js")){
             $newfile = $newfile.".js";
         }
