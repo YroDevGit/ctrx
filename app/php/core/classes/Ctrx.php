@@ -97,6 +97,18 @@ class Ctrx
         return self::x_rate_limit($limit, $seconds, "");
     }
 
+    static function _hasUnderscoreDir(string $path): bool
+    {
+        $segments = explode('/', trim($path, '/'));
+
+        foreach ($segments as $segment) {
+            if ($segment !== '' && $segment[0] === '_') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function throttle_this(string|int $name, int $limit, int $seconds = 60)
     {
         $name = current_be()."_".strval($name);
