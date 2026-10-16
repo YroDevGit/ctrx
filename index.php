@@ -128,17 +128,17 @@ $blocked = [
  * Block protected access
  */
 foreach ($blocked as $path) {
+    if($path == "/views/pages/"){
+        continue;
+    }
     if (strpos($uri, $path) === 0) {
         http_response_code(403);
-
         $forbidden = 'views/core/errors/forbidden.php';
-
         if (\Classes\Ctrx::file_exists_strict($forbidden)) {
             include $forbidden;
         } else {
             echo "403 Forbidden";
         }
-
         exit;
     }
 }

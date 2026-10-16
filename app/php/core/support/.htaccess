@@ -1,7 +1,7 @@
 RewriteEngine On
 
 # ==========================================
-# CTRX - PROTECTION LAYER
+# CTRX - PROTECTION LAYER - By CodeYro
 # ==========================================
 
 RewriteRule ^app/php/db/ctrx\.db$ - [F,L,NC]
@@ -22,7 +22,10 @@ RewriteRule \.(sql|bak|backup|old|orig|tmp)$ - [F,L,NC]
 RewriteRule \.tar\.gz$ - [F,L,NC]
 RewriteRule \.db$ - [F,L,NC]
 
-RewriteRule ^views/pages/ - [F,L]
+RewriteCond %{REQUEST_URI} ^/views/pages/ [NC]
+RewriteCond %{REQUEST_URI} \.(css|js|mjs|map|png|jpe?g|gif|svg|webp|avif|ico|bmp|woff2?|ttf|eot|otf|mp4|webm|ogg|mp3|wav|pdf)$ [NC]
+RewriteRule ^ - [L]
+
 RewriteRule ^views/includes/ - [F,L]
 RewriteRule ^views/core/ - [F,L]
 RewriteRule ^views/app/ - [F,L]
@@ -34,6 +37,25 @@ RewriteRule ^app/php/core/ - [F,L]
 
 RewriteRule ^vendor/ - [F,L]
 RewriteRule ^composer\.(json|lock)$ - [F,L,NC]
+
+# Ctrx Javascript
+RewriteCond %{REQUEST_URI} ^/(views/js/|views/code/src/|views/code/script/|views/code/settings/) [NC]
+RewriteCond %{REQUEST_URI} !\.(js|css)$ [NC]
+RewriteCond %{REQUEST_FILENAME}.js -f
+RewriteRule ^(.*)$ $1.js [L,T=application/javascript]
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+</IfModule>
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
