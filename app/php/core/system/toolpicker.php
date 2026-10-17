@@ -287,6 +287,7 @@ if (isset($_GET['exportStorage']) && $_GET['exportStorage'] == "true") {
 }
 
 if (isset($_POST['importStorage']) && $_POST['importStorage'] == "true") {
+  sleep(5);
   if (empty($_FILES['storage_zip']) || $_FILES['storage_zip']['error'] !== UPLOAD_ERR_OK) {
     $errmsg = "Failed to import storage: no file uploaded";
     redirect(path: "/ctrx", time: 2, exit: false);
@@ -1174,6 +1175,24 @@ $size = folderSize('app/php/logs');
         margin-right: auto;
       }
     }
+
+    .overlayloading{
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      top: 0;
+      left: 0;
+      align-content: center;
+      z-index: 999999;
+      background-color: white;
+      justify-content: center;
+      > div{
+        font-size: 18px;
+      }
+    }
+    .overlayloading-none{
+      display: none;
+    }
   </style>
 </head>
 
@@ -1404,6 +1423,11 @@ $size = folderSize('app/php/logs');
     </div>
   </dialog>
 
+  <div class="overlayloading" id="overlayloading" style="display:none;" align='center'>
+    <div>
+      Uploading. Please wait...
+    </div>
+  </div>
 
   <?php if ($submitd): ?>
     <script>
@@ -1414,6 +1438,10 @@ $size = folderSize('app/php/logs');
   <script>
     (function() {
       const toolItems = document.querySelectorAll('.tool-item');
+
+      document.querySelector("#importStorageForm").addEventListener("submit", ()=>{
+        document.querySelector("#overlayloading").style.display = "";
+      });
 
       function handleToolClick(event) {
         const card = event.currentTarget;
