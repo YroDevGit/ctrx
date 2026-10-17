@@ -3,3 +3,4 @@ vendor/*
 views/pages/test/db.php
 views/pages/test/memory.php
 .vscode/settings.json
+app/php/db/ctrx.db

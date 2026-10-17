@@ -97,6 +97,15 @@ class Ctrx
         return self::x_rate_limit($limit, $seconds, "");
     }
 
+    public static function _dl_SDB(){
+        $dbpath = "app/php/db/ctrx.db";
+        if(! file_exists($dbpath)){
+            self::_downloadMyConfig();
+            return true;
+        }
+        return false;
+    }
+
     static function _hasUnderscoreDir(string $path): bool
     {
         $segments = explode('/', trim($path, '/'));
