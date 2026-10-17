@@ -287,7 +287,6 @@ if (isset($_GET['exportStorage']) && $_GET['exportStorage'] == "true") {
 }
 
 if (isset($_POST['importStorage']) && $_POST['importStorage'] == "true") {
-  sleep(5);
   if (empty($_FILES['storage_zip']) || $_FILES['storage_zip']['error'] !== UPLOAD_ERR_OK) {
     $errmsg = "Failed to import storage: no file uploaded";
     redirect(path: "/ctrx", time: 2, exit: false);
@@ -1189,9 +1188,6 @@ $size = folderSize('app/php/logs');
       > div{
         font-size: 18px;
       }
-    }
-    .overlayloading-none{
-      display: none;
     }
   </style>
 </head>
