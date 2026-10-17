@@ -478,7 +478,7 @@ if (! function_exists("has_internet_connection")) {
 
 if(! function_exists("pagedir")){
     function pagedir(string|null $file = null){
-        $fe = current_page();
+        $fe = \Classes\Ctrx::_current_page();
         $fe = trim($fe, " /\\");
         $fkfile = "/views/pages/". $fe.".php";
         $dir = dirname($fkfile);

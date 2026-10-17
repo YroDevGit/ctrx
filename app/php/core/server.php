@@ -424,10 +424,16 @@ if (str_starts_with($req, "api/")) {
             exit;
         }
 
-        if (!\Classes\Ctrx::file_exists_strict($fullpath)) {
-            $errorpage = $view_config["page_not_found"] ?? "404";
-            \Classes\Ctrx::page404($errorpage, false);
-            exit;
+        if (! \Classes\Ctrx::file_exists_strict($fullpath)) {
+            $fullpath = rem_php($fullpath);
+            if(is_dir($fullpath) && file_exists($fullpath."/index.php")){
+                \Classes\Ctrx::_set_current_fe($req."/index");
+                $fullpath = $fullpath."/index.php";
+            }else{
+                $errorpage = $view_config["page_not_found"] ?? "404";
+                \Classes\Ctrx::page404($errorpage, false);
+                exit;
+            }
         }
         if (isset($_SESSION['ctrx_translate']) && $_SESSION['ctrx_translate'] != "") {
             \Classes\Ctrx::loadTranslations();

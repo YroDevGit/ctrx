@@ -1220,6 +1220,32 @@ class Ctrx
         }
     }
 
+    static function _set_current_fe($newFe){
+        $_SESSION['basixs_current_fe_ctrx'] = $newFe;
+    }
+
+    static function _current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
+    {
+        $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
+        if (! $filename) $filename = fe_config('main_page');
+        if (! str_starts_with($filename, "/") && $startsWithSlash) {
+            $filename = "/" . $filename;
+        }
+        if (! $startsWithSlash && str_starts_with($filename, "/")) {
+            $filename = substr($filename, 1);
+        }
+        if (! $withParam) {
+            $expl = explode("?", $filename);
+            $filename = $expl[0] ?? "";
+        }
+        if (! $php_exention) {
+            $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;
+            return $filename;
+        }
+
+        return $filename;
+    }
+
     public static function remoteFileExists($url)
     {
         $ch = curl_init($url);
