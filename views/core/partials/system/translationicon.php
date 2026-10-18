@@ -108,7 +108,7 @@ try {
       <?php if ($success): ?>
         <?php
         $backg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
-        if (! isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) || ! $GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) {
+        if (! isset($_COOKIE['__ctrx_translate']) || ! $_COOKIE['__ctrx_translate']) {
           $backg_col = " background: #efefb2; color: black;";
         }
         ?>
@@ -123,8 +123,8 @@ try {
             $name = $val['name'] ?? $val['lang'] ?? "Unknown";
             $lang = $val['lang'] ?? null;
             $bg_col = " background: rgba(255,255,255,0.1); color: #f0f0f0;";
-            if ($lang && is_string($lang) && isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate'])) {
-              if ($lang == $GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) {
+            if ($lang && is_string($lang) && isset($_COOKIE['__ctrx_translate'])) {
+              if ($lang == $_COOKIE['__ctrx_translate']) {
                 $bg_col = " background: #efefb2; color: black;";
               }
             }

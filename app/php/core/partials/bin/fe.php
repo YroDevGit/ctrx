@@ -905,7 +905,7 @@ if (! function_exists("translation_icon")) {
 if (! function_exists("current_language")) {
     function current_language()
     {
-        return $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] ?? null;
+        return $_COOKIE['__ctrx_translate'] ?? null;
     }
 }
 
@@ -924,11 +924,11 @@ if (! function_exists("t")) {
             return $string;
         }
 
-        if (!isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) || !is_string($GLOBALS['_CTRX_COOKIES']['__ctrx_translate'])) {
+        if (!isset($_COOKIE['__ctrx_translate']) || !is_string($_COOKIE['__ctrx_translate'])) {
             return $string;
         }
 
-        $lang = $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'];
+        $lang = $_COOKIE['__ctrx_translate'];
         if (!$lang) return $string;
 
         if (!isset($GLOBALS['ctrx_translations_loaded'])) {

@@ -222,6 +222,7 @@ if (str_starts_with($req, "api/")) {
     $trnsltn = $_GET['ctrx_translate'] ?? $_COOKIE['__ctrx_translate'] ?? null;
     if (isset($_GET['ctrx_translate'])) {
         $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] = $trnsltn;
+        $_COOKIE['__ctrx_translate'] = $trnsltn;
     }
     $GLOBALS['ctrx_endpoint'] = "FE";
     $GLOBALS['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
@@ -435,9 +436,9 @@ if (str_starts_with($req, "api/")) {
                 exit;
             }
         }
-        if (isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) && $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] != "") {
-            \Classes\Ctrx::loadTranslations();
-        }
+
+        \Classes\Ctrx::loadTranslations();
+        
         include $fullpath;
         private_loadAllJsFiles();
         if (env('debugger') == "yes") {

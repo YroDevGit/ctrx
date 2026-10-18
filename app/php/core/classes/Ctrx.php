@@ -1206,7 +1206,7 @@ class Ctrx
 
     public static function ctrx_prvPage($withParam = false)
     {
-        $url = $GLOBALS['_CTRX_COOKIES']['__cTrx_pReviOus_paGe3'];
+        $url = $_COOKIE['__cTrx_pReviOus_paGe3'];
         $path = parse_url($url, PHP_URL_PATH);
         $query = parse_url($url, PHP_URL_QUERY);
         if ($query) {
@@ -1546,10 +1546,18 @@ class Ctrx
 
     public static function loadTranslations()
     {
-        $lang = $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] ?? 'en';
+        if(! isset($_COOKIE['__ctrx_translate'])){
+            return null;
+        }
+
+        $lang = $_COOKIE['__ctrx_translate'];
+
+        if($lang == ""){
+            return null;
+        }
 
         if (isset($GLOBALS['ctrx_translations'][$lang])) {
-            return;
+            return null;
         }
 
         $cacheDir = 'views/core/partials/cache/';
