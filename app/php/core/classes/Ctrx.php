@@ -1547,17 +1547,17 @@ class Ctrx
     public static function loadTranslations()
     {
         if(! isset($_COOKIE['__ctrx_translate'])){
-            return null;
+            return;
         }
 
         $lang = $_COOKIE['__ctrx_translate'];
 
         if($lang == ""){
-            return null;
+            return;
         }
 
         if (isset($GLOBALS['ctrx_translations'][$lang])) {
-            return null;
+            return;
         }
 
         $cacheDir = 'views/core/partials/cache/';
