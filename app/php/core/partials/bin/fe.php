@@ -182,7 +182,7 @@ if (! function_exists("decrypt_csrf_codetazer")) {
 if (! function_exists("csrf")) {
     function csrf()
     {
-        $tkn = $_SESSION[ctr_secure_key] ?? null;
+        $tkn = $GLOBALS['_CTRX_COOKIES'][ctr_secure_key] ?? null;
         return "<input type='hidden' name='csrf_ctr_field' value='$tkn'>";
     }
 }
@@ -190,7 +190,7 @@ if (! function_exists("csrf")) {
 if (! function_exists("csrf_token")) {
     function csrf_token()
     {
-        return $_SESSION[ctr_secure_key] ?? null;
+        return $GLOBALS['_CTRX_COOKIES'][ctr_secure_key] ?? null;
     }
 }
 
@@ -287,7 +287,7 @@ if (! function_exists('back_end')) {
 if (! function_exists("current_page")) {
     function current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
     {
-        $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
+        $filename =  $GLOBALS['basixs_current_fe_ctrx'] ?? null;
         if (! $filename) return "/";
         if (! str_starts_with($filename, "/") && $startsWithSlash) {
             $filename = "/" . $filename;
@@ -311,14 +311,14 @@ if (! function_exists("current_page")) {
 if (! function_exists("page_title")) {
     function page_title()
     {
-        return $_SESSION['basixs_current_page_title'];
+        return $GLOBALS['basixs_current_page_title'];
     }
 }
 
 if (! function_exists("set_page_title")) {
     function set_page_title(string $pagetitle)
     {
-        $_SESSION['basixs_current_page_title'] = $pagetitle;
+        $GLOBALS['basixs_current_page_title'] = $pagetitle;
     }
 }
 
@@ -434,7 +434,7 @@ if (! function_exists("prev_page")) {
 if (! function_exists("ctrx_force_save_pages")) {
     function ctrx_force_save_previous_pages(string $previous_page)
     {
-        $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $previous_page;
+        $GLOBALS['_CTRX_COOKIES']['__cTrx_pReviOus_paGe3'] = $previous_page;
     }
 }
 
@@ -453,7 +453,7 @@ if (! function_exists("ctr_generate_request_id")) {
 if (! function_exists("ctr_get_current_request_id")) {
     function ctr_get_current_request_id()
     {
-        return $_SESSION["ctr_unique_request_id_x0015"] ?? null;
+        return $GLOBALS["ctr_unique_request_id_x0015"] ?? null;
     }
 }
 
@@ -905,7 +905,7 @@ if (! function_exists("translation_icon")) {
 if (! function_exists("current_language")) {
     function current_language()
     {
-        return $_SESSION['ctrx_translate'] ?? null;
+        return $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] ?? null;
     }
 }
 
@@ -924,11 +924,11 @@ if (! function_exists("t")) {
             return $string;
         }
 
-        if (!isset($_SESSION['ctrx_translate']) || !is_string($_SESSION['ctrx_translate'])) {
+        if (!isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) || !is_string($GLOBALS['_CTRX_COOKIES']['__ctrx_translate'])) {
             return $string;
         }
 
-        $lang = $_SESSION['ctrx_translate'];
+        $lang = $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'];
         if (!$lang) return $string;
 
         if (!isset($GLOBALS['ctrx_translations_loaded'])) {

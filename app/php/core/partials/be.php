@@ -10,7 +10,7 @@ if (! function_exists('json_response')) {
 
         $json = json_encode($data);
 
-        if($status == 200 && (isset($data['code']) && $data['code'] == success_code)){
+        if ($status == 200 && (isset($data['code']) && $data['code'] == success_code)) {
             $etag = md5($json);
             if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
                 $clientEtag = trim($_SERVER['HTTP_IF_NONE_MATCH'], '"');
@@ -32,20 +32,38 @@ if (! function_exists('json_response')) {
 if (! function_exists("ctrx_save_cookies")) {
     function ctrx_save_cookies()
     {
-        $newCookies = $GLOBALS['_CTRX_COOKIES'] ?? null;
-        if ($newCookies) {
-            foreach ($newCookies as $key => $val) {
-                if (isset($val['delete']) && $val['delete'] == "yes") {
-                    setcookie($key, "", time() - 3600, "/", "", isset($_SERVER['HTTPS']));
-                    continue;
-                }
-                $value = $val['value'] ?? null;
-                $expiry = $val['expiry'] ?? null;
-                if (! $value && ! $expiry) {
-                    continue;
-                }
-                setcookie($key, $value, $expiry, "/", "", isset($_SERVER['HTTPS']));
+        $newCookies = $GLOBALS['_CTRX_COOKIES'] ?? [];
+        if (!is_array($newCookies) || !$newCookies) {
+            return;
+        }
+
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['SERVER_PORT'] ?? null) == 443);
+
+        foreach ($newCookies as $key => $val) {
+            if (!empty($val['delete']) && $val['delete'] === 'yes') {
+                setcookie($key, '', time() - 3600, '/', '', $secure, true);
+                continue;
             }
+
+            if(! is_array($val)){
+                $year = intval(date("Y")) + 10;
+                $expiry = strtotime("$year-12-31 23:59:59");
+                $val = [
+                    "value" => $val,
+                    "expiry" => $expiry
+                ];
+            }
+
+            $value  = $val['value']  ?? "";
+            $expiry = $val['expiry'] ?? null;
+
+
+            if(! $value || ! $expiry){
+                continue;
+            }
+
+            setcookie($key, (string) $value, (int) ($expiry ?? 0), '/', '', $secure, true);
         }
     }
 }
@@ -196,8 +214,9 @@ if (! function_exists("post")) {
     }
 }
 
-if(! function_exists("old_value")){
-    function old_value(string|null $inputname = null, bool|null|string|float $trim = true){
+if (! function_exists("old_value")) {
+    function old_value(string|null $inputname = null, bool|null|string|float $trim = true)
+    {
         return post($inputname, $trim);
     }
 }
@@ -234,10 +253,10 @@ if (! function_exists("get")) {
     /** (Any) returns the value of the get */
     function get(string $key, $trim = true)
     {
-        if($trim){
-            if(is_bool($trim)){
+        if ($trim) {
+            if (is_bool($trim)) {
                 return isset($_GET[$key]) ? trim(val($_GET[$key], "")) : null;
-            }else{
+            } else {
                 return isset($_GET[$key]) ? trim(val($_GET[$key], ""), $trim) : null;
             }
         }
@@ -247,14 +266,15 @@ if (! function_exists("get")) {
 
 if (! function_exists("get_decrypt")) {
     /** (Any) returns the value of the get */
-    function get_decrypt(string $key,$errorMessage = null, $trim = true)
+    function get_decrypt(string $key, $errorMessage = null, $trim = true)
     {
         return \Classes\Request::get_decrypt($key, $errorMessage, $trim);
     }
 }
 
-if(! function_exists("post_decrypt")){
-    function post_decrypt($key, $errorMessage = null, $trim = true){
+if (! function_exists("post_decrypt")) {
+    function post_decrypt($key, $errorMessage = null, $trim = true)
+    {
         return \Classes\Request::post_decrypt($key, $errorMessage, $trim);
     }
 }
@@ -459,9 +479,9 @@ if (! function_exists("set_sql_batch")) {
     function set_sql_batch(string $batch = "")
     {
         if ($batch == "" || $batch == null) {
-            unset($_SESSION['set_sql_batch']);
+            unset($GLOBALS['set_sql_batch']);
         } else {
-            $_SESSION['set_sql_batch'] = $batch;
+            $GLOBALS['set_sql_batch'] = $batch;
         }
     }
 }
@@ -469,7 +489,7 @@ if (! function_exists("set_sql_batch")) {
 if (! function_exists("current_be")) {
     function current_be(bool $php_exention = false): string
     {
-        $filename =  $_SESSION['basixs_current_be_ctrx'] ?? null;
+        $filename =  $GLOBALS['basixs_current_be_ctrx'] ?? null;
         if (! $filename) return null;
         if (! $php_exention) {
             $filename = substr($filename, -4) === '.php' ? substr($filename, 0, -4) : $filename;

@@ -1033,7 +1033,7 @@ class Ctrx
     {
         self::resetBackend();
         self::include_all_autoFiles();
-        $_SESSION['basixs_current_fe_ctrx'] = $path;
+        $GLOBALS['basixs_current_fe_ctrx'] = $path;
         $prev = self::get_prev_path_toSave();
         if (! defined("prev_page")) define("prev_page", prev_page());
         include $file;
@@ -1070,20 +1070,20 @@ class Ctrx
     private static function box1($data = null)
     {
         if ($data) {
-            $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] = $data;
+            $GLOBALS['_CTRX_COOKIES']['__cTrx_pReviOus_paGe3'] = $data;
             return $data;
         } else {
-            return $_SESSION['cTrx_pReviOus_paGee_basixs112100514'] ?? "/";
+            return $GLOBALS['_CTRX_COOKIES']['__cTrx_pReviOus_paGe3'] ?? "/";
         }
     }
 
     private static function box2($data = null)
     {
         if ($data) {
-            $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] = $data;
+            $GLOBALS['_CTRX_COOKIES']['__cTrx_pRevpaGe_bx05'] = $data;
             return $data;
         } else {
-            return $_SESSION['cTrx_pReviOus_paGee_basixs112100515'] ?? "/";
+            return $GLOBALS['_CTRX_COOKIES']['__cTrx_pRevpaGe_bx05'] ?? "/";
         }
     }
 
@@ -1201,12 +1201,12 @@ class Ctrx
 
     public static function resetBackend()
     {
-        unset($_SESSION['basixs_current_be_ctrx']);
+        unset($GLOBALS['basixs_current_be_ctrx']);
     }
 
     public static function ctrx_prvPage($withParam = false)
     {
-        $url = $_SESSION['cTrx_pReviOus_paGee_basixs112100514'];
+        $url = $GLOBALS['_CTRX_COOKIES']['__cTrx_pReviOus_paGe3'];
         $path = parse_url($url, PHP_URL_PATH);
         $query = parse_url($url, PHP_URL_QUERY);
         if ($query) {
@@ -1221,12 +1221,12 @@ class Ctrx
     }
 
     static function _set_current_fe($newFe){
-        $_SESSION['basixs_current_fe_ctrx'] = $newFe;
+        $GLOBALS['basixs_current_fe_ctrx'] = $newFe;
     }
 
     static function _current_page(bool $withParam = false, $startsWithSlash = false, bool $php_exention = false): string
     {
-        $filename =  $_SESSION['basixs_current_fe_ctrx'] ?? null;
+        $filename =  $GLOBALS['basixs_current_fe_ctrx'] ?? null;
         if (! $filename) $filename = fe_config('main_page');
         if (! str_starts_with($filename, "/") && $startsWithSlash) {
             $filename = "/" . $filename;
@@ -1546,7 +1546,7 @@ class Ctrx
 
     public static function loadTranslations()
     {
-        $lang = $_SESSION['ctrx_translate'] ?? 'en';
+        $lang = $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] ?? 'en';
 
         if (isset($GLOBALS['ctrx_translations'][$lang])) {
             return;

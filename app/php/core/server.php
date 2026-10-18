@@ -80,19 +80,19 @@ if (str_starts_with($req, "ctrx/game")) {
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/getall") {
-    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/getall";
+    $GLOBALS['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/getall";
     include "app/picker/images_config.php";
     exit;
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/uploadHere") {
-    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/uploadHere";
+    $GLOBALS['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/uploadHere";
     include "app/picker/upload_config.php";
     exit;
 }
 
 if ($req == "ctrx.yro.ctrstorage.images/deleteImg") {
-    $_SESSION['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/deleteImg";
+    $GLOBALS['basixs_current_be_ctrx'] = "ctrx.yro.ctrstorage.images/deleteImg";
     include "app/picker/remove_config.php";
     exit;
 }
@@ -124,18 +124,18 @@ if (str_starts_with($req, "api/")) {
         throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
     });
     try {
-        $_SESSION['ctrx_endpoint'] = "BE";
+        $GLOBALS['ctrx_endpoint'] = "BE";
 
         $serve = "";
 
-        $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
+        $GLOBALS['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
         if (str_starts_with($req, "api/")) $serve = "api";
         $newReq = "";
         if ($serve == "api") $newReq = str_replace("api/", "", $req);
         $reqmeth = strtolower(request_method());
 
-        $_SESSION['basixs_current_be_ctrx'] = $newReq;
+        $GLOBALS['basixs_current_be_ctrx'] = $newReq;
         defined("route") || define("ROUTE", rem_php($newReq));
 
         header("Cache-Control: private, max-age=0");
@@ -219,15 +219,15 @@ if (str_starts_with($req, "api/")) {
             \Classes\Ctrx::forbidden_page();
         }
     }
-    $trnsltn = $_GET['ctrx_translate'] ?? $_SESSION['ctrx_translate'] ?? null;
+    $trnsltn = $_GET['ctrx_translate'] ?? $_COOKIE['__ctrx_translate'] ?? null;
     if (isset($_GET['ctrx_translate'])) {
-        $_SESSION['ctrx_translate'] = $trnsltn;
+        $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] = $trnsltn;
     }
-    $_SESSION['ctrx_endpoint'] = "FE";
-    $_SESSION['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
+    $GLOBALS['ctrx_endpoint'] = "FE";
+    $GLOBALS['ctr_unique_request_id_x0015'] = ctr_generate_request_id();
 
     $csrfHashCode = encrypted_csrf_codetazer(25);
-    $_SESSION[ctr_secure_key] = $csrfHashCode;
+    #$GLOBALS['_CTRX_COOKIES'][ctr_secure_key] = $csrfHashCode;
 
     error_reporting(E_ALL);
     if (env_in_prod()) {
@@ -259,9 +259,9 @@ if (str_starts_with($req, "api/")) {
         $req = $req ? $req : $mainnophp;
         if ($_GET) {
             $phar = array_as_param($_GET);
-            $_SESSION['basixs_current_fe_ctrx'] = $req . $phar;
+            $GLOBALS['basixs_current_fe_ctrx'] = $req . $phar;
         } else {
-            $_SESSION['basixs_current_fe_ctrx'] = $req;
+            $GLOBALS['basixs_current_fe_ctrx'] = $req;
         }
         $feconfig = glob('views/app/config/*.php');
         foreach ($feconfig as $k => $v) {
@@ -435,7 +435,7 @@ if (str_starts_with($req, "api/")) {
                 exit;
             }
         }
-        if (isset($_SESSION['ctrx_translate']) && $_SESSION['ctrx_translate'] != "") {
+        if (isset($GLOBALS['_CTRX_COOKIES']['__ctrx_translate']) && $GLOBALS['_CTRX_COOKIES']['__ctrx_translate'] != "") {
             \Classes\Ctrx::loadTranslations();
         }
         include $fullpath;
@@ -444,6 +444,7 @@ if (str_starts_with($req, "api/")) {
             include_once "views/core/partials/system/dev.php";
         }
         \Classes\Ctrx::ctrx_save_previous_pages();
+        ctrx_save_cookies();
     } catch (Throwable $e) {
         ob_clean();
         $reqid = ctr_get_current_request_id();
