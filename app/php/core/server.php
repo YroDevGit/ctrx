@@ -180,8 +180,7 @@ if (str_starts_with($req, "api/")) {
                 $upperReqMethod = strtoupper($reqmeth);
                 ctrx_response(["code" => env('notfound_code'), "message" => "Route: ($upperReqMethod) '$newReq' not found.!"], 500);
             }
-            echo \Classes\Ctrx::file_exists_strict("app/_controller/$newReqPHP");
-            exit;
+            \Classes\Ctrx::file_exists_strict("app/_controller/$newReqPHP");
             include "app/_controller/$newReqPHP";
             throw new Exception("Controller endpoint not reached");
         }
@@ -422,6 +421,11 @@ if (str_starts_with($req, "api/")) {
             }
             include_once "app/php/core/system/toolpicker.php";
             \Classes\Ctrx::ctrx_save_previous_pages();
+            exit;
+        }
+
+        if($req == "test/capi"){
+            include "views/code/src/capi/index.php";
             exit;
         }
 
