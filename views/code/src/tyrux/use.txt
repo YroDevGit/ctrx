@@ -4,6 +4,9 @@
 cd views\code\src\tyrux\lib\    
 npx terser tyrux.js -o tyrux.min.js -c -m
 
+cd views\code\src\capi
+npx terser script2.js -o ctrx-capi-script.js -c -m
+
 <script type="module">
     tyrux({
         url: window.baseRoute+"admin/add",
