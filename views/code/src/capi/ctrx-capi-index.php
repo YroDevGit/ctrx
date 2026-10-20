@@ -9,7 +9,7 @@ if(env('environment') == "prod" || env('environment') == "production"){
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>API Tester</title>
+    <title>CAPI - CTRX API Tester</title>
     <link rel="stylesheet" href="/views/code/src/capi/ctrx-capi-style.css" />
 </head>
 
@@ -17,7 +17,7 @@ if(env('environment') == "prod" || env('environment') == "production"){
 
     <header class="tester-header">
         <div class="tester-header-inner">
-            <span class="tester-logo">CTRX-<span>APITester</span></span>
+            <span class="tester-logo">c<span>API</span></span>
             <div class="tester-actions">
                 <button id="curlBtn" class="tester-btn-icon" title="Generate cURL">cURL</button>
                 <button id="historyToggle" class="tester-btn-icon" title="History">History</button>
@@ -27,7 +27,6 @@ if(env('environment') == "prod" || env('environment') == "production"){
     </header>
 
     <main class="tester-main">
-
         <section class="tester-request">
             <div class="tester-row">
                 <select id="method" class="tester-method">
