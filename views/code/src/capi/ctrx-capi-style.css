@@ -584,6 +584,52 @@ body {
     background: rgba(9, 105, 218, 0.08);
 }
 
+#responsePretty {
+    color: var(--text);
+    white-space: pre;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    tab-size: 2;
+}
+
+#responsePretty .json-key {
+    color: var(--accent-dim);
+    font-weight: 600;
+}
+
+#responsePretty .json-string {
+    color: #0a3069;
+}
+
+#responsePretty .json-number {
+    color: #953800;
+}
+
+#responsePretty .json-bool {
+    color: var(--red);
+    font-weight: 600;
+}
+
+#responsePretty .json-null {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+#responsePretty .json-bracket {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+#responsePretty .json-comma {
+    color: var(--text-muted);
+}
+
+#responsePretty .json-colon {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
 .tester-curl-panel {
     display: none;
     flex: 1;
