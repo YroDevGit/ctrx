@@ -425,7 +425,7 @@ if (str_starts_with($req, "api/")) {
         }
 
         if($req == "test/capi"){
-            include "views/code/src/capi/index.php";
+            include "views/code/src/capi/ctrx-capi-index.php";
             exit;
         }
 

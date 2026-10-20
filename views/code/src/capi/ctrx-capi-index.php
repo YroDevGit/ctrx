@@ -10,7 +10,7 @@ if(env('environment') == "prod" || env('environment') == "production"){
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>API Tester</title>
-    <link rel="stylesheet" href="/views/code/src/capi/style.css" />
+    <link rel="stylesheet" href="/views/code/src/capi/ctrx-capi-style.css" />
 </head>
 
 <body>
@@ -51,7 +51,7 @@ if(env('environment') == "prod" || env('environment') == "production"){
             <div class="tester-panel active" data-panel="body">
                 <div class="tester-body-mode">
                     <label><input type="radio" name="bodyMode" value="json" checked /> JSON</label>
-                    <label><input type="radio" name="bodyMode" value="form" /> Form</label>
+                    <label style="display: none;"><input type="radio" name="bodyMode" value="form" /> Form</label>
                 </div>
                 <textarea id="bodyInput" class="tester-textarea" spellcheck="false" placeholder='{ "title": "The Pragmatic Programmer" }'></textarea>
                 <div style="display: flex;gap:10px;">
@@ -129,6 +129,6 @@ if(env('environment') == "prod" || env('environment') == "production"){
         </div>
     </aside>
 
-    <script type="module" src="/views/code/src/capi/script.js"></script>
+    <script type="module" src="/views/code/src/capi/ctrx-capi-script.js"></script>
 </body>
 </html>
