@@ -9,6 +9,16 @@ $myEnv = strtolower($myEnv);
 if(! in_array($myEnv, $exp)){
     die("This page is not available");
 }
+
+if(isset($_GET["capi_encrypt"])){
+    $capienc = $_GET["capi_encrypt"];
+    echo json_encode(["data"=>encrypt($capienc)]);exit;
+}
+
+if(isset($_GET["capi_decrypt"])){
+    $capienc = $_GET["capi_decrypt"];
+    echo json_encode(["data"=>decrypt($capienc)]);exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -86,6 +96,10 @@ if(! in_array($myEnv, $exp)){
                     <input id="optLoading" type="checkbox" checked />
                     Show loading spinner
                 </label>
+                <div>
+                    <button id="btnencrypt">Encrypt</button>
+                    <button id="btndecrypt">Decrypt</button>
+                </div>
             </div>
         </section>
 
