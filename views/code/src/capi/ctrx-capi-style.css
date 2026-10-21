@@ -652,10 +652,15 @@ body {
     display: block;
 }
 
-#curlCopy {
+#curlCopy, #curlSave {
     align-self: stretch;
     text-align: center;
     margin-top: 0;
+    width: 130px;
+}
+
+#curlSaved1{
+    flex: 1;
 }
 
 .curl-section {

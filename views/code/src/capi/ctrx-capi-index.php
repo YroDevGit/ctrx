@@ -1,6 +1,13 @@
 <?php
-if(env('environment') == "prod" || env('environment') == "production"){
-    die("This page is not available.");
+$capiEnv = env("capi_env") ?? "dev,uat,staging";
+$exp = explode(",",$capiEnv);
+$myEnv = env("environment");
+if(! $myEnv){
+    die("@.env environment should not blank.");
+}
+$myEnv = strtolower($myEnv);
+if(! in_array($myEnv, $exp)){
+    die("This page is not available");
 }
 ?>
 <!DOCTYPE html>
@@ -17,7 +24,7 @@ if(env('environment') == "prod" || env('environment') == "production"){
 
     <header class="tester-header">
         <div class="tester-header-inner">
-            <span class="tester-logo">c<span>API</span></span>
+            <span class="tester-logo" title="cAPI by CodeYRO, this is for CTRX api testing.">c<span>API</span></span>
             <div class="tester-actions">
                 <button id="curlBtn" class="tester-btn-icon" title="Generate cURL">cURL</button>
                 <button id="historyToggle" class="tester-btn-icon" title="History">History</button>
@@ -40,9 +47,9 @@ if(env('environment') == "prod" || env('environment') == "production"){
             </div>
 
             <div class="tester-tabs">
-                <button class="tester-tab active" data-tab="body">Body raw</button>
-                <button id="bnraw" class="tester-tab active" data-tab="bodyform">Body</button>
-                <button class="tester-tab" data-tab="params">Params</button>
+                <button title="POST json" class="tester-tab active" data-tab="body">Body raw</button>
+                <button title="POST" id="bnraw" class="tester-tab" data-tab="bodyform">Body</button>
+                <button title="GET" class="tester-tab" data-tab="params">Params</button>
                 <button class="tester-tab" data-tab="headers">Headers</button>
                 <button class="tester-tab" data-tab="options">Options</button>
             </div>
@@ -119,12 +126,17 @@ if(env('environment') == "prod" || env('environment') == "production"){
                 <button class="tester-ctab" data-ctab="tyrax">TYRAX</button>
                 <button class="tester-ctab" data-ctab="form">Form</button>
                 <button class="tester-ctab" data-ctab="tabletab">Table</button>
+                <button class="tester-ctab" data-ctab="curlsaved">Saved</button>
             </div>
             <div id="curlRaw" class="tester-curl-panel active"></div>
             <div id="curlTyrax" class="tester-curl-panel"></div>
             <div id="curlForm" class="tester-curl-panel"></div>
             <div id="curlTable" class="tester-curl-panel"></div>
+            <div id="curlSaved1" class="tester-curl-panel"></div>
+            <div align="right" style="display: flex; gap:10px;justify-content:end;">
+            <button id="curlSave" class="tester-btn-small">Save curl</button>
             <button id="curlCopy" class="tester-btn-small">Copy to clipboard</button>
+            </div>
         </div>
     </aside>
 
