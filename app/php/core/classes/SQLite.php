@@ -14,6 +14,9 @@ class SQLite
     public static function connect(
         string $database = "app/php/db/ctrx.db"
     ): PDO {
+        if(! file_exists($database)){
+            echo "<div><span style='color:red;font-family:monospace;font-size:18px;'>UNABLE TO FIND CTRX MEMORY.!</span></div><a href='/ctrx'>Click to Generate</a>";exit;
+        }
         if (self::$pdo === null) {
             self::$pdo = new PDO(
                 'sqlite:' . $database

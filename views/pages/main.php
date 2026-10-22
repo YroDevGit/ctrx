@@ -30,11 +30,11 @@
       </div>
 
       <div class="d-flex flex-wrap justify-content-center gap-4 mt-5">
-        <a href="#" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
-          <i class="fab fa-github"></i> Visit Repository
+        <a href="https://codeyro.infy.click/guide/" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
+          <i class="fa-solid fa-book"></i> Documentation
         </a>
-        <a href="https://drive.google.com/file/d/1P1RvCMcPFzs_-jLE2ddsORy9PSLE4klf/view?usp=sharing" target="_blank" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
-          <i class="fas fa-database"></i> Download MariaDB
+        <a href="#" target="_blank" class="btn btn-outline-neon px-5 py-3 rounded-3 fw-bold fs-6 d-inline-flex align-items-center gap-2">
+          <i class="fas fa-video"></i> Tutorials
         </a>
       </div>
 
