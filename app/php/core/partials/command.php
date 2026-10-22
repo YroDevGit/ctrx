@@ -369,7 +369,7 @@ if ($route == "run" || $route == "server") {
     echo "Done. Success: $successCount, Failed: $failCount\n";
 
     exit($failCount > 0 ? 1 : 0);
-} else if ($route == "generate:clean") {
+} else if ($route == "generate:clean" || $route == "ctrx:clean") {
     $dir = ".vscode/";
     if (! is_dir($dir)) {
         @mkdir($dir);
