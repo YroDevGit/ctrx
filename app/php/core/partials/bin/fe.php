@@ -477,19 +477,28 @@ if (! function_exists("has_internet_connection")) {
 }
 
 if(! function_exists("pagedir")){
-    function pagedir(string|null $file = null){
-        $fe = \Classes\Ctrx::_current_page();
-        $fe = trim($fe, " /\\");
-        $fkfile = "/views/pages/". $fe.".php";
-        $dir = dirname($fkfile);
+    function pagedir(string|null $file = null, bool|int $current_path = true){
+        $dir = "views/pages";
+        if($current_path){
+            $fe = \Classes\Ctrx::_current_page();
+            $fe = trim($fe, " /\\");
+            $fkfile = "/views/pages/". $fe.".php";
+            $dir = dirname($fkfile);
+        }
         if(! $file) return $dir;
         return $dir."/".$file;
     }
 }
 
+if(! function_exists("pagepath")){
+    function pagepath(string|null $file){
+        return pagedir($file, false);
+    }
+}
+
 if(! function_exists("pagedir_include")){
-    function pagedir_include($page){
-        $page = pagedir($page);
+    function pagedir_include($page, $current_path = true){
+        $page = pagedir($page, $current_path);
         $page = append_php($page);
         $page = trim($page, " /\\");
         include $page;
@@ -497,8 +506,8 @@ if(! function_exists("pagedir_include")){
 }
 
 if(! function_exists("pagedir_css")){
-    function pagedir_css(string $file){
-        $newfile = pagedir($file);
+    function pagedir_css(string $file, $current_path = true){
+        $newfile = pagedir($file, $current_path);
         if(! str_ends_with($newfile, ".css")){
             $newfile = $newfile.".css";
         }
@@ -507,8 +516,8 @@ if(! function_exists("pagedir_css")){
 }
 
 if(! function_exists("pagedir_js")){
-    function pagedir_js(string $file){
-        $newfile = pagedir($file);
+    function pagedir_js(string $file, $current_path = true){
+        $newfile = pagedir($file, $current_path);
         if(! str_ends_with($newfile, ".js")){
             $newfile = $newfile.".js";
         }
