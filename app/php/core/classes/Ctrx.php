@@ -1275,7 +1275,7 @@ class Ctrx
         include_once "app/php/core/partials/envloader.php";
         $filePath = trim($filePath, " /\\");
         $filePath = str_replace("\\", "/", $filePath);
-        $repo = env("raw_repository");
+        $repo = "https://raw.githubusercontent.com/YroDevGit/ctrx";
         if (! $repo) {
             return ["success" => false, "message" => "Raw repository not set @env"];
         }
@@ -1291,7 +1291,7 @@ class Ctrx
                     return ["success" => false, "message" => "Failed to create directory {$dir}."];
                 }
             }
-            $localFilePath = ";".$localFilePath;
+            $localFilePath = $dir."/;".basename($localFilePath);
         }else if($new == "n"){
             $dir = dirname($localFilePath);
             if (!is_dir($dir)) {

@@ -1294,7 +1294,7 @@ $size = folderSize('app/php/logs');
       <div class="footer-actions">
         <a href="/ctrx/logs" style="font-weight: bold;"><span><span class="icon"></span>File logs (<?= formatSize($size) ?>)</span></a>
       </div>
-      <span class="badge-soft"><span class="icon"></span> no hardcoded links · you decide</span>
+      <span class="badge-soft">CTRX <?=ctrx_version()?> [PHP <?=phpversion()?>]</span>
     </div>
   </div>
 

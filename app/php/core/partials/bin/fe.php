@@ -11,6 +11,8 @@ define('_backend', '_backend');
 define('assets', '/views/assets');
 define('codepath', '/views/code');
 define("docroot", $_SERVER['DOCUMENT_ROOT'] ?? "");
+define('PAGEDIR_ROOT', FALSE);
+define('PAGEDIR_CURRENT', TRUE);
 
 define("DATE_FORMAT", "Y-m-d");
 define("DATETIME_FORMAT", "Y-m-d H:i:s");
@@ -477,9 +479,9 @@ if (! function_exists("has_internet_connection")) {
 }
 
 if(! function_exists("pagedir")){
-    function pagedir(string|null $file = null, bool|int $current_path = true){
+    function pagedir(string|null $file = null, bool|int $path = PAGEDIR_CURRENT){
         $dir = "views/pages";
-        if($current_path){
+        if($path){
             $fe = \Classes\Ctrx::_current_page();
             $fe = trim($fe, " /\\");
             $fkfile = "/views/pages/". $fe.".php";
@@ -497,8 +499,8 @@ if(! function_exists("pagepath")){
 }
 
 if(! function_exists("pagedir_include")){
-    function pagedir_include($page, $current_path = true){
-        $page = pagedir($page, $current_path);
+    function pagedir_include($page, $path = PAGEDIR_CURRENT){
+        $page = pagedir($page, $path);
         $page = append_php($page);
         $page = trim($page, " /\\");
         include $page;
@@ -506,8 +508,8 @@ if(! function_exists("pagedir_include")){
 }
 
 if(! function_exists("pagedir_css")){
-    function pagedir_css(string $file, $current_path = true){
-        $newfile = pagedir($file, $current_path);
+    function pagedir_css(string $file, $path = PAGEDIR_CURRENT){
+        $newfile = pagedir($file, $path);
         if(! str_ends_with($newfile, ".css")){
             $newfile = $newfile.".css";
         }
@@ -516,8 +518,8 @@ if(! function_exists("pagedir_css")){
 }
 
 if(! function_exists("pagedir_js")){
-    function pagedir_js(string $file, $current_path = true){
-        $newfile = pagedir($file, $current_path);
+    function pagedir_js(string $file, $path = PAGEDIR_CURRENT){
+        $newfile = pagedir($file, $path);
         if(! str_ends_with($newfile, ".js")){
             $newfile = $newfile.".js";
         }

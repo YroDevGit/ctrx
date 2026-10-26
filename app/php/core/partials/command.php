@@ -1379,7 +1379,8 @@ if ($route == "run" || $route == "server") {
         "favicon.ico",
         "composer.json",
         "app/php/db/*",
-        "app/_routes/*"
+        "app/_routes/*",
+        "views/fe_config.json"
     ];
 
     $isBak = function ($path) use ($bak) {
@@ -1476,7 +1477,13 @@ if ($route == "run" || $route == "server") {
             if ($status === 'modified' && $isBak($filename)) {
                 $ret = \Classes\Ctrx::updateFile($filename, "m");
                 if (isset($ret['success']) && $ret['success'] === true) {
-                    echo "📄 Copied (protected): $filename → ;$filename\n";
+                    $dirname = dirname($filename);
+                    $base = basename($filename);
+                    if(! $dirname || $dirname == "."){
+                        echo "📄 Copied (protected): $filename → ;$base\n";
+                    }else{
+                        echo "📄 Copied (protected): $filename → $dirname/;$base\n";
+                    } 
                 } else {
                     $err = $ret['message'] ?? "Error";
                     echo "❌ ;$filename: $err\n";
@@ -1552,6 +1559,8 @@ if ($route == "run" || $route == "server") {
     }
 
     echo "\n";
+
+    echo "Changes @: https://github.com/YroDevGit/ctrx/compare/$localTag...$remoteTag?diff=split&w#files_bucket\n\n";
 
     if (empty($failed)) {
         \Classes\Ctrx::setCurrentVersion($remoteTag);
