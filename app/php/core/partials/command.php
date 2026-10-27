@@ -1560,7 +1560,9 @@ if ($route == "run" || $route == "server") {
 
     echo "\n";
 
-    echo "Changes @: https://github.com/YroDevGit/ctrx/compare/$localTag...$remoteTag?diff=split&w#files_bucket\n\n";
+    if($detailed){
+        echo "Changes @: https://github.com/YroDevGit/ctrx/compare/$localTag...$remoteTag?diff=split&w#files_bucket\n\n";
+    }
 
     if (empty($failed)) {
         \Classes\Ctrx::setCurrentVersion($remoteTag);
