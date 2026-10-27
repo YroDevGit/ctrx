@@ -2,7 +2,7 @@
 
 use Classes\Validator;
 
-$data = \Classes\Ctrx::get_admin_data();
+$data = $GLOBALS['data_admin'];
 $data = $data[0] ?? null;
 
 if (! $data || ! isset($data['id']) || ! isset($data['username'])) {
@@ -1286,7 +1286,7 @@ $size = folderSize('app/php/logs');
 
     <div class="back-section">
       <div class="back-hint">
-      <span class="icon"></span> Use the Back button above to return
+      <a href="/ctrx/pagemgt"><span class="icon"></span>Manage pages</a>
       </div>
     </div>
 

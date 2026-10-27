@@ -386,6 +386,25 @@ if (str_starts_with($req, "api/")) {
         /**
          * Ctrx Translation tools for import export
          */
+        if (str_starts_with($req, "ctrx/pagemgt")) {
+            $data = \Classes\Ctrx::get_admin_data();
+            if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect("ctrx/logout", "page", 2);
+                return;
+            }
+            $userTools = $data['access_ctrx_tools'] ?? null;
+            if (empty($userTools) || ! in_array("roles", $userTools)) {
+                \Classes\Ctrx::forbidden_page();
+                return;
+            }
+            include "app/php/core/system/pgmgt.php";
+            exit;
+        }
+        /**
+         * Ctrx Translation tools for import export
+         */
         if (str_starts_with($req, "ctrx/translations")) {
             $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
@@ -419,6 +438,8 @@ if (str_starts_with($req, "api/")) {
             if (empty($userTools)) {
                 \Classes\Ctrx::forbidden_page();
             }
+            $GLOBALS['data_admin'] = $data;
+            unset($data);
             include_once "app/php/core/system/toolpicker.php";
             \Classes\Ctrx::ctrx_save_previous_pages();
             exit;

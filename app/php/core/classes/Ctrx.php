@@ -771,6 +771,16 @@ class Ctrx
             $ctrxdata = \Classes\Ccookie::get("ctrx_user_data_admin");
             if (! $ctrxdata) return null;
             if ($key == "*") {
+                $data = $ctrxdata[0];
+                $username = $data['username'] ?? null;
+                $password = $data['password'] ?? null;
+                if(! $username || ! $password){
+                    return null;
+                }
+                $select = \Classes\SQLite::get("select * from users where username = ? and password = ?", [$username, $password]);
+                if(! $select || ! isset($select[0])){
+                    return null;
+                }
                 return $ctrxdata;
             }
             return isset($ctrxdata[$key]) ? $ctrxdata[$key] : null;
