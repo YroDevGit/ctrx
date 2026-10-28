@@ -426,9 +426,9 @@ if (str_starts_with($req, "api/")) {
          * Ctrx Tools page
          */
         if ($req == "ctrx") {
+            \Classes\Ctrx::_dl_SDB();
             $data = \Classes\Ctrx::get_admin_data();
             $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
-            \Classes\Ctrx::_dl_SDB();
             if (! $data) {
                 \Classes\Ctrx::page_rate_limit(10, 60, "ctrx/adm1n100505/l0g1n1y00r5o14");
                 include_once "app/php/core/system/toollogin.php";
