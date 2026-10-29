@@ -89,6 +89,14 @@ $exxr = isset($arguments[4]) ? $arguments[4] : '';
 
 if ($route == "run" || $route == "server") {
     include_once "app/php/core/partials/envloader.php";
+    if($filename == "--docker"){
+        $res = exec("docker compose start", $output);
+        foreach ($output as $kk => $vv) {
+            if (! $vv || $vv == "" || $vv == null) echo "\n";
+            echo $vv . "\n";
+        }
+    exit;
+    }
     $host = env("rootpath");
     $exp = explode("//", $host);
     $runner = $exp[1];
@@ -145,6 +153,30 @@ if ($route == "run" || $route == "server") {
     $cmd = "php -S $runner index.php" . $dir_comm;
     passthru($cmd);
     exit;
+}else if($route == "stop" && $filename == "--docker"){
+    $res = exec("docker compose stop", $output);
+        foreach ($output as $kk => $vv) {
+            if (! $vv || $vv == "" || $vv == null) echo "\n";
+            echo $vv . "\n";
+        }
+}else if($route == "build" && $filename == "--docker"){
+    $res = exec("docker compose up --build", $output);
+        foreach ($output as $kk => $vv) {
+            if (! $vv || $vv == "" || $vv == null) echo "\n";
+            echo $vv . "\n";
+        }
+}else if(($route == "remove" || $route == "delete" || $route == "down") && $filename == "--docker"){
+    $res = exec("docker compose down", $output);
+        foreach ($output as $kk => $vv) {
+            if (! $vv || $vv == "" || $vv == null) echo "\n";
+            echo $vv . "\n";
+        }
+}else if($route == "stop" && $filename == "--docker"){
+    $res = exec("docker compose stop", $output);
+        foreach ($output as $kk => $vv) {
+            if (! $vv || $vv == "" || $vv == null) echo "\n";
+            echo $vv . "\n";
+        }
 } else if ($route == "tables") {
     if (! $filename) {
         echo "❌ Invalid tables command.!";
