@@ -24,6 +24,18 @@ if (! function_exists("private_loadAllJsFiles")) {
             
             <script id="scriptloader_ctrx_yro_loader199363">
                 window.addEventListener("load", async () => {
+                    <?php if(! env('time_zone')): ?>
+                    function getCookie(name) {
+                        const match = document.cookie.match(
+                            new RegExp('(?:^|; )' + name.replace(/([.*+?^${}()|[\]\\])/g, '\\$1') + '=([^;]*)')
+                        );
+                        return match ? decodeURIComponent(match[1]) : null;
+                    }
+                    if(! getCookie("__ctrx_server_timezone")){
+                        let tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Asia/Manila";
+                        document.cookie = `__ctrx_server_timezone=${tz}; path=/; max-age=10800; SameSite=Lax; Secure`;
+                    }
+                    <?php endif; ?>
                     let errsYros121 = `<?= $jsnewctr1 ?>`;
                     let newYrosErrs = JSON.parse(errsYros121);
                     if (Object.keys(newYrosErrs).length > 0) {

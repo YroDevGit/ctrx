@@ -2,76 +2,12 @@
 //CodeYro
 function encrypt($data, string|null $key = null)
 {
-    if ($data == null || $data == "") {
-        return null;
-    }
-    $cipher = "AES-256-CBC";
-    $iv_length = openssl_cipher_iv_length($cipher);
-    $iv = openssl_random_pseudo_bytes($iv_length);
-    $encrypted_data = null;
-    if ($key == null || $key == "") {
-        $enc = env("encrypt_key") ?? "ctrx_yro";
-        $ky = "yro_".$enc;
-        $encrypted_data = openssl_encrypt($data, $cipher, $ky , 0, $iv);
-    } else {
-        $ky = "yro_".$key;
-        $encrypted_data = openssl_encrypt($data, $cipher, $ky, 0, $iv);
-    }
-
-    $combined_data = $iv . $encrypted_data;
-
-    $encrypted_data = base64_encode($combined_data);
-
-    $encrypted_data = strtr($encrypted_data, [
-        '+' => '-',
-        '/' => '_',
-        '=' => '',
-        '&' => '%26',
-        '#' => '%23',
-    ]);
-    return $encrypted_data;
+    return \Classes\Ctrx::encrypt($data, $key);
 }
 
 function decrypt($encrypted_data, string|null $key = null)
 {
-    if ($encrypted_data == null || $encrypted_data == "") {
-        return null;
-    }
-    $cipher = "AES-256-CBC";
-    $iv_length = openssl_cipher_iv_length($cipher);
-
-    $encrypted_data = strtr($encrypted_data, [
-        '-' => '+',
-        '_' => '/',
-        '%26' => '&',
-        '%23' => '#',
-    ]);
-
-    $padding_needed = 4 - (strlen($encrypted_data) % 4);
-    if ($padding_needed !== 4) {
-        $encrypted_data .= str_repeat('=', $padding_needed);
-    }
-
-    $decoded_data = base64_decode($encrypted_data, true);
-    if ($decoded_data === false) {
-        \Classes\Hash::error_save_decryption_error();
-    }
-
-    if (strlen($decoded_data) < $iv_length) {
-        \Classes\Hash::error_save_decryption_error();
-    }
-    $iv = substr($decoded_data, 0, $iv_length);
-    $encrypted_data = substr($decoded_data, $iv_length);
-
-    $decryption_key = $key ?: env("encrypt_key");
-    $newDec = "yro_". $decryption_key;
-    $decrypted_data = openssl_decrypt($encrypted_data, $cipher, $newDec, 0, $iv);
-
-    if ($decrypted_data === false || !mb_check_encoding($decrypted_data, 'UTF-8')) {
-        \Classes\Hash::error_save_decryption_error();
-    }
-
-    return $decrypted_data;
+    return \Classes\Ctrx::decrypt($encrypted_data, $key);
 }
 
 

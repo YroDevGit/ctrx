@@ -114,19 +114,7 @@ if (! function_exists('ctrx_response')) {
 if (! function_exists("server_headers")) {
     function server_headers(string|null $searchKey = null)
     {
-        $headers = [];
-        foreach ($_SERVER as $serverKey => $value) {
-            if (strpos($serverKey, 'HTTP_') === 0) {
-                $exp = str_replace("HTTP_", "", $serverKey);
-                $headers[strtolower($exp)] = $value;
-                $headers[strtoupper($exp)] = $value;
-            }
-        }
-        if ($searchKey === null) {
-            return $headers;
-        } else {
-            return $headers[$searchKey] ?? null;
-        }
+        \Classes\Request::server_headers($searchKey);
     }
 }
 
@@ -135,6 +123,18 @@ if (! function_exists("request_method")) {
     {
         $method = $_SERVER['REQUEST_METHOD'];
         return $method;
+    }
+}
+
+if(! function_exists("set_default_timezone")){
+    function set_default_timezone(string $timezone){
+        \Classes\TimeZone::set_default_timezone($timezone);
+    }
+}
+
+if(! function_exists("get_default_timezone")){
+    function get_default_timezone(){
+        return \Classes\TimeZone::get_default_timezone();
     }
 }
 

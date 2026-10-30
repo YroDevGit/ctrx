@@ -2,13 +2,14 @@
  * This is tyrax config
  */
 
-import Ctr from "../src/mods/ctr.js";
+import $$ from "../src/mods/ctrx/ctrx.js";
 import Loading from "../src/mods/loading.js";
 
 //This is tyrax default header
 export const headerHandler = {
     Authorization: "Bearer sometoken",
     "Content-Type": "application/json",
+    "timezone": $$.timezone
 }
 
 //Tyrax loading
@@ -27,10 +28,8 @@ export const errorHandler = (error, message) => {
      */
     alert(message);
     if(error.code == 707){
-        Ctr.redirect("logout");
+        $$.redirect("logout");
         return;
     }
 
 }
-
-

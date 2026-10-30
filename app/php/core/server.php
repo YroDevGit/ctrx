@@ -12,13 +12,6 @@ include_once "app/php/core/partials/envloader.php";
 session_start();
 
 /**
- * Timezone is set to default (@env)
- */
-if (env('time_zone')) {
-    date_default_timezone_set(env('time_zone'));
-}
-
-/**
  * Basix server adopt by codetazer and ctrx
  */
 $basixserver = $_SERVER['HTTP_HOST'];
@@ -55,7 +48,7 @@ if (env("global_db_access") == "yes") {
 $_POST = postdata();
 
 foreach ($system as $k => $v) {
-    include $v;
+    include_once $v;
 }
 
 include_once "app/php/core/partials/ctrxc.php";
@@ -125,6 +118,10 @@ if (str_starts_with($req, "api/")) {
     });
     try {
         $GLOBALS['ctrx_endpoint'] = "BE";
+        $tzctrxzone = env('time_zone') ?? $_COOKIE["__ctrx_server_timezone"] ?? \Classes\Request::timezone() ?? null;
+        if($tzctrxzone && \Classes\Ctrx::__isValidTzone($tzctrxzone)){
+            date_default_timezone_set($tzctrxzone);
+        }
 
         $serve = "";
 
@@ -252,6 +249,10 @@ if (str_starts_with($req, "api/")) {
         $view_config['build'] = isset($view_config['build']) && $view_config['build'] ? "views/build/" : "views/js/";
         if (json_last_error() === JSON_ERROR_NONE) {
             $GLOBALS['ctrx_views_conf_a_vars'] = $view_config;
+        }
+        $tzctrxzone = env('time_zone') ?? $_COOKIE["__ctrx_server_timezone"] ?? null;
+        if($tzctrxzone && \Classes\Ctrx::__isValidTzone($tzctrxzone)){
+            date_default_timezone_set($tzctrxzone);
         }
         $mainpage = $view_config['main_page'] ?? "main";
         $mainpage = append_php($mainpage);

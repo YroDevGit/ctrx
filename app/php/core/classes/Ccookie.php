@@ -9,7 +9,7 @@ class Ccookie
         include_once "app/php/core/partials/bin/basixs.php";
         $newHour = 60 * $minute;
         if (is_array($value)) {
-            $val = encrypt(json_encode($value), "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
+            $val = \Classes\Ctrx::encrypt(json_encode($value), "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
             unset($GLOBALS['_CTRX_COOKIES'][$key]);
             $GLOBALS['_CTRX_COOKIES'][$key] = [
                 "value" => $val,
@@ -18,7 +18,7 @@ class Ccookie
             $_COOKIE[$key] = $val;
             return true;
         } else {
-            $val = encrypt($value, "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
+            $val = \Classes\Ctrx::encrypt($value, "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
             unset($GLOBALS['_CTRX_COOKIES'][$key]);
             $GLOBALS['_CTRX_COOKIES'][$key] = [
                 "value" => $val,
@@ -35,7 +35,7 @@ class Ccookie
         include_once "app/php/core/partials/bin/basixs.php";
         $year = intval(date("Y")) + 10;
         if (is_array($value)) {
-            $val = encrypt(json_encode($value), "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
+            $val = \Classes\Ctrx::encrypt(json_encode($value), "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
             unset($GLOBALS['_CTRX_COOKIES'][$key]);
             $GLOBALS['_CTRX_COOKIES'][$key] = [
                 "value" => $val,
@@ -47,7 +47,7 @@ class Ccookie
             $_COOKIE[$key] = $val;
             return true;
         } else {
-            $val = encrypt($value, "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
+            $val = \Classes\Ctrx::encrypt($value, "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
             unset($GLOBALS['_CTRX_COOKIES'][$key]);
             $GLOBALS['_CTRX_COOKIES'][$key] = [
                 "value" => $val,
@@ -136,7 +136,7 @@ class Ccookie
     {
         include_once "app/php/core/partials/bin/basixs.php";
         if (isset($_COOKIE[$key])) {
-            $cookie = decrypt($_COOKIE[$key], "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
+            $cookie = \Classes\Ctrx::decrypt($_COOKIE[$key], "ctrx_".(env("encrypt_key") ?? "ctrxt_yro"));
             $ret = json_decode($cookie, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $ret;

@@ -7,7 +7,6 @@ const baseRoute = "";   // Default api rout
 const backend = "/api/";  // This app default backend path
 
 const headers = headerHandler;
-const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const config = {
     error: (err, message) => { // Tyrax error handler ::CodeTazer
@@ -25,7 +24,7 @@ function tyrux(request) {
     const head = request.headers ?? null;
 
     if (head) {
-        request.headers = { ...head, ...headers, timezone: timeZone };
+        request.headers = { ...head, ...headers};
 
         const ctype = head["Content-Type"]?.toLowerCase();
 

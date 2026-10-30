@@ -47,6 +47,10 @@ class CtrxClass {
         return `CTR${date}${random}`;
     }
 
+    get timezone(){
+        return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Asia/Manila";
+    }
+
     async generateHash(max = 16) {
         const id = this.generateRandom();
         const buffer = await crypto.subtle.digest(

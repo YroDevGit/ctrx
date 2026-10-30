@@ -83,14 +83,34 @@ class Request
     static function headers(string|null $key = null, $ucwords = false)
     {
         if (is_null($key)) {
-            return server_headers($key);
+            return self::server_headers($key);
         } else {
             $key = strtolower($key);
             if ($ucwords) {
-                return server_headers($key);
+                return self::server_headers($key);
             }
-            return server_headers($key);
+            return self::server_headers($key);
         }
+    }
+
+    static function server_headers(string|null $searchKey = null){
+        $headers = [];
+        foreach ($_SERVER as $serverKey => $value) {
+            if (strpos($serverKey, 'HTTP_') === 0) {
+                $exp = str_replace("HTTP_", "", $serverKey);
+                $headers[strtolower($exp)] = $value;
+                $headers[strtoupper($exp)] = $value;
+            }
+        }
+        if ($searchKey === null) {
+            return $headers;
+        } else {
+            return $headers[$searchKey] ?? null;
+        }
+    }
+
+    static function timezone(){
+        return self::headers("timezone");
     }
 
     private static function fileGetter($name, $type = null, $st = 0)

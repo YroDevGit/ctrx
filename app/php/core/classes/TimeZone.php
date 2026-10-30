@@ -11,13 +11,23 @@ class TimeZone
 
     //create a function here...
 
-    static function set_default_timezone(string|null $timezone = "Asia/Manila")
+    static function set_default_timezone(string|null $timezone = "Asia/Manila", bool $global = true)
     {
+        if(! \Classes\Ctrx::__isValidTzone($timezone)) return;
+        if($global){
+            setcookie("__ctrx_server_timezone", $timezone, time() + 10800, "/", "", !empty($_SERVER['HTTPS']));
+        }
         return date_default_timezone_set($timezone);
     }
 
-    static function get_default_timezone()
+    static function get_default_timezone(bool $global = true)
     {
+        if($global){
+            $myTzone = $_COOKIE['__ctrx_server_timezone'] ?? null;
+            if($myTzone && \Classes\Ctrx::__isValidTzone($myTzone)){
+                return $myTzone;
+            }
+        }
         return date_default_timezone_get();
     }
 
