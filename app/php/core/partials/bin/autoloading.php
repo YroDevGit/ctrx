@@ -146,8 +146,8 @@ if (!function_exists("import_script")) {
             }
             $fl = str_ends_with($flx, '.js') ? $flx : $flx . '.js';
             $value = htmlspecialchars(codepath('script/' . $fl), ENT_QUOTES);
-            if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {
-                $GLOBALS['ctrx_js_includes_1993664_yro'][] = $value;
+            if(! isset( $GLOBALS['ctrx_js_includes_1993664_yro'][$value])){
+                $GLOBALS['ctrx_js_includes_1993664_yro'][$value] = 1;
             }
         }
     }
@@ -182,8 +182,8 @@ if (!function_exists("js")) {
                 continue;
             }
             $value = htmlspecialchars('/'.$jsPath. $fl, ENT_QUOTES);
-            if (!in_array($value, $GLOBALS['ctrx_js_includes_1993664_yro'] ?? [], true)) {
-                $GLOBALS['ctrx_js_includes_1993664_yro'][] = $value;
+            if(! isset($GLOBALS['ctrx_js_includes_1993664_yro'][$value])){
+                $GLOBALS['ctrx_js_includes_1993664_yro'][$value] = 1;
             }
         }
     }

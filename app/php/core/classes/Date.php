@@ -33,7 +33,7 @@ class Date
     static function timeDif(string|null $datetime, $date_local = false)
     {
         if (! $datetime) return null;
-        if($date_local){
+        if ($date_local) {
             $datetime = strval(self::local($datetime));
         }
         $time = strtotime($datetime);
@@ -77,7 +77,8 @@ class Date
         return date($dateformat);
     }
 
-    static function zone_to_datetime(string $timezone){
+    static function zone_to_datetime(string $timezone)
+    {
         $timezone = new \DateTimeZone($timezone);
         $datetime = new \DateTime('now', $timezone);
         return $datetime->format('P');
@@ -85,66 +86,88 @@ class Date
 
     public static function datetime_to_zones(string $offset): array
     {
-        $offset = str_replace(':', '', $offset);
-        if (!preg_match('/^([+-])(\d{2})(\d{2})$/', $offset, $m)) {
-            if (!preg_match('/^([+-])(\d{1,2})$/', $offset, $m2)) {
-                return [];
-            }
-            $sign = $m2[1];
-            $hours = (int) $m2[2];
-            $minutes = 0;
-        } else {
-            $sign = $m[1];
-            $hours = (int) $m[2];
-            $minutes = (int) $m[3];
+        $offset = str_replace(':', '', trim($offset));
+
+        if (!preg_match('/^([+-])(\d{1,2})(\d{2})?$/', $offset, $m)) {
+            return [];
+        }
+
+        $sign    = $m[1];
+        $hours   = (int) $m[2];
+        $minutes = isset($m[3]) && $m[3] !== '' ? (int) $m[3] : 0;
+
+        if ($hours > 14 || $minutes > 59) {
+            return [];
         }
 
         $seconds = ($hours * 3600 + $minutes * 60) * ($sign === '-' ? -1 : 1);
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $matches = [];
+        return self::offsetMap()[$seconds] ?? [];
+    }
 
-        foreach (\DateTimeZone::listIdentifiers() as $tzName) {
-            $tz = new \DateTimeZone($tzName);
-            if ($tz->getOffset($now) === $seconds) {
-                $matches[] = $tzName;
-            }
+    private static function offsetMap(): array
+    {
+        static $map = null;
+
+        if ($map !== null) {
+            return $map;
         }
 
-        return $matches;
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $map = [];
+
+        foreach (\DateTimeZone::listIdentifiers() as $tzName) {
+            $offset = (new \DateTimeZone($tzName))->getOffset($now);
+            $map[$offset][] = $tzName;
+        }
+
+        return $map;
     }
 
     public static function datetime_to_zone(string $offset, ?string $preferred = null): ?string
     {
-        $matches = self::datetime_to_zones($offset);
+        $zones = self::datetime_to_zones($offset);
+        if ($zones === []) {
+            return null;
+        }
 
-        if ($preferred && in_array($preferred, $matches, true)) {
+        $map = array_flip($zones);
+
+        if ($preferred !== null && isset($map[$preferred])) {
             return $preferred;
         }
 
-        $priority = [
-            'Asia/Manila', 'Asia/Singapore', 'Asia/Shanghai', 'Asia/Tokyo',
-            'Asia/Kolkata', 'Europe/London', 'Europe/Paris',
-            'America/New_York', 'America/Chicago', 'America/Denver',
-            'America/Los_Angeles', 'UTC',
+        static $priority = [
+            'Asia/Manila',
+            'Asia/Singapore',
+            'Asia/Shanghai',
+            'Asia/Tokyo',
+            'Asia/Kolkata',
+            'Europe/London',
+            'Europe/Paris',
+            'America/New_York',
+            'America/Chicago',
+            'America/Denver',
+            'America/Los_Angeles',
+            'UTC',
         ];
 
         foreach ($priority as $name) {
-            if (in_array($name, $matches, true)) {
+            if (isset($map[$name])) {
                 return $name;
             }
         }
 
-        return $matches[0] ?? null;
+        return array_key_first($map);
     }
 
     static function local($date, $timezone = null)
     {
-        if(! isset($date)) return null;
-        if(! $date) return null;
+        if (! isset($date)) return null;
+        if (! $date) return null;
         $dbTimezone = $timezone ?? env('dbtimezone') ?? null;
-        if(! $dbTimezone) return $date;
-        if(! str_starts_with($dbTimezone, "-") && ! str_starts_with($dbTimezone, "+")){
+        if (! $dbTimezone) return $date;
+        if (! str_starts_with($dbTimezone, "-") && ! str_starts_with($dbTimezone, "+")) {
             $dbTimezone = self::zone_to_datetime($dbTimezone);
         }
         $appTimezone = date_default_timezone_get();

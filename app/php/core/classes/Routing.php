@@ -51,7 +51,7 @@ class Routing
             if (str_contains($a, "/*")) {
                 $exp = explode("/*", $a);
                 $parent = $exp[0];
-                self::api_group(ctr_get_routes("api/" . $parent), $callable);
+                self::api_group(ctrx_get_routes("api/" . $parent), $callable);
                 continue;
             }
             $arr[] = "api/" . $a;
@@ -68,7 +68,7 @@ class Routing
             if (str_contains($r, "/*")) {
                 $exp = explode("/*", $r);
                 $parent = $exp[0];
-                self::route_filtering(ctr_get_routes($parent), $func, $included);
+                self::route_filtering(ctrx_get_routes($parent), $func, $included);
                 continue;
             }
             $r = trim($r, " /\\");

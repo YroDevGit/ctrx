@@ -421,15 +421,25 @@ class Ctrx
 
     public static function file_exists_strict(string $path): bool
     {
+        static $scannedDir = [];
+
         if (!file_exists($path)) {
             return false;
         }
 
-        $dir = dirname($path);
+        $dir  = dirname($path);
         $file = basename($path);
 
+        if (!array_key_exists($dir, $scannedDir)) {
+            $list = @scandir($dir);
+            $scannedDir[$dir] = $list === false ? [] : array_flip($list);
+        }
 
-        return in_array($file, scandir($dir), true);
+        if ($scannedDir[$dir] === []) {
+            return true;
+        }
+
+        return isset($scannedDir[$dir][$file]);
     }
 
     public static function CachedHeader(int $age, $privacy = "private")

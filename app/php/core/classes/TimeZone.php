@@ -20,6 +20,10 @@ class TimeZone
         return date_default_timezone_set($timezone);
     }
 
+    static function is_valid(string $timezone){
+        return \Classes\Ctrx::__isValidTzone($timezone);
+    }
+
     static function get_default_timezone(bool $global = true)
     {
         if($global){

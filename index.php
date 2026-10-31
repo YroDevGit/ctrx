@@ -147,27 +147,27 @@ foreach ($blocked as $path) {
  * Allowed static asset extensions
  */
 $staticExtensions = [
-    'js',
-    'mjs',
-    'css',
-    'png',
-    'jpg',
-    'jpeg',
-    'gif',
-    'svg',
-    'webp',
-    'ico',
-    'woff',
-    'woff2',
-    'ttf',
-    'eot',
-    'map',
-    'json',
-    'txt',
-    'xml',
-    'mp4',
-    'webm',
-    'mp3',
+    'js'   => 0,
+    'mjs'  => 1,
+    'css'  => 2,
+    'png'  => 3,
+    'jpg'  => 4,
+    'jpeg' => 5,
+    'gif'  => 6,
+    'svg'  => 7,
+    'webp' => 8,
+    'ico'  => 9,
+    'woff' => 10,
+    'woff2'=> 11,
+    'ttf'  => 12,
+    'eot'  => 13,
+    'map'  => 14,
+    'json' => 15,
+    'txt'  => 16,
+    'xml'  => 17,
+    'mp4'  => 18,
+    'webm' => 19,
+    'mp3'  => 20,
 ];
 
 /**
@@ -180,7 +180,7 @@ if (
 
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
     if (str_contains($file, "views/code/src/") || str_contains($file, "views/js/")) return false;
-    if (in_array($ext, $staticExtensions)) {
+    if (isset($staticExtensions[$ext])) {
         return false;
     }
 

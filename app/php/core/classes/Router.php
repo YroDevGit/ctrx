@@ -90,12 +90,21 @@ class Router
         return new self($key);
     }
 
-    private static function checkRoutes(string $route)
+    private static function checkRoutes(string $route): void
     {
-        $route = append_php($route);
-        if (! \Classes\Ctrx::file_exists_strict("app/_controller/" . $route)) {
-            throw new Exception("Controller file $route not found.!");
+        static $checked = [];
+
+        if (isset($checked[$route])) {
+            return;
         }
+
+        $file = append_php($route);
+
+        if (! \Classes\Ctrx::file_exists_strict("app/_controller/" . $file)) {
+            throw new Exception("Controller file $file not found.!");
+        }
+
+        $checked[$route] = true;
     }
 
     public function intro(string ...$middleware)

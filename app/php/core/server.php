@@ -322,11 +322,6 @@ if (str_starts_with($req, "api/")) {
                 redirect("ctrx/logout", "page", 2);
                 return;
             }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("database", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
-                return;
-            }
             Classes\Ctrx::use_database_management();
         }
 
@@ -339,11 +334,6 @@ if (str_starts_with($req, "api/")) {
                 \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
-                return;
-            }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("logs", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
                 return;
             }
             Classes\Ctrx::use_logs_tools();
@@ -359,11 +349,6 @@ if (str_starts_with($req, "api/")) {
                 redirect("ctrx/logout", "page", 2);
                 return;
             }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("data", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
-                return;
-            }
             \Classes\Ctrx::use_db_tools();
         }
         /**
@@ -375,11 +360,6 @@ if (str_starts_with($req, "api/")) {
                 \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect("ctrx/logout", "page", 2);
-                return;
-            }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("roles", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
                 return;
             }
             \Classes\Ctrx::use_roles_tools();
@@ -395,11 +375,6 @@ if (str_starts_with($req, "api/")) {
                 redirect("ctrx/logout", "page", 2);
                 return;
             }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("roles", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
-                return;
-            }
             include "app/php/core/system/pgmgt.php";
             exit;
         }
@@ -413,11 +388,6 @@ if (str_starts_with($req, "api/")) {
                 \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
                 echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
                 redirect($logoutPage, "page", 2);
-                return;
-            }
-            $userTools = $data['access_ctrx_tools'] ?? null;
-            if (empty($userTools) || ! in_array("translations", $userTools)) {
-                \Classes\Ctrx::forbidden_page();
                 return;
             }
             \Classes\Ctrx::use_translate_tools();

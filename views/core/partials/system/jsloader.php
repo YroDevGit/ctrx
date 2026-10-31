@@ -50,7 +50,7 @@ if (! function_exists("private_loadAllJsFiles")) {
                     const alljjsnencdctrx = `<?= $jsnencdctrx ?>`;
                     const alljsnParsed = JSON.parse(alljjsnencdctrx);
 
-                    const promises = Object.values(alljsnParsed).map(src => {
+                    const promises = Object.keys(alljsnParsed).map(src => {
                         return new Promise((resolve, reject) => {
                             const scr = document.createElement("script");
                             scr.src = src;

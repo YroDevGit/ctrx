@@ -641,9 +641,8 @@ if (! function_exists("in_table")) {
 }
 
 if (! function_exists("in_table_strict")) {
-    function in_table_strict(string $tableColumn, string|null $value)
+    function in_table_strict(string $tableColumn, string|null $value, $wildCard = false)
     {
-        $wildCard = false;
         $explode = explode(":", $tableColumn);
         $table = $explode[0] ?? null;
         $columns = $explode[1] ?? null;
@@ -653,7 +652,6 @@ if (! function_exists("in_table_strict")) {
         }
 
         $oldValue = $value;
-        if ($wildCard) $value = "%" . $value . "%";
 
         if (str_contains($columns, ",")) {
             $exp = explode(",", $columns);

@@ -235,8 +235,13 @@ class RouteScanner
             }
         }
     }
+    
     public function getRoutesByDirectory($directory = '')
     {
+        static $cacheRoutes = [];
+        if(isset($cacheRoutes[$directory])){
+            return $cacheRoutes[$directory];
+        }
         $routes = [];
         if ($directory === 'all') {
             $this->scanDirectory($this->basePath, '', $routes);
@@ -248,8 +253,10 @@ class RouteScanner
                 $this->scanDirectory($searchPath, $directory . '/', $routes);
             }
         }
+        $cacheRoutes[$directory] = $routes;
         return $routes;
     }
+
     private function scanDirectoryRoot($dir, &$routes)
     {
         if (!is_dir($dir)) return;

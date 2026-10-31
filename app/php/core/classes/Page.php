@@ -73,6 +73,18 @@ class Page
         return $this;
     }
 
+    private static function scanPages(?string $parent = null): array
+    {
+        static $cache = [];
+        $key = $parent ?? '';
+
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        return $cache[$key] = ctrx_get_files("views/pages", $parent);
+    }
+
     static function group(string ...$routes)
     {
         foreach ($routes as $k => $v) {
@@ -92,7 +104,7 @@ class Page
                 $routes = [];
                 $explode = explode("/*", $v);
                 $parent = $explode[0];
-                $allfiles = ctrx_get_files("views/pages", $parent);
+                $allfiles =  ctrx_get_files("views/pages", $parent);
                 foreach ($allfiles as $keys => $val) {
                     $val = trim($val, "/");
                     self::checkRoutes($val);
@@ -114,9 +126,17 @@ class Page
 
     private static function checkRoutes(string $route)
     {
-        $route = append_php($route);
-        if (! \Classes\Ctrx::file_exists_strict("views/pages/" . $route)) {
-            throw new Exception("Client: Page '$route' not a found or not a file.!");
+        static $checked = [];
+
+        if (isset($checked[$route])) {
+            return true;
         }
+
+        $route = append_php($route);
+        if (!\Classes\Ctrx::file_exists_strict("views/pages/" . $route)) {
+            throw new Exception("Client: Page '$route' not found or not a file.!");
+        }
+
+        $checked[$route] = true;
     }
 }
