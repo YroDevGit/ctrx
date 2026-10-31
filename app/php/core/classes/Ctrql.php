@@ -84,9 +84,12 @@ class Ctrql
 
     public static function checkAccess(string $access)
     {
+        static $cacheAccess = [];
         $access = strtoupper($access);
-        $arr = self::getAccess();
-        if (in_array($access, $arr)) {
+        if(! $cacheAccess){
+            $cacheAccess = array_flip(self::getAccess());
+        }
+        if (isset($cacheAccess[$access])) {
             return true;
         }
         return false;

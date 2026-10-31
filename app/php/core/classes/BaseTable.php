@@ -71,7 +71,7 @@ class BaseTable
 
     protected function isMysql(): bool
     {
-        return in_array(self::$driver, ['mysql', 'mariadb']);
+        return isset(['mysql'=>1, 'mariadb'=>1][self::$driver]);
     }
 
     protected function isMariaDB(): bool
@@ -175,22 +175,32 @@ class BaseTable
 
     protected function filterFillable(array $data): array
     {
+        static $cacheFillable = [];
+        static $cacheGuarded = [];
         if (!empty($this->fillable)) {
+            $key = static::class;
+            if (!isset($cacheFillable[$key])) {
+                $cacheFillable[$key] = array_flip($this->fillable);
+            }
             return array_filter(
                 $data,
-                fn($key) => in_array($key, $this->fillable),
+                fn($k) => isset($cacheFillable[$key][$k]),
                 ARRAY_FILTER_USE_KEY
             );
         }
-
+        
         if (!empty($this->guarded)) {
+            $key = static::class;
+            if (!isset($cacheGuarded[$key])) {
+                $cacheGuarded[$key] = array_flip($this->guarded);
+            }
             return array_filter(
                 $data,
-                fn($key) => !in_array($key, $this->guarded),
+                fn($k) => !isset($cacheGuarded[$key][$k]),
                 ARRAY_FILTER_USE_KEY
             );
         }
-
+        
         return $data;
     }
 
@@ -1090,7 +1100,7 @@ class BaseTable
 
         $condition = strtolower($condition);
 
-        if (!in_array($condition, ['and', 'or'])) {
+        if (!isset(['and'=>1, 'or'=>1][$condition])) {
             throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
         }
 

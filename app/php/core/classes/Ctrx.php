@@ -444,8 +444,8 @@ class Ctrx
 
     public static function CachedHeader(int $age, $privacy = "private")
     {
-        $allowed = ['private', 'public'];
-        if (!in_array($privacy, $allowed)) {
+        $allowed = ['private'=>1, 'public'=>1];
+        if (!isset($allowed[$privacy])) {
             $privacy = 'private';
         }
         header_remove('Cache-Control');
@@ -1501,7 +1501,7 @@ class Ctrx
         if (!is_dir($path)) {
             throw new RuntimeException("Directory not found: $path");
         }
-        if (!in_array($separator, ['-', '/'], true)) {
+        if (!isset(['-'=>1, '/'=>1][$separator])) {
             throw new InvalidArgumentException("Separator must be '-' or '/'");
         }
 
