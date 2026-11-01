@@ -392,12 +392,13 @@ class Validator
         }
 
         $rulesArray = explode('|', $rules);
-        $hasRequired = in_array('required', $rulesArray);
-        $rulesArray = array_reverse($rulesArray);
+        $rulesArray = array_flip($rulesArray);
+        $hasRequired = isset($rulesArray["required"]);
+        
         $value = $postdata[$postname] ?? "";
         $org = $postdata[$postname] ?? null;
 
-        if (in_array("decrypt", $rulesArray) && $org) {
+        if (isset($rulesArray["decrypt"]) && $org) {
             $org = decrypt($org);
             if (! $org) {
                 throw new Exception("Decryption Error.!");
@@ -405,12 +406,12 @@ class Validator
             $value = $org;
         }
 
-        if (in_array("trim", $rulesArray)) {
+        if (isset($rulesArray["trim"])) {
             $value = trim($org ?? "");
         }
         $collected = false;
 
-        foreach ($rulesArray as $rule) {
+        foreach ($rulesArray as $rule=>$v) {
             $ruleParts = explode(':', $rule, 2);
             $ruleName = $ruleParts[0];
             $ruleParam = $ruleParts[1] ?? null;
@@ -426,7 +427,8 @@ class Validator
 
             if ($ruleName === 'required' && $value === '') {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label is required."));
-                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "required."));
+                self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "required."));   
+                continue;
             }
 
             if ($ruleName === 'min') {
@@ -441,6 +443,7 @@ class Validator
                         self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be at least $ruleParam characters."));
                     }
                 }
+                continue;
             }
 
             if ($ruleName === 'max') {
@@ -455,6 +458,7 @@ class Validator
                         self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must not exceed $ruleParam characters."));
                     }
                 }
+                continue;
             }
 
             if ($ruleName === 'min_chars') {
@@ -462,6 +466,7 @@ class Validator
                     self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be at least $ruleParam characters."));
                     self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be at least $ruleParam characters."));
                 }
+                continue;
             }
 
             if ($ruleName === "in_table" && $value) {
@@ -495,6 +500,7 @@ class Validator
                         self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "Invalid value."));
                     }
                 }
+                continue;
             }
 
             if ($ruleName === "unique" && $value) {
@@ -509,6 +515,7 @@ class Validator
                     self::addError($postname, $label . " " . self::$msg);
                     self::addErrs($postname, self::$msg);
                 }
+                continue;
             }
 
             if ($ruleName === 'max_chars') {
@@ -516,31 +523,37 @@ class Validator
                     self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must not exceed $ruleParam characters."));
                     self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must not exceed $ruleParam characters."));
                 }
+                continue;
             }
 
             if ($ruleName === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid email address."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid email address."));
+                continue;
             }
 
             if (($ruleName === 'string' || $ruleName === 'text') && !is_string($value)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a string."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a string."));
+                continue;
             }
 
             if (($ruleName === 'numeric' || $ruleName === 'number') && !is_numeric($value)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a number."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a number."));
+                continue;
             }
 
             if ($ruleName === 'alpha' && !ctype_alpha(str_replace(" ", "", $value))) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters."));
+                continue;
             }
 
             if ($ruleName === 'alphaStrict' && !ctype_alpha($value)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters."));
+                continue;
             }
 
             if ($ruleName == "contain" || $ruleName == "having") {
@@ -553,6 +566,7 @@ class Validator
                         self::addErrs($postname, "invalid value.");
                     }
                 }
+                continue;
             }
 
             if ($ruleName == "exclude") {
@@ -565,11 +579,13 @@ class Validator
                         self::addErrs($postname, "value is not allowed.");
                     }
                 }
+                continue;
             }
 
             if ($ruleName === 'alphanumeric' && !ctype_alnum($value)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must contain only letters and numbers."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must contain only letters and numbers."));
+                continue;
             }
 
             if ($ruleName === 'regex' && $ruleParam) {
@@ -577,6 +593,7 @@ class Validator
                     self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label format is invalid."));
                     self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "format is invalid."));
                 }
+                continue;
             }
 
             if ($ruleName === 'in' && $ruleParam) {
@@ -590,6 +607,7 @@ class Validator
                         self::addErrs($postname, "invalid value.");
                     }
                 }
+                continue;
             }
 
             if ($ruleName === 'not_in' && $ruleParam) {
@@ -603,41 +621,49 @@ class Validator
                         self::addErrs($postname, "value is not allowed.");
                     }
                 }
+                continue;
             }
 
             if ($ruleName === 'date' && strtotime($value) === false) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid date."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid date."));
+                continue;
             }
 
             if ($ruleName === 'url' && !filter_var($value, FILTER_VALIDATE_URL)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid URL."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid URL."));
+                continue;
             }
 
             if ($ruleName === 'ip' && !filter_var($value, FILTER_VALIDATE_IP)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be a valid IP address."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be a valid IP address."));
+                continue;
             }
 
-            if ($ruleName === 'boolean' && !in_array($value, [true, false, 0, 1, '0', '1'], true)) {
+            if ($ruleName === 'boolean' && !is_bool($value)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be true or false."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be true or false."));
+                continue;
             }
 
             if ($ruleName === 'length' && strlen($value) !== (int)$ruleParam) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must be exactly $ruleParam characters."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must be exactly $ruleParam characters."));
+                continue;
             }
 
             if ($ruleName === 'starts_with' && !str_starts_with($value, $ruleParam)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must start with $ruleParam."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must start with $ruleParam."));
+                continue;
             }
 
             if ($ruleName === 'ends_with' && !str_ends_with($value, $ruleParam)) {
                 self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label must end with $ruleParam."));
                 self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "must end with $ruleParam."));
+                continue;
             }
 
             if ($ruleName === 'equal' && $ruleParam !== null) {
@@ -645,6 +671,7 @@ class Validator
                     self::addError($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "$label has invalid value."));
                     self::addErrs($postname, self::getErrorMsg($ruleName, $label, $errorMessages, "invalid value."));
                 }
+                continue;
             }
         }
 
@@ -714,6 +741,7 @@ class Validator
 
     protected static function addError(string $post, string $message)
     {
+        if(isset(self::$errors[$post])) return;
         self::$errors[$post] = $message;
         self::$failed = true;
     }
@@ -737,6 +765,7 @@ class Validator
 
     protected static function addErrs(string $post, string $message)
     {
+        if(isset(self::$ers[$post])) return;
         self::$ers[$post] = $message;
         self::$failed = true;
     }
