@@ -162,12 +162,12 @@ $constants = $pdo->query("SELECT * FROM constants ORDER BY key ASC")->fetchAll()
 
                     <div class="form-group">
                         <label>Key (e.g., site_name)</label>
-                        <input type="text" name="key" required value="<?= $editData ? $editData['key'] : '' ?>" placeholder="site_name">
+                        <input type="text" name="key" required value="<?= $editData ? $editData['key'] : '' ?>" placeholder="Enter key">
                     </div>
                     
                     <div class="form-group">
                         <label>Value</label>
-                        <input type="text" name="value" required value="<?= $editData ? $editData['value'] : '' ?>" placeholder="My Awesome Website">
+                        <input type="text" name="value" required value="<?= $editData ? $editData['value'] : '' ?>" placeholder="Enter value">
                     </div>
 
                     <div class="form-group">
