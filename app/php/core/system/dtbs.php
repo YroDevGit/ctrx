@@ -74,7 +74,7 @@ function isSqlite()
 function isMysql()
 {
     global $driver;
-    return in_array($driver, ['mysql', 'mariadb']);
+    return isset(['mysql'=>1, 'mariadb'=>1][$driver]);
 }
 
 function quoteIdentifier($identifier)

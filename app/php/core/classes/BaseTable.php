@@ -1058,7 +1058,7 @@ class BaseTable
 
         $condition = strtolower($condition);
 
-        if (!in_array($condition, ['and', 'or'])) {
+        if (!isset(['and'=>1, 'or'=>1][$condition])) {
             throw new \InvalidArgumentException("Condition must be 'and' or 'or'.");
         }
 

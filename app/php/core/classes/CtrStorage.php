@@ -204,9 +204,9 @@ class CtrStorage
 
         $file = $_FILES['image'];
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+        $imageTypes = ['png'=>1, 'jpg'=>1, 'jpeg'=>1, 'gif'=>1, 'bmp'=>1, 'webp'=>1, 'svg'=>1, 'ico'=>1];
 
-        if (!in_array($extension, $imageTypes)) {
+        if (!isset($imageTypes[$extension])) {
             echo json_encode(['success' => false, 'code' => 500, 'message' => 'Invalid image type']);
             exit;
         }
@@ -258,7 +258,7 @@ class CtrStorage
         $dirs = is_array($dirs[0]) ? $dirs[0] : $dirs;
 
         $allImages = [];
-        $imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+        $imageTypes = ['png'=>1, 'jpg'=>1, 'jpeg'=>1, 'gif'=>1, 'bmp'=>1, 'webp'=>1, 'svg'=>1, 'ico'=>1];
 
         foreach ($dirs as $dir) {
             $includeSubfolders = false;
@@ -288,7 +288,7 @@ class CtrStorage
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
                     $extension = strtolower($file->getExtension());
-                    if (in_array($extension, $imageTypes)) {
+                    if (isset($imageTypes[$extension])) {
                         $relativePath = str_replace(dirname(__DIR__) . '/', '', $file->getPathname());
                         $relativePath = str_replace('\\', '/', $relativePath);
 

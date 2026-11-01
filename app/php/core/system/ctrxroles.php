@@ -305,8 +305,10 @@ class RouteScanner
     }
     public function getAllRoutes()
     {
-        $routes = [];
-        $this->scanDirectory($this->basePath, '', $routes);
+        static $routes = [];
+        if(! $routes){
+            $this->scanDirectory($this->basePath, '', $routes);
+        }
         return $routes;
     }
     public function getDirColors()
@@ -365,8 +367,13 @@ class RoleManager
     {
         $this->pdo->beginTransaction();
         try {
+            static $all_routes = [];
             $routeScanner = new RouteScanner('views/pages/');
-            $all_routes = $routeScanner->getAllRoutes();
+
+            if(! $all_routes){
+                $all_routes = $routeScanner->getAllRoutes();
+            }
+
             $all_route_names = array_column($all_routes, 'route');
 
             $current_access = $this->getRoleAccess($role_id);
@@ -387,14 +394,20 @@ class RoleManager
                     }
                 }
             }
-            $posted_routes = array_keys($access_data);
+            $selected_directory = isset($_GET['dir']) ? $_GET['dir'] : 'root';
+            $selected_directory = str_replace("\\", "/", $selected_directory);
+            static $curviewroutenames = [];
+            $update_stmt = $this->pdo->prepare("UPDATE ctrx_roles_access SET has_access = 0 WHERE role_id = ? AND route = ?");
             foreach ($current_access as $route => $current_value) {
-                if (!in_array($route, $posted_routes)) {
-                    $selected_directory = isset($_GET['dir']) ? $_GET['dir'] : 'root';
-                    $current_view_routes = $routeScanner->getRoutesByDirectory($selected_directory);
-                    $current_view_route_names = array_column($current_view_routes, 'route');
-                    if (in_array($route, $current_view_route_names)) {
-                        $update_stmt = $this->pdo->prepare("UPDATE ctrx_roles_access SET has_access = 0 WHERE role_id = ? AND route = ?");
+                if (!isset($access_data[$route])) {
+                    if(! isset($curviewroutenames[$selected_directory])){
+                        $current_view_routes = $routeScanner->getRoutesByDirectory($selected_directory);
+                        $arry = array_column($current_view_routes, 'route');
+                        $arry = array_flip($arry);
+                        $curviewroutenames[$selected_directory] = $arry;
+                    }
+                     
+                    if (isset($curviewroutenames[$selected_directory][$route])) {
                         $update_stmt->execute([$role_id, $route]);
                     }
                 }
@@ -408,25 +421,30 @@ class RoleManager
         }
     }
 
-    public function cleanupUnusedRoutes()
-    {
+    public function cleanupUnusedRoutes(): int
+{
+    static $existingRoutes = [];
+
+    if (! $existingRoutes) {
         $routeScanner = new RouteScanner('views/pages/');
         $all_routes = $routeScanner->getAllRoutes();
-        $existing_route_names = array_column($all_routes, 'route');
-
-        $stmt = $this->pdo->query("SELECT id, route FROM ctrx_roles_access");
-        $records = $stmt->fetchAll();
-
-        $deleted_count = 0;
-        foreach ($records as $record) {
-            if (!in_array($record['route'], $existing_route_names)) {
-                $delete_stmt = $this->pdo->prepare("DELETE FROM ctrx_roles_access WHERE id = ?");
-                $delete_stmt->execute([$record['id']]);
-                $deleted_count++;
-            }
-        }
-        return $deleted_count;
+        $existingRoutes = array_column($all_routes, 'route');
     }
+
+    if (empty($existingRoutes)) {
+        return (int) $this->pdo->exec("DELETE FROM ctrx_roles_access");
+    }
+
+    $placeholders = implode(',', array_fill(0, count($existingRoutes), '?'));
+
+    $stmt = $this->pdo->prepare(
+        "DELETE FROM ctrx_roles_access WHERE route IS NULL OR route NOT IN ($placeholders)"
+    );
+
+    $stmt->execute($existingRoutes);
+
+    return $stmt->rowCount();
+}
 
     public function exportTables()
     {
@@ -469,22 +487,28 @@ class RoleManager
         }
     }
 
-    public function countUnusedRoutes()
+    public function countUnusedRoutes(): int
     {
-        $routeScanner = new RouteScanner('views/pages/');
-        $all_routes = $routeScanner->getAllRoutes();
-        $existing_route_names = array_column($all_routes, 'route');
+        static $existingRoutes = [];
 
-        $stmt = $this->pdo->query("SELECT route FROM ctrx_roles_access");
-        $records = $stmt->fetchAll();
-
-        $unused_count = 0;
-        foreach ($records as $record) {
-            if (!in_array($record['route'], $existing_route_names)) {
-                $unused_count++;
-            }
+        if (! $existingRoutes) {
+            $routeScanner = new RouteScanner('views/pages/');
+            $all_routes = $routeScanner->getAllRoutes();
+            $existingRoutes = array_column($all_routes, 'route');
         }
-        return $unused_count;
+
+        if (empty($existingRoutes)) {
+            return (int) $this->pdo->query("SELECT COUNT(*) FROM ctrx_roles_access")->fetchColumn();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($existingRoutes), '?'));
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM ctrx_roles_access WHERE route NOT IN ($placeholders)"
+        );
+        $stmt->execute($existingRoutes);
+
+        return (int) $stmt->fetchColumn();
     }
 }
 

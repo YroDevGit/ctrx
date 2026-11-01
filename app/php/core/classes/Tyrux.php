@@ -33,7 +33,7 @@ class Tyrux
             CURLOPT_HTTPHEADER => self::formatHeaders($headers),
         ];
 
-        if (!empty($data) && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH'])) {
+        if (!empty($data) && isset(['POST'=>1, 'PUT'=>1, 'PATCH'=>1][strtoupper($method)])) {
             $curlOptions[CURLOPT_POSTFIELDS] = json_encode($data);
             $curlOptions[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json';
         }
