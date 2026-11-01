@@ -1119,6 +1119,17 @@ if(! function_exists("find_in_array")){
     }
 }
 
+if(! function_exists("cv")){
+    function cv(string $key, $default = null){
+        static $allData = [];
+        if(! $allData){
+            $data = \Classes\SQLite::get("select * from constants");
+            $allData = array_column($data,"value", "key");
+        }  
+        return $allData[$key] ?? $default;
+    }
+}
+
 if(! function_exists("get_array_columns")){
     function get_array_columns(array $data, array|string|null $columns = null, $index = null){
         return \Classes\Collection::array_column($data, $columns, $index);

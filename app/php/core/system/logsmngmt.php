@@ -607,7 +607,7 @@ $size = folderSize('app/php/logs');
                 <?php if ($current_path != ''): ?>
                     <a href="?path=" class="top-back">⬅ Back</a>
                 <?php endif; ?>
-                <a href="/ctrx" class="exit-btn">🚪 Exit</a>
+                <a href="/ctrx" class="exit-btn">Home</a>
             </div>
         </div>
 

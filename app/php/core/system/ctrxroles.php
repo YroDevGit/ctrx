@@ -1513,7 +1513,7 @@ if ($is_activated) {
         <?php endif; ?>
         <div class="main-content">
             <div class="top-bar">
-                <a href="/ctrx" class="back-btn">← Go back</a>
+                <a href="/ctrx" class="back-btn">Home</a>
                 <?php if ($is_activated): ?>
                     <span class="status-badge active">✓ Activated</span>
                 <?php else: ?>

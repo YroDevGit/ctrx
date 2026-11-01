@@ -243,7 +243,7 @@ if ($action) {
     <div class="pm-header-inner">
         <span class="pm-logo">Page<span>Manager</span></span>
         <div class="pm-actions">
-            <button id="backBtn" class="pm-btn">Back</button>
+            <button id="backBtn" class="pm-btn">Home</button>
             <button id="refreshBtn" class="pm-btn">Refresh</button>
             <button id="addPageBtn" class="pm-btn pm-btn-primary">+ New Page</button>
         </div>

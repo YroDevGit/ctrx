@@ -1567,7 +1567,7 @@ if ($tableExists) {
         <?php endif; ?>
 
         <div class="back-link">
-            <b><a href="/ctrx">← Previous page</a></b>
+            <b><a href="/ctrx">Home</a></b>
         </div>
 
         <div class="footer">

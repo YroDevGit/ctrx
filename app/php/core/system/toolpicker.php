@@ -1189,6 +1189,10 @@ $size = folderSize('app/php/logs');
         font-size: 18px;
       }
     }
+    .more-actions{
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 
@@ -1286,7 +1290,10 @@ $size = folderSize('app/php/logs');
 
     <div class="back-section">
       <div class="back-hint">
+      <div class="more-actions">
       <a href="/ctrx/pagemgt"><span class="icon"></span>Manage pages</a>
+      <a href="/ctrx/constants"><span class="icon"></span>Manage constants</a>
+      </div>
       </div>
     </div>
 
