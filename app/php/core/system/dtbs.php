@@ -749,18 +749,18 @@ function getDBTimezone($pdo)
     
     try {
         if (isMysql()) {
-            $sql = "SELECT CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone";
+            $sql = "SELECT DATE_FORMAT(NOW(), '%M %e %Y %l:%i%p') AS cdate, CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone";
             $result = executeQuery($pdo, $sql);
             if ($result['success']) {
                 $row = $result['data']->fetch();
-                return $row['timezone'] ?? 'Unknown';
+                return ["timezone"=>$row['timezone'], "ctime"=>$row['cdate'] ?? null] ?? 'Unknown';
             }
         } elseif (isPostgres()) {
-            $sql = "SELECT TO_CHAR(EXTRACT(TIMEZONE FROM NOW()) * INTERVAL '1 second', 'HH24:MI') AS timezone";
+            $sql = "SELECT to_char(NOW(), 'FMMonth FMDD YYYY FMHH12:MIam') AS cdate, TO_CHAR(EXTRACT(TIMEZONE FROM NOW()) * INTERVAL '1 second', 'HH24:MI') AS timezone";
             $result = executeQuery($pdo, $sql);
             if ($result['success']) {
                 $row = $result['data']->fetch();
-                return $row['timezone'] ?? 'Unknown';
+                return ["timezone"=>$row['timezone'], "ctime"=>$row['cdate'] ?? null] ?? 'Unknown';
             }
         } elseif (isSqlite()) {
             return 'SQLite (UTC)';
@@ -1339,7 +1339,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <button class="btn-close" onclick="closeModal('credentialsModal')">×</button>
             </div>
             <div align="center" style="margin-top: 5px;">
-            <span class="timezone-display" id="timezoneDisplay">⏰ Loading timezone...</span>
+            <span class="" id="timezoneDisplay">⏰ Loading timezone...</span>
             </div>
             <div class="modal-body">
                 <?php
@@ -2115,12 +2115,15 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             try {
                 const result = await apiRequest('getTimezone');
                 if (result.success && result.timezone) {
-                    document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: ' + result.timezone;
+                    let timezone = result.timezone?.timezone ?? undefined;
+                    let ctime = result.timezone?.ctime ?? undefined;
+                    let timeandctime = `${ctime}\n⏰ Timezone: ${timezone}`;
+                    document.getElementById('timezoneDisplay').innerText = timeandctime;
                 } else {
-                    document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: Unknown';
+                    document.getElementById('timezoneDisplay').innerText = '⏰ Timezone: Unknown';
                 }
             } catch (error) {
-                document.getElementById('timezoneDisplay').textContent = '⏰ Timezone: Error';
+                document.getElementById('timezoneDisplay').innerText = '⏰ Timezone: Error';
             }
         }
 

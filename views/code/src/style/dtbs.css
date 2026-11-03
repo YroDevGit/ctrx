@@ -911,6 +911,11 @@ textarea.form-control {
     padding: 0 4px;
 }
 
+#timezoneDisplay{
+    font-size: 14px;
+    font-family: monospace;
+}
+
 .eye-icon:hover {
     opacity: 1;
 }
