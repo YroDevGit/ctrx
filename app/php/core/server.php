@@ -437,6 +437,10 @@ if (str_starts_with($req, "api/")) {
 
         if (! \Classes\Ctrx::file_exists_strict($fullpath)) {
             $fullpath = rem_php($fullpath);
+            if(str_ends_with($fullpath, ".html")){
+                include $fullpath;
+                exit;
+            }
             if(is_dir($fullpath) && file_exists($fullpath."/index.php")){
                 \Classes\Ctrx::_set_current_fe($req."/index");
                 $fullpath = $fullpath."/index.php";
