@@ -430,7 +430,15 @@ if (str_starts_with($req, "api/")) {
             exit;
         }
 
-        if($req == "test/capi"){
+        if($req == "ctrx/capi"){
+            $data = \Classes\Ctrx::get_admin_data();
+            $logoutPage = \Classes\Ctrx::get_logout_page() ?? "/";
+            if (! $data) {
+                \Classes\Ctrx::page_rate_limit(5, 60, "ctrx/admin1005/unauth1y00r5o14");
+                echo "<b style='color:red;'>You are not authorize to accesss this page</b>";
+                redirect($logoutPage, "page", 2);
+                return;
+            }
             include "views/code/src/capi/ctrx-capi-index.php";
             exit;
         }

@@ -1193,6 +1193,14 @@ $size = folderSize('app/php/logs');
       display: flex;
       gap: 10px;
     }
+    .more-actions a{
+      color:#0044a8;
+      text-decoration:none;
+      &:hover{
+        color:blueviolet;
+        font-weight: bold;
+      }
+    }
   </style>
 </head>
 
@@ -1291,8 +1299,9 @@ $size = folderSize('app/php/logs');
     <div class="back-section">
       <div class="back-hint">
       <div class="more-actions">
-      <a href="/ctrx/pagemgt"><span class="icon"></span>Manage pages</a>
-      <a href="/ctrx/constants"><span class="icon"></span>Manage constants</a>
+      <a href="/ctrx/capi"><span class="icon"></span> Capi</a>
+      <a href="/ctrx/pagemgt"><span class="icon"></span> Manage pages</a>
+      <a href="/ctrx/constants"><span class="icon"></span> Manage constants</a>
       </div>
       </div>
     </div>

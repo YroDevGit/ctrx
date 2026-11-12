@@ -39,6 +39,7 @@ if(isset($_GET["capi_decrypt"])){
                 <button id="curlBtn" class="tester-btn-icon" title="Generate cURL">cURL</button>
                 <button id="historyToggle" class="tester-btn-icon" title="History">History</button>
                 <button id="clearBtn" class="tester-btn-icon" title="Clear">Clear</button>
+                <a href="/ctrx"><button class="tester-btn-icon" title="Clear">Home</button></a>
             </div>
         </div>
     </header>
