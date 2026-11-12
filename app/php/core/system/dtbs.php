@@ -1249,6 +1249,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Manager - <?= $dbname ?></title>
+    <?=ctrx_icons()?>
     <link rel="stylesheet" href="/views/code/src/style/dtbs.css">
 </head>
 
@@ -1259,26 +1260,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="db-header">
                 <h2>
                     <span class="icon"></span>CTRX DBMS</span>
-                    <button class="eye-icon" onclick="showCredentialsModal()" title="View Database Credentials">👁️</button>
+                    <button class="eye-icon" onclick="showCredentialsModal()" title="View Database Credentials"><span class="icon"></span></button>
                 </h2>
 
             </div>
 
             <div class="db-header-actions">
                 <button class="btn btn-success btn-sm export-sql-btn" onclick="showExportModal()">
-                    <span class="icon">💾</span> Export SQL
+                <span class="icon"></span>Export SQL
                 </button>
                 <button class="btn btn-info btn-sm" onclick="showImportModal()">
-                    <span class="icon">📥</span> Import SQL
+                <span class="icon"></span>Import SQL
                 </button>
                 <button class="btn btn-warning btn-sm" onclick="showMigrationModal()">
-                    <span class="icon">🧬</span> Migration
+                <span class="icon"></span>Migration
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="refreshAll()">
-                    <span class="icon">🔄</span> Refresh
+                <span class="icon"></span>Refresh
                 </button>
                 <a href="/ctrx">
-                    <button class="btn btn-outline-secondary btn-sm">Home</button>
+                    <button class="btn btn-outline-secondary btn-sm"><span class="icon"></span>Home</button>
                 </a>
             </div>
         </div>
@@ -1287,7 +1288,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="input-group">
                 <textarea class="form-control" id="queryInput" placeholder="Enter SQL query here... (e.g., SELECT * FROM users)"></textarea>
                 <button class="btn btn-primary" onclick="executeCustomQuery()">
-                    <span class="icon">▶️</span> Execute
+                <span class="icon"></span>Execute
                 </button>
             </div>
             <div id="queryResultContainer" class="query-result-container"></div>
@@ -1299,9 +1300,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="col-md-3">
                 <div class="card sidebar">
                     <div class="card-header">
-                        <h5><span class="icon">📋</span>Tables</h5>
+                        <h5><span class="icon"></span>Tables</h5>
                         <button class="btn btn-primary btn-sm" onclick="showCreateTableModal()">
-                            <span class="icon">➕</span> New
+                        <span class="icon"></span>New
                         </button>
                     </div>
                     <div id="tableList">
@@ -1310,10 +1311,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     <hr style="margin: 15px 0;">
                     <div>
                         <button class="btn btn-outline-danger btn-sm w-100" onclick="dropTable()">
-                            <span class="icon">🗑️</span> Drop Table
+                        <span class="icon"></span>Drop Table
                         </button>
                         <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="showRenameTableModal()">
-                            <span class="icon">✏️</span> Rename Table
+                        <span class="icon"></span>Rename Table
                         </button>
                     </div>
                 </div>
@@ -1335,11 +1336,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <div class="modal-overlay" id="credentialsModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">🔐</span>Database Credentials</h5>
+                <h5><span class="icon"><span class="icon"></span></span> Database Credentials</h5>
                 <button class="btn-close" onclick="closeModal('credentialsModal')">×</button>
             </div>
             <div align="center" style="margin-top: 5px;">
-            <span class="" id="timezoneDisplay">⏰ Loading timezone...</span>
+            <span class="" id="timezoneDisplay"><span class="icon"></span> Loading timezone...</span>
             </div>
             <div class="modal-body">
                 <?php
@@ -1349,40 +1350,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 <div class="credential-item">
                     <span class="label">HOST (dbhost)</span>
                     <span class="value" id="cred_host"><?= env('dbhost') ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_host')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_host')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">PORT (dbport)</span>
                     <span class="value" id="cred_port"><?= env('dbport') ?: '3306' ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_port')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_port')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">DATABASE (database)</span>
                     <span class="value" id="cred_database"><?= env('database') ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_database')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_database')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">USER (dbuser)</span>
                     <span class="value" id="cred_user"><?= env('dbuser') ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_user')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_user')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">PASSWORD (dbpass)</span>
                     <span class="value" id="cred_password" data-actual="<?= htmlspecialchars($actualPassword) ?>"><?= $displayPassword ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_password')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_password')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">CHARSET (dbcharset)</span>
                     <span class="value" id="cred_charset"><?= env('dbcharset') ?: 'utf8mb4' ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_charset')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_charset')"><span class="icon"></span></button>
                 </div>
                 <div class="credential-item">
                     <span class="label">DRIVER (dbdriver)</span>
                     <span class="value" id="cred_driver"><?= env('dbdriver') ?: 'mysql' ?></span>
-                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_driver')">📋</button>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyCredential('cred_driver')"><span class="icon"></span></button>
                 </div>
                 <div style="margin-top: 15px; text-align: center;">
-                    <button class="btn btn-primary btn-sm" onclick="copyAllCredentials()">📋 Copy All Credentials</button>
+                    <button class="btn btn-primary btn-sm" onclick="copyAllCredentials()"><span class="icon"></span> Copy All Credentials</button>
                 </div>
             </div>
             <div class="modal-footer">
@@ -1394,7 +1395,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <div class="modal-overlay" id="exportModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">💾</span>Export Database as SQL</h5>
+                <h5><span class="icon"></span>Export Database as SQL</h5>
                 <button class="btn-close" onclick="closeModal('exportModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1419,7 +1420,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancel</button>
                 <button class="btn btn-success" onclick="exportSQL()">
-                    <span class="icon">💾</span> Export SQL
+                <span class="icon"></span>Export SQL
                 </button>
             </div>
         </div>
@@ -1428,13 +1429,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     <div class="modal-overlay" id="importModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h5><span class="icon">📥</span>Import SQL</h5>
+                <h5><span class="icon"></span> Import SQL</h5>
                 <button class="btn-close" onclick="closeModal('importModal')">×</button>
             </div>
             <div class="modal-body">
                 <div class="import-tabs">
-                    <div class="import-tab active" data-tab="file" onclick="switchImportTab('file')">📁 Upload SQL File</div>
-                    <div class="import-tab" data-tab="paste" onclick="switchImportTab('paste')">📝 Paste Query</div>
+                    <div class="import-tab active" data-tab="file" onclick="switchImportTab('file')"><span class="icon"></span> Upload SQL File</div>
+                    <div class="import-tab" data-tab="paste" onclick="switchImportTab('paste')"><span class="icon"></span> Paste Query</div>
                 </div>
 
                 <div class="import-panel active" id="importPanelFile">
@@ -1491,8 +1492,8 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             <div class="modal-body" style="display:block;">
 
                 <div class="import-tabs">
-                    <div class="import-tab active" data-tab="export" onclick="switchMigrationTab('export')">📤 Export JSON</div>
-                    <div class="import-tab" data-tab="import" onclick="switchMigrationTab('import')">📥 Import JSON</div>
+                    <div class="import-tab active" data-tab="export" onclick="switchMigrationTab('export')"><span class="icon"></span> Export JSON</div>
+                    <div class="import-tab" data-tab="import" onclick="switchMigrationTab('import')"><span class="icon"></span> Import JSON</div>
                 </div>
 
                 <div class="import-panel active" id="migrationPanelExport">
@@ -1562,7 +1563,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="createTableModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h5><span class="icon">➕</span>Create Table</h5>
+                <h5><span class="icon"></span> Create Table</h5>
                 <button class="btn-close" onclick="closeModal('createTableModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1586,7 +1587,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="addColumnModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">➕</span>Add Column</h5>
+                <h5><span class="icon"></span> Add Column</h5>
                 <button class="btn-close" onclick="closeModal('addColumnModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1603,7 +1604,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="removeColumnModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">🗑️</span>Remove Column</h5>
+                <h5><span class="icon"></span>Remove Column</h5>
                 <button class="btn-close" onclick="closeModal('removeColumnModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1620,7 +1621,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('removeColumnModal')">Cancel</button>
                 <button class="btn btn-danger" onclick="removeColumn()">
-                    <span class="icon">🗑️</span> Remove Column
+                <span class="icon"></span>Remove Column
                 </button>
             </div>
         </div>
@@ -1629,7 +1630,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="renameColumnModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">✏️</span>Rename Column</h5>
+                <h5><span class="icon"></span>Rename Column</h5>
                 <button class="btn-close" onclick="closeModal('renameColumnModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1652,7 +1653,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="modifyColumnModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">⚙️</span>Modify Column</h5>
+                <h5><span class="icon"></span> Modify Column</h5>
                 <button class="btn-close" onclick="closeModal('modifyColumnModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1675,7 +1676,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="keyModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">🔑</span>Manage Keys</h5>
+                <h5><span class="icon"></span> Manage Keys</h5>
                 <button class="btn-close" onclick="closeModal('keyModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1707,7 +1708,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="renameTableModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">✏️</span>Rename Table</h5>
+                <h5><span class="icon"></span>Rename Table</h5>
                 <button class="btn-close" onclick="closeModal('renameTableModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1724,7 +1725,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="insertRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h5><span class="icon">➕</span>Insert Row</h5>
+                <h5><span class="icon"></span> Insert Row</h5>
                 <button class="btn-close" onclick="closeModal('insertRowModal')">×</button>
             </div>
             <div class="modal-body" id="insertRowFields">
@@ -1739,7 +1740,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="editRowModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h5><span class="icon">✏️</span>Edit Row</h5>
+                <h5><span class="icon"></span> Edit Row</h5>
                 <button class="btn-close" onclick="closeModal('editRowModal')">×</button>
             </div>
             <div class="modal-body" id="editRowFields">
@@ -1755,7 +1756,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="createCodeModal">
         <div class="modal modal-lg">
             <div class="modal-header">
-                <h5><span class="icon">📝</span>Create Table SQL</h5>
+                <h5><span class="icon"></span> Create Table SQL</h5>
                 <button class="btn-close" onclick="closeModal('createCodeModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1766,7 +1767,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
                     Loading...
                 </div>
                 <div style="margin-top: 10px;">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="copyCreateCode()">📋 Copy SQL</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyCreateCode()"><span class="icon"></span> Copy SQL</button>
                 </div>
             </div>
             <div class="modal-footer">
@@ -1778,7 +1779,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
     <div class="modal-overlay" id="exportSingleModal">
         <div class="modal">
             <div class="modal-header">
-                <h5><span class="icon">💾</span>Export Table: <span id="exportSingleTableName"></span></h5>
+                <h5><span class="icon"></span> Export Table: <span id="exportSingleTableName"></span></h5>
                 <button class="btn-close" onclick="closeModal('exportSingleModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1802,7 +1803,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('exportSingleModal')">Cancel</button>
                 <button class="btn btn-success" onclick="exportSingleTable()">
-                    <span class="icon">💾</span> Export
+                <span class="icon"></span>Export
                 </button>
             </div>
         </div>
@@ -2117,8 +2118,8 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
                 if (result.success && result.timezone) {
                     let timezone = result.timezone?.timezone ?? undefined;
                     let ctime = result.timezone?.ctime ?? undefined;
-                    let timeandctime = `${ctime}\n⏰ Timezone: ${timezone}`;
-                    document.getElementById('timezoneDisplay').innerText = timeandctime;
+                    let timeandctime = `${ctime}<br><span class="icon"></span>Timezone: ${timezone}`;
+                    document.getElementById('timezoneDisplay').innerHTML = timeandctime;
                 } else {
                     document.getElementById('timezoneDisplay').innerText = '⏰ Timezone: Unknown';
                 }
@@ -2308,35 +2309,35 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
             <h5 style="font-size: 16px; font-weight: 600;">
-                <span class="icon">📋</span>Table: <strong>${currentTable}</strong>
+                <span class="icon"><span class="icon"></span></span>Table: <strong>${currentTable}</strong>
             </h5>
             <div class="btn-group">
                 <button class="btn btn-outline-primary btn-sm" onclick="showAddColumnModal()">
-                    <span class="icon">➕</span> Column
+                <span class="icon"></span>Column
                 </button>
                 <button class="btn btn-outline-danger btn-sm" onclick="showRemoveColumnModal()">
-                    <span class="icon">🗑️</span> Remove
+                <span class="icon"></span>Remove
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="showRenameColumnModal()">
-                    <span class="icon">✏️</span> Rename
+                <span class="icon"></span>Rename
                 </button>
                 <button class="btn btn-outline-warning btn-sm" onclick="showModifyColumnModal()">
-                    <span class="icon">⚙️</span> Modify
+                <span class="icon"></span>Modify
                 </button>
                 <button class="btn btn-outline-info btn-sm" onclick="showKeyModal()">
-                    <span class="icon">🔑</span> Keys
+                <span class="icon"></span>Keys
                 </button>
                 <button class="btn btn-success btn-sm" onclick="showInsertRowModal()">
-                    <span class="icon">➕</span> Insert
+                <span class="icon"></span>Insert
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="truncateTable()">
-                    <span class="icon">🗑️</span> Truncate
+                <span class="icon"></span>Truncate
                 </button>
                 <button class="btn btn-outline-success btn-sm" onclick="showExportSingleModal()">
-                    <span class="icon">💾</span> Export
+                <span class="icon"></span>Export
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="showCreateCodeModal()">
-                    <span class="icon">📝</span> Create Code
+                <span class="icon"></span>Create Code
                 </button>
             </div>
         </div>
@@ -2476,10 +2477,10 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
                     html += `
             <td>
                 <button class="btn btn-outline-primary btn-sm" onclick="showEditRowModal('${pkValue}')" style="margin: 2px;">
-                    ✏️
+                <span class="icon"></span>
                 </button>
                 <button class="btn btn-outline-danger btn-sm" onclick="deleteRow('${pkValue}')" style="margin: 2px;">
-                    🗑️
+                <span class="icon"></span>
                 </button>
             </td>
         </tr>
@@ -3513,7 +3514,7 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             }
 
             if (createCount) {
-                html += `<div class="migration-section-title">➕ Tables to CREATE</div>`;
+                html += `<div class="migration-section-title"><span class="icon"></span> Tables to CREATE</div>`;
                 Object.keys(plan.tables_to_create).forEach(t => {
                     const cols = Object.keys(plan.tables_to_create[t].columns || {});
                     html += `<div class="migration-code">CREATE TABLE <span class="tbl">\`${t}\`</span> (<br>`;
@@ -3525,14 +3526,14 @@ INSERT IGNORE INTO users (id, name) VALUES (1, 'John');"></textarea>
             }
 
             if (addCount) {
-                html += `<div class="migration-section-title">➕ Columns to ADD</div>`;
+                html += `<div class="migration-section-title"><span class="icon"></span> Columns to ADD</div>`;
                 plan.columns_to_add.forEach(c => {
                     html += `<div class="migration-code"><span class="kw">ALTER TABLE</span> <span class="tbl">\`${c.table}\`</span> <span class="kw">ADD COLUMN</span> <span class="col">\`${c.column}\`</span> ${c.definition.replace(/^`[^`]+`\s+/, '')};</div>`;
                 });
             }
 
             if (modCount) {
-                html += `<div class="migration-section-title">⚙️ Columns to MODIFY</div>`;
+                html += `<div class="migration-section-title"><span class="icon"></span> Columns to MODIFY</div>`;
                 plan.columns_to_modify.forEach(c => {
                     html += `<div class="migration-code"><span class="kw">ALTER TABLE</span> <span class="tbl">\`${c.table}\`</span> <span class="kw">MODIFY COLUMN</span> <span class="col">\`${c.column}\`</span> ${c.definition.replace(/^`[^`]+`\s+/, '')};
 <span style="color:#6a9955;">-- from:</span> ${c.from.type} | null:${c.from.nullable} | default:${c.from.default === null ? 'NULL' : c.from.default}
