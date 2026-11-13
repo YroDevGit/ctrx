@@ -444,7 +444,7 @@ class Ctrx
 
     public static function CachedHeader(int $age, $privacy = "private")
     {
-        $allowed = ['private'=>1, 'public'=>1];
+        $allowed = ['private' => 1, 'public' => 1];
         if (!isset($allowed[$privacy])) {
             $privacy = 'private';
         }
@@ -1295,15 +1295,18 @@ class Ctrx
     public static function updateFile(string $filePath, $new = "m")
     {
         include_once "app/php/core/partials/envloader.php";
+
         $filePath = trim($filePath, " /\\");
         $filePath = str_replace("\\", "/", $filePath);
+
         $repo = "https://raw.githubusercontent.com/YroDevGit/ctrx";
         if (! $repo) {
             return ["success" => false, "message" => "Raw repository not set @env"];
         }
         $repo = trim($repo, " /\\");
         $repo = str_replace("\\", "/", $repo);
-        $rawUrl = "$repo/main/" . $filePath;
+
+        $rawUrl        = "$repo/main/" . $filePath;
         $localFilePath = $filePath;
 
         if ($new == "m") {
@@ -1333,6 +1336,13 @@ class Ctrx
             return ["success" => false, "message" => "Failed to fetch the file from GitHub. Check the URL or your internet connection."];
         }
 
+        if ($new == "m") {
+            $annotated = self::annotateForBackup($filePath, $newContent);
+            if ($annotated !== null) {
+                $newContent = $annotated;
+            }
+        }
+
         $bytes = @file_put_contents($localFilePath, $newContent);
 
         if ($bytes === false) {
@@ -1343,7 +1353,174 @@ class Ctrx
         return ["success" => true, "message" => "Successfully updated {$filePath} from CTRX."];
     }
 
-    static function __isValidTzone(string $timezone){
+    private static function annotateForBackup(string $filePath, string $newContent): ?string
+    {
+        try {
+            $markers = self::markersFor($filePath);
+            if ($markers === null) return null;
+            if (!self::isTextual($newContent)) return null;
+
+            $original = is_file($filePath) ? @file_get_contents($filePath) : false;
+            if ($original === false || $original === '') {
+                [$open, $close] = $markers;
+                return "{$open} upstream version — no local copy to diff {$close}\n"
+                    . $newContent
+                    . "\n{$open} end upstream version {$close}\n";
+            }
+
+            return self::annotateChanges($original, $newContent, $filePath, $markers);
+        } catch (\Throwable $e) {
+            error_log("annotateForBackup failed for {$filePath}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    private static function markersFor(string $path): ?array
+    {
+        $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $name = strtolower(basename($path));
+
+        $noAnnotate = [
+            'json',
+            'db',
+            'sqlite',
+            'sqlite3',
+            'otf',
+            'ttf',
+            'woff',
+            'woff2',
+            'eot',
+            'png',
+            'jpg',
+            'jpeg',
+            'gif',
+            'webp',
+            'ico',
+            'bmp',
+            'zip',
+            'gz',
+            'tar',
+            'phar',
+            'pdf',
+            'exe',
+            'dll',
+            'so',
+            'dylib',
+        ];
+        if (in_array($ext, $noAnnotate, true)) return null;
+
+        if (
+            $name === '.env' || $name === '.htaccess' || $name === '.gitignore'
+            || $name === '.gitkeep' || $name === 'dockerfile'
+        ) {
+            return ['#>>', '#<<', '# '];
+        }
+
+        $hash  = ['php', 'env', 'htaccess', 'gitignore', 'gitkeep', 'yml', 'yaml', 'txt', 'md', 'ini', 'conf', 'sh'];
+        $slash = ['js', 'mjs', 'cjs', 'ts'];
+        $css   = ['css', 'scss', 'less'];
+        $html  = ['html', 'htm', 'xml', 'svg'];
+        $sql   = ['sql'];
+
+        if (in_array($ext, $hash,  true)) return ['#>>',  '#<<',  '# '];
+        if (in_array($ext, $slash, true)) return ['//>>', '//<<', '//'];
+        if (in_array($ext, $css,   true)) return ['/*>>', '>>*/', '/* '];
+        if (in_array($ext, $html,  true)) return ['<!-->>', '<<-->', '<!-- '];
+        if (in_array($ext, $sql,   true)) return ['-->>', '<<--', '-- '];
+
+        return ['#>>', '#<<', '# '];
+    }
+
+    private static function isTextual(string $s): bool
+    {
+        if ($s === '') return true;
+        if (str_contains($s, "\0")) return false;
+        return preg_match('//u', substr($s, 0, 8192)) === 1;
+    }
+
+    private static function annotateChanges(string $original, string $new, string $path, array $markers): string
+    {
+        [$open, $close, $lineComment] = $markers;
+
+        $a = preg_split("/\r\n|\n|\r/", $original);
+        $b = preg_split("/\r\n|\n|\r/", $new);
+        $n = count($a);
+        $m = count($b);
+
+        if ($n * $m > 4_000_000) {
+            $body = [];
+            foreach ($b as $line) {
+                $body[] = $lineComment . $line;
+            }
+            return "{$open} file too large to diff — full upstream content commented below {$close}\n"
+                . implode("\n", $body) . "\n"
+                . "{$open} end {$close}\n";
+        }
+
+        $lcs = array_fill(0, $n + 1, array_fill(0, $m + 1, 0));
+        for ($i = $n - 1; $i >= 0; $i--) {
+            for ($j = $m - 1; $j >= 0; $j--) {
+                $lcs[$i][$j] = $a[$i] === $b[$j]
+                    ? $lcs[$i + 1][$j + 1] + 1
+                    : max($lcs[$i + 1][$j], $lcs[$i][$j + 1]);
+            }
+        }
+
+        $out = [];
+
+        $oldBuf = [];
+        $newBuf = [];
+
+        $flushSuggestion = function () use (&$out, &$oldBuf, &$newBuf, $open, $close, $lineComment) {
+            if (empty($oldBuf) && empty($newBuf)) return;
+
+            if (!empty($oldBuf)) {
+                $out[] = "{$open} Old {$close}";
+                foreach ($oldBuf as $l) $out[] = $l;
+            }
+            if (!empty($newBuf)) {
+                $out[] = "{$open} New code {$close}";
+                foreach ($newBuf as $l) $out[] = $lineComment . $l;
+            }
+            if (!empty($oldBuf) || !empty($newBuf)) {
+                $out[] = "{$open} end {$close}";
+            }
+            $oldBuf = [];
+            $newBuf = [];
+        };
+
+        $i = 0;
+        $j = 0;
+        while ($i < $n && $j < $m) {
+            if ($a[$i] === $b[$j]) {
+                $flushSuggestion();
+                $out[] = $a[$i];
+                $i++;
+                $j++;
+            } elseif ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
+                $oldBuf[] = $a[$i];
+                $i++;
+            } else {
+                $newBuf[] = $b[$j];
+                $j++;
+            }
+        }
+        while ($i < $n) {
+            $oldBuf[] = $a[$i++];
+        }
+        while ($j < $m) {
+            $newBuf[] = $b[$j++];
+        }
+        $flushSuggestion();
+
+        $header = "{$open} annotated backup — original preserved at {$path} {$close}\n"
+            . "{$open} Uncomment the 'New code' block, then delete the 'Old' block to apply. {$close}\n";
+
+        return $header . implode("\n", $out) . "\n";
+    }
+
+    static function __isValidTzone(string $timezone)
+    {
         static $zones = null;
 
         if ($zones === null) {
@@ -1501,7 +1678,7 @@ class Ctrx
         if (!is_dir($path)) {
             throw new RuntimeException("Directory not found: $path");
         }
-        if (!isset(['-'=>1, '/'=>1][$separator])) {
+        if (!isset(['-' => 1, '/' => 1][$separator])) {
             throw new InvalidArgumentException("Separator must be '-' or '/'");
         }
 
