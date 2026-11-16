@@ -11,17 +11,28 @@ include_once "app/php/core/partials/backend.php";
 
 $pdo = pdo($dbname);
 $driver = env('dbdriver') ?: 'mysql';
+$driver = strtolower($driver);
 
 $message = "";
 
 ctrx_force_save_previous_pages(previous_page());
 
+function isPgDriver($driver)
+{
+    return in_array($driver, ['pgsql', 'postgres', 'postgresql'], true);
+}
+
+function isSqliteDriver($driver)
+{
+    return $driver === 'sqlite';
+}
+
 function getTables($pdo, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
+    if (isPgDriver($driver)) {
+        $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
-    } elseif ($driver === 'sqlite') {
+    } elseif (isSqliteDriver($driver)) {
         $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     } else {
@@ -34,13 +45,12 @@ $allTables = getTables($pdo, $driver);
 
 function getTableColumns($pdo, $table, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = :table");
+    if (isPgDriver($driver)) {
+        $stmt = $pdo->prepare("SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = :table ORDER BY ordinal_position");
         $stmt->execute(['table' => $table]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
-    } elseif ($driver === 'sqlite') {
-        $stmt = $pdo->prepare("PRAGMA table_info(" . quoteIdentifier($table, 'sqlite') . ")");
-        $stmt->execute();
+    } elseif (isSqliteDriver($driver)) {
+        $stmt = $pdo->query("PRAGMA table_info(" . quoteIdentifier($table, 'sqlite') . ")");
         $columns = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $columns[] = $row['name'];
@@ -48,18 +58,19 @@ function getTableColumns($pdo, $table, $driver)
         return $columns;
     } else {
         $stmt = $pdo->query("SHOW COLUMNS FROM " . quoteIdentifier($table, 'mysql'));
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $columns = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $columns[] = $row['Field'];
+        }
+        return $columns;
     }
 }
 
 function quoteIdentifier($identifier, $driver = null)
 {
-    global $driver;
     $driver = $driver ?? $GLOBALS['driver'] ?? 'mysql';
 
-    if ($driver === 'pgsql') {
-        return '"' . str_replace('"', '""', $identifier) . '"';
-    } elseif ($driver === 'sqlite') {
+    if (isPgDriver($driver) || isSqliteDriver($driver)) {
         return '"' . str_replace('"', '""', $identifier) . '"';
     } else {
         return '`' . str_replace('`', '``', $identifier) . '`';
@@ -68,11 +79,12 @@ function quoteIdentifier($identifier, $driver = null)
 
 function tableExists($pdo, $table, $driver)
 {
-    if ($driver === 'pgsql') {
-        $stmt = $pdo->prepare("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = :table)");
+    if (isPgDriver($driver)) {
+        $stmt = $pdo->prepare("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = :table)");
         $stmt->execute(['table' => $table]);
-        return $stmt->fetchColumn() === 't' || $stmt->fetchColumn() === true;
-    } elseif ($driver === 'sqlite') {
+        $val = $stmt->fetchColumn();
+        return $val === true || $val === 't' || $val === 1 || $val === '1';
+    } elseif (isSqliteDriver($driver)) {
         $stmt = $pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = :table");
         $stmt->execute(['table' => $table]);
         return $stmt->fetchColumn() !== false;
@@ -178,7 +190,7 @@ if (isset($_POST['export_table'])) {
             $message = "❌ Please select a table.";
         } else {
             $columns = getTableColumns($pdo, $table, $driver);
-            $stmt = $pdo->query("SELECT * FROM " . quoteIdentifier($table));
+            $stmt = $pdo->query("SELECT * FROM " . quoteIdentifier($table, $driver));
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             switch ($export_format) {
                 case 'csv':
@@ -281,22 +293,27 @@ if (isset($_POST['import_table'])) {
                 $columnDefs = [];
                 foreach ($columns as $col) {
                     $colSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $col);
-                    $columnDefs[] = quoteIdentifier($colSafe) . " TEXT";
+                    $columnDefs[] = quoteIdentifier($colSafe, $driver) . " TEXT";
                 }
-                $sql = "CREATE TABLE " . quoteIdentifier($table) . " (" . implode(", ", $columnDefs) . ")";
+                $sql = "CREATE TABLE " . quoteIdentifier($table, $driver) . " (" . implode(", ", $columnDefs) . ")";
                 $pdo->exec($sql);
                 $message = "✅ Table '{$table}' created automatically. ";
                 $tableExists = true;
             }
 
             $dbColumns = getTableColumns($pdo, $table, $driver);
+            $qTable = quoteIdentifier($table, $driver);
 
             $inserted = 0;
             $updated = 0;
             $skipped = 0;
 
             if ($importMode === 'replace_all' && $tableExists) {
-                $pdo->exec("TRUNCATE TABLE " . quoteIdentifier($table));
+                if (isPgDriver($driver)) {
+                    $pdo->exec("TRUNCATE TABLE $qTable RESTART IDENTITY CASCADE");
+                } else {
+                    $pdo->exec("TRUNCATE TABLE $qTable");
+                }
             }
 
             foreach ($importedData as $row) {
@@ -317,8 +334,8 @@ if (isset($_POST['import_table'])) {
                     $columns = array_keys($filteredRow);
                     if (!empty($columns)) {
                         $placeholders = ":" . implode(", :", $columns);
-                        $sql = "INSERT INTO " . quoteIdentifier($table) . " (" . implode(",", array_map(function ($c) {
-                            return quoteIdentifier($c);
+                        $sql = "INSERT INTO $qTable (" . implode(",", array_map(function ($c) use ($driver) {
+                            return quoteIdentifier($c, $driver);
                         }, $columns)) . ")
                                 VALUES ($placeholders)";
                         $stmt = $pdo->prepare($sql);
@@ -329,7 +346,7 @@ if (isset($_POST['import_table'])) {
                 }
 
                 if ($importMode === 'skip' && $hasId) {
-                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM " . quoteIdentifier($table) . " WHERE " . quoteIdentifier('id') . " = :id");
+                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM $qTable WHERE " . quoteIdentifier('id', $driver) . " = :id");
                     $checkStmt->execute(['id' => $idValue]);
                     if ($checkStmt->fetchColumn() > 0) {
                         $skipped++;
@@ -338,7 +355,7 @@ if (isset($_POST['import_table'])) {
                 }
 
                 if ($importMode === 'update' && $hasId) {
-                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM " . quoteIdentifier($table) . " WHERE " . quoteIdentifier('id') . " = :id");
+                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM $qTable WHERE " . quoteIdentifier('id', $driver) . " = :id");
                     $checkStmt->execute(['id' => $idValue]);
                     $exists = $checkStmt->fetchColumn() > 0;
 
@@ -348,12 +365,12 @@ if (isset($_POST['import_table'])) {
                         foreach ($dbColumns as $col) {
                             if ($col === 'id') continue;
                             if (isset($row[$col]) && $row[$col] !== '' && $row[$col] !== null) {
-                                $setClauses[] = quoteIdentifier($col) . " = :$col";
+                                $setClauses[] = quoteIdentifier($col, $driver) . " = :$col";
                                 $params[$col] = $row[$col];
                             }
                         }
                         if (!empty($setClauses)) {
-                            $sql = "UPDATE " . quoteIdentifier($table) . " SET " . implode(", ", $setClauses) . " WHERE " . quoteIdentifier('id') . " = :id";
+                            $sql = "UPDATE $qTable SET " . implode(", ", $setClauses) . " WHERE " . quoteIdentifier('id', $driver) . " = :id";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($params);
                             $updated++;
@@ -376,8 +393,8 @@ if (isset($_POST['import_table'])) {
                 $columns = array_keys($filteredRow);
                 if (!empty($columns)) {
                     $placeholders = ":" . implode(", :", $columns);
-                    $sql = "INSERT INTO " . quoteIdentifier($table) . " (" . implode(",", array_map(function ($c) {
-                        return quoteIdentifier($c);
+                    $sql = "INSERT INTO $qTable (" . implode(",", array_map(function ($c) use ($driver) {
+                        return quoteIdentifier($c, $driver);
                     }, $columns)) . ")
                             VALUES ($placeholders)";
                     $stmt = $pdo->prepare($sql);

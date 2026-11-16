@@ -6,11 +6,12 @@ include_once "app/php/core/partials/envloader.php";
  * Where you can manage your entire database
  * Made by CodeYro
  * Modified date: July 21 2026
- * 
+ *
  * Added Multi-Database Support (MySQL, PostgreSQL, SQLite)
  * Updated Export to use INSERT IGNORE / ON CONFLICT based on driver
  * Added eye icon to show credentials modal
  * Added pagination for table data (Next button for next 100 records)
+ * Added cross-engine (MySQL <-> PostgreSQL) migration normalization
  */
 
 $dbname = env("database");
@@ -79,13 +80,90 @@ function isMysql()
 
 function quoteIdentifier($identifier)
 {
-    global $driver;
-    $identifier = trim($identifier, '`"');
+    $identifier = trim((string)$identifier, '`"');
     if (isMysql()) {
-        return "`$identifier`";
+        return '`' . str_replace('`', '``', $identifier) . '`';
     } else {
-        return "\"$identifier\"";
+        return '"' . str_replace('"', '""', $identifier) . '"';
     }
+}
+
+/**
+ * Normalize a MySQL-flavoured type string to an equivalent PostgreSQL type.
+ * Used when the connected driver is Postgres but the source snapshot came
+ * from MySQL (or the user pasted MySQL DDL).
+ */
+function mysqlTypeToPg($type)
+{
+    $t = strtolower(trim((string)$type));
+    if ($t === '') return $t;
+
+    if (preg_match('/^(tinyint|smallint)\(1\)/', $t)) return 'boolean';
+    if (preg_match('/^(tinyint|smallint|mediumint|int|integer|bigint)(\(\d+\))?(\s+unsigned)?/', $t, $m)) {
+        $base = $m[1];
+        if ($base === 'tinyint')  return 'smallint';
+        if ($base === 'smallint') return 'smallint';
+        if ($base === 'mediumint')return 'integer';
+        if ($base === 'int' || $base === 'integer') return 'integer';
+        if ($base === 'bigint')   return 'bigint';
+    }
+    if (preg_match('/^(float|double|real)(\(\d+(,\d+)?\))?/', $t)) return 'double precision';
+    if (preg_match('/^decimal(\(\d+(,\d+)?\))?/', $t, $m)) {
+        return 'numeric' . (isset($m[1]) ? $m[1] : '');
+    }
+    if (preg_match('/^varchar\((\d+)\)/', $t, $m)) return 'varchar(' . $m[1] . ')';
+    if (preg_match('/^(tinytext|text|mediumtext|longtext)/', $t)) return 'text';
+    if (preg_match('/^(tinyblob|blob|mediumblob|longblob|binary|varbinary)/', $t)) return 'bytea';
+    if (preg_match('/^datetime/', $t)) return 'timestamp';
+    if (preg_match('/^timestamp/', $t)) return 'timestamp';
+    if (preg_match('/^date/', $t)) return 'date';
+    if (preg_match('/^time/', $t)) return 'time';
+    if (preg_match('/^year/', $t)) return 'smallint';
+    if (preg_match('/^json/', $t)) return 'jsonb';
+    if (preg_match('/^enum\(/', $t)) return 'text';
+    if (preg_match('/^set\(/', $t)) return 'text';
+    if (preg_match('/^bool/', $t)) return 'boolean';
+    return $t;
+}
+
+/**
+ * Normalize a PostgreSQL type string to an equivalent MySQL type.
+ */
+function pgTypeToMysql($type)
+{
+    $t = strtolower(trim((string)$type));
+    if ($t === '') return $t;
+
+    if ($t === 'boolean' || $t === 'bool') return 'tinyint(1)';
+    if (in_array($t, ['smallint', 'int2'], true)) return 'smallint';
+    if (in_array($t, ['integer', 'int', 'int4'], true)) return 'int';
+    if (in_array($t, ['bigint', 'int8'], true)) return 'bigint';
+    if (in_array($t, ['real', 'float4'], true)) return 'float';
+    if (in_array($t, ['double precision', 'float8'], true)) return 'double';
+    if (preg_match('/^numeric(\(\d+(,\d+)?\))?/', $t, $m)) {
+        return 'decimal' . (isset($m[1]) ? $m[1] : '');
+    }
+    if (preg_match('/^character varying\((\d+)\)/', $t, $m)) return 'varchar(' . $m[1] . ')';
+    if ($t === 'character varying') return 'varchar(255)';
+    if (preg_match('/^varchar\((\d+)\)/', $t, $m)) return 'varchar(' . $m[1] . ')';
+    if ($t === 'text') return 'longtext';
+    if ($t === 'bytea') return 'longblob';
+    if (preg_match('/^timestamp/', $t)) return 'datetime';
+    if (in_array($t, ['date'], true)) return 'date';
+    if (in_array($t, ['time', 'time without time zone'], true)) return 'time';
+    if (in_array($t, ['jsonb', 'json'], true)) return 'json';
+    if (preg_match('/^serial|bigserial/', $t)) return 'int';
+    return $t;
+}
+
+/**
+ * Convert a type string to the canonical form for the current driver.
+ */
+function toLocalType($type)
+{
+    if (isPostgres()) return mysqlTypeToPg($type);
+    if (isMysql())    return pgTypeToMysql($type);
+    return strtolower(trim((string)$type));
 }
 
 function executeQuery($pdo, $sql, $params = [])
@@ -101,12 +179,10 @@ function executeQuery($pdo, $sql, $params = [])
 
 function getTables($pdo)
 {
-    global $driver;
-
     if (isMysql()) {
         $sql = "SHOW TABLES";
     } elseif (isPostgres()) {
-        $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'";
+        $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type='BASE TABLE'";
     } else {
         $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
     }
@@ -123,7 +199,6 @@ function getTables($pdo)
 
 function getTableInfo($pdo, $table)
 {
-    global $driver;
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $quoted = quoteIdentifier($table);
 
@@ -148,60 +223,57 @@ function getTableInfo($pdo, $table)
         }
         return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
     } elseif (isPostgres()) {
-        $sql = "SELECT 
-                    column_name as Field,
-                    data_type as Type,
-                    is_nullable as Null,
-                    column_default as Default,
-                    '' as Extra
-                FROM information_schema.columns 
-                WHERE table_name = ?";
+        $sql = "SELECT
+                    column_name AS \"Field\",
+                    data_type   AS \"Type\",
+                    is_nullable AS \"Null\",
+                    column_default AS \"Default\",
+                    '' AS \"Extra\"
+                FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = ?
+                ORDER BY ordinal_position";
         $result = executeQuery($pdo, $sql, [$table]);
         if (!$result['success']) return $result;
 
+        $pkCols = [];
+        $pkCheck = executeQuery($pdo, "
+            SELECT a.attname
+            FROM pg_index i
+            JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+            WHERE i.indrelid = ?::regclass AND i.indisprimary
+        ", [$table]);
+        if ($pkCheck['success']) {
+            while ($r = $pkCheck['data']->fetch()) {
+                $pkCols[] = $r['attname'];
+            }
+        }
+
         $columns = [];
         while ($row = $result['data']->fetch()) {
-            $row['Type'] = $row['type'];
-            $row['Null'] = $row['null'] == 'YES' ? 'YES' : 'NO';
-            $row['Default'] = $row['default'] ?? null;
-            $row['Extra'] = '';
-
-            $pkCheck = executeQuery($pdo, "
-                SELECT a.attname
-                FROM pg_index i
-                JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-                WHERE i.indrelid = ?::regclass AND i.indisprimary
-            ", [$table]);
-            if ($pkCheck['success'] && $pkCheck['data']->rowCount() > 0) {
-                $pkRow = $pkCheck['data']->fetch();
-                if ($pkRow['attname'] == $row['field']) {
-                    $row['Key'] = 'PRI';
-                }
+            $row['Null']    = ($row['Null'] === 'YES') ? 'YES' : 'NO';
+            $row['Key']     = in_array($row['Field'], $pkCols, true) ? 'PRI' : '';
+            $row['Extra']   = '';
+            if ($row['Default'] !== null && stripos((string)$row['Default'], 'nextval(') !== false) {
+                $row['Extra'] = 'auto_increment';
             }
-
             $columns[] = $row;
         }
 
-        $keys = ['PRIMARY' => [], 'UNIQUE' => []];
+        $keys = ['PRIMARY' => $pkCols, 'UNIQUE' => []];
         $keyResult = executeQuery($pdo, "
-            SELECT 
-                i.relname as Key_name,
-                a.attname as Column_name,
-                i.indisprimary as is_primary,
-                i.indisunique as is_unique
+            SELECT
+                i.relname AS key_name,
+                a.attname AS column_name,
+                i.indisunique AS is_unique
             FROM pg_index i
             JOIN pg_class c ON c.oid = i.indrelid
             JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(i.indkey)
-            WHERE c.relname = ?
+            WHERE c.relname = ? AND i.indisprimary = false AND i.indisunique = true
         ", [$table]);
 
         if ($keyResult['success']) {
             while ($row = $keyResult['data']->fetch()) {
-                if ($row['is_primary']) {
-                    $keys['PRIMARY'][] = $row['column_name'];
-                } elseif ($row['is_unique']) {
-                    $keys['UNIQUE'][$row['key_name']][] = $row['column_name'];
-                }
+                $keys['UNIQUE'][$row['key_name']][] = $row['column_name'];
             }
         }
 
@@ -223,6 +295,9 @@ function getTableInfo($pdo, $table)
         }
 
         $keys = ['PRIMARY' => [], 'UNIQUE' => []];
+        foreach ($columns as $c) {
+            if ($c['Key'] === 'PRI') $keys['PRIMARY'][] = $c['Field'];
+        }
 
         return ['success' => true, 'data' => ['columns' => $columns, 'keys' => $keys]];
     }
@@ -235,12 +310,14 @@ function getTableData($pdo, $table, $limit = 100, $offset = 0)
 
     $countResult = executeQuery($pdo, "SELECT COUNT(*) as total FROM $quoted");
     if (!$countResult['success']) return $countResult;
-    $totalCount = $countResult['data']->fetch()['total'];
+    $totalCount = (int)$countResult['data']->fetch()['total'];
 
     if ($offset >= $totalCount) {
         return ['success' => true, 'data' => [], 'total' => $totalCount];
     }
 
+    $limit  = max(1, (int)$limit);
+    $offset = max(0, (int)$offset);
     $result = executeQuery($pdo, "SELECT * FROM $quoted LIMIT $limit OFFSET $offset");
     if (!$result['success']) return $result;
     $data = [];
@@ -379,15 +456,17 @@ function dropKey($pdo, $table, $keyName)
     $quoted = quoteIdentifier($table);
 
     if (strtoupper($keyName) == 'PRIMARY') {
-        if (isPostgres() || isSqlite()) {
-            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT {$table}_pkey");
+        if (isPostgres()) {
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT IF EXISTS {$quoted}_pkey");
+        } elseif (isSqlite()) {
+            return ['success' => false, 'message' => 'SQLite does not support dropping PRIMARY KEY. Recreate the table.'];
         } else {
             $result = executeQuery($pdo, "ALTER TABLE $quoted DROP PRIMARY KEY");
         }
     } else {
         $keyName = preg_replace('/[^a-zA-Z0-9_]/', '', $keyName);
         if (isPostgres()) {
-            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT $keyName");
+            $result = executeQuery($pdo, "ALTER TABLE $quoted DROP CONSTRAINT IF EXISTS " . quoteIdentifier($keyName));
         } else {
             $quotedKey = quoteIdentifier($keyName);
             $result = executeQuery($pdo, "ALTER TABLE $quoted DROP INDEX $quotedKey");
@@ -450,12 +529,87 @@ function truncateTable($pdo, $table)
     $quoted = quoteIdentifier($table);
 
     if (isPostgres()) {
-        $sql = "TRUNCATE TABLE $quoted RESTART IDENTITY";
+        $sql = "TRUNCATE TABLE $quoted RESTART IDENTITY CASCADE";
     } else {
         $sql = "TRUNCATE TABLE $quoted";
     }
     $result = executeQuery($pdo, $sql);
     return $result;
+}
+
+/**
+ * Build a portable CREATE TABLE statement for the current driver.
+ * Handles auto-increment / identity, defaults and primary key.
+ */
+function buildCreateTableStatement($table, $srcTable)
+{
+    $qTable = quoteIdentifier($table);
+    $pk = $srcTable['primary_key'] ?? [];
+    $colDefs = [];
+
+    foreach ($srcTable['columns'] as $colName => $col) {
+        $qCol  = quoteIdentifier($colName);
+        $type  = toLocalType($col['type'] ?? 'text');
+        $extra = strtolower((string)($col['extra'] ?? ''));
+        $isAuto = (strpos($extra, 'auto_increment') !== false);
+
+        if (isPostgres()) {
+            if ($isAuto) {
+                if (preg_match('/^bigint/', $type)) {
+                    $type = 'bigserial';
+                } else {
+                    $type = 'serial';
+                }
+                $def = "$qCol $type";
+            } else {
+                $def = "$qCol $type";
+                if (empty($col['nullable'])) $def .= " NOT NULL";
+                if ($col['default'] !== null && $col['default'] !== '') {
+                    $lower = strtolower((string)$col['default']);
+                    if ($lower === 'current_timestamp' || $lower === 'current_timestamp()' || $lower === 'now()') {
+                        $def .= " DEFAULT CURRENT_TIMESTAMP";
+                    } elseif ($lower === 'null') {
+                        $def .= " DEFAULT NULL";
+                    } elseif (is_numeric($col['default'])) {
+                        $def .= " DEFAULT " . $col['default'];
+                    } else {
+                        $def .= " DEFAULT " . var_export((string)$col['default'], true);
+                    }
+                }
+            }
+        } elseif (isMysql()) {
+            $def = "$qCol $type";
+            if (empty($col['nullable'])) $def .= " NOT NULL";
+            if ($isAuto) $def .= " AUTO_INCREMENT";
+            if ($col['default'] !== null && $col['default'] !== '') {
+                $lower = strtolower((string)$col['default']);
+                if ($lower === 'current_timestamp' || $lower === 'current_timestamp()' || $lower === 'now()') {
+                    $def .= " DEFAULT CURRENT_TIMESTAMP";
+                } elseif (is_numeric($col['default'])) {
+                    $def .= " DEFAULT " . $col['default'];
+                } else {
+                    $def .= " DEFAULT " . var_export((string)$col['default'], true);
+                }
+            }
+            if (strpos($extra, 'on update current_timestamp') !== false) {
+                $def .= " ON UPDATE CURRENT_TIMESTAMP";
+            }
+        } else {
+            $def = "$qCol $type";
+            if (empty($col['nullable'])) $def .= " NOT NULL";
+            if ($col['default'] !== null && $col['default'] !== '') {
+                $def .= " DEFAULT " . var_export((string)$col['default'], true);
+            }
+        }
+        $colDefs[] = $def;
+    }
+
+    if (!empty($pk)) {
+        $pkCols = array_map('quoteIdentifier', $pk);
+        $colDefs[] = "PRIMARY KEY (" . implode(', ', $pkCols) . ")";
+    }
+
+    return "CREATE TABLE IF NOT EXISTS $qTable (\n  " . implode(",\n  ", $colDefs) . "\n)";
 }
 
 function exportDatabaseSQL($pdo, $tablesWithData = [], $singleTable = null)
@@ -487,48 +641,43 @@ function exportDatabaseSQL($pdo, $tablesWithData = [], $singleTable = null)
         $sql .= "-- USE " . quoteIdentifier(DB_NAME) . ";\n\n";
     }
 
-    $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+    if (isMysql()) {
+        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+    } elseif (isPostgres()) {
+        $sql .= "SET session_replication_role = replica;\n\n";
+    }
 
     foreach ($tablesToExport as $table) {
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
         $quoted = quoteIdentifier($table);
 
+        $sql .= "-- Table structure for $quoted\n";
+
         if (isMysql()) {
             $createResult = executeQuery($pdo, "SHOW CREATE TABLE $quoted");
             if ($createResult['success']) {
                 $row = $createResult['data']->fetch();
-                $sql .= "-- Table structure for `$table`\n";
                 $createStatement = $row['Create Table'];
                 $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
                 $sql .= $createStatement . ";\n\n";
             }
-        } elseif (isPostgres()) {
-            $sql .= "-- Table structure for \"$table\"\n";
-
-            $colResult = executeQuery($pdo, "
-                SELECT column_name, data_type, is_nullable, column_default
-                FROM information_schema.columns 
-                WHERE table_name = ?
-            ", [$table]);
-
-            if ($colResult['success']) {
-                $cols = [];
-                while ($row = $colResult['data']->fetch()) {
-                    $colDef = quoteIdentifier($row['column_name']) . " " . $row['data_type'];
-                    if ($row['is_nullable'] == 'NO') $colDef .= " NOT NULL";
-                    if ($row['column_default']) $colDef .= " DEFAULT " . $row['column_default'];
-                    $cols[] = $colDef;
-                }
-                $sql .= "CREATE TABLE IF NOT EXISTS $quoted (\n  " . implode(",\n  ", $cols) . "\n);\n\n";
-            }
         } else {
-            $createResult = executeQuery($pdo, "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$table]);
-            if ($createResult['success'] && $createResult['data']->rowCount() > 0) {
-                $row = $createResult['data']->fetch();
-                $sql .= "-- Table structure for \"$table\"\n";
-                $createStatement = $row['sql'];
-                $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
-                $sql .= $createStatement . ";\n\n";
+            $info = getTableInfo($pdo, $table);
+            if ($info['success']) {
+                $sql .= buildCreateTableStatement($table, [
+                    'columns' => array_combine(
+                        array_column($info['data']['columns'], 'Field'),
+                        array_map(function ($c) {
+                            return [
+                                'type' => $c['Type'],
+                                'nullable' => ($c['Null'] === 'YES'),
+                                'default' => $c['Default'],
+                                'extra' => $c['Extra'] ?? ''
+                            ];
+                        }, $info['data']['columns'])
+                    ),
+                    'primary_key' => $info['data']['keys']['PRIMARY'] ?? []
+                ]) . ";\n\n";
             }
         }
 
@@ -543,7 +692,7 @@ function exportDatabaseSQL($pdo, $tablesWithData = [], $singleTable = null)
                     $escapedColumns = array_map('quoteIdentifier', $columns);
                     $columnList = implode(', ', $escapedColumns);
 
-                    $sql .= "-- Dumping data for table `$table`\n";
+                    $sql .= "-- Dumping data for table $quoted\n";
 
                     if (isPostgres()) {
                         $sql .= "INSERT INTO $quoted ($columnList) VALUES\n";
@@ -561,17 +710,27 @@ function exportDatabaseSQL($pdo, $tablesWithData = [], $singleTable = null)
                         }, array_values($row));
                         $values[] = "(" . implode(', ', $escapedValues) . ")";
                     }
-                    $sql .= implode(",\n", $values) . ";\n\n";
+                    $sql .= implode(",\n", $values) . ";\n";
+
+                    if (isPostgres()) {
+                        $sql .= "ON CONFLICT DO NOTHING;\n\n";
+                    } else {
+                        $sql .= "\n";
+                    }
                 } else {
-                    $sql .= "-- No data for table `$table`\n\n";
+                    $sql .= "-- No data for table $quoted\n\n";
                 }
             }
         } else {
-            $sql .= "-- Skipping data for table `$table` (structure only)\n\n";
+            $sql .= "-- Skipping data for table $quoted (structure only)\n\n";
         }
     }
 
-    $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    if (isMysql()) {
+        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    } elseif (isPostgres()) {
+        $sql .= "SET session_replication_role = DEFAULT;\n";
+    }
 
     return ['success' => true, 'sql' => $sql];
 }
@@ -590,35 +749,234 @@ function getCreateTableSQL($pdo, $table)
             return ['success' => true, 'sql' => $createStatement];
         }
         return ['success' => false, 'message' => 'Failed to get create table SQL'];
-    } elseif (isPostgres()) {
-        $colResult = executeQuery($pdo, "
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns 
-            WHERE table_name = ?
-        ", [$table]);
-
-        if ($colResult['success']) {
-            $cols = [];
-            while ($row = $colResult['data']->fetch()) {
-                $colDef = quoteIdentifier($row['column_name']) . " " . $row['data_type'];
-                if ($row['is_nullable'] == 'NO') $colDef .= " NOT NULL";
-                if ($row['column_default']) $colDef .= " DEFAULT " . $row['column_default'];
-                $cols[] = $colDef;
-            }
-            $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdentifier($table) . " (\n  " . implode(",\n  ", $cols) . "\n);";
-            return ['success' => true, 'sql' => $sql];
-        }
-        return ['success' => false, 'message' => 'Failed to get create table SQL'];
     } else {
-        $createResult = executeQuery($pdo, "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$table]);
-        if ($createResult['success'] && $createResult['data']->rowCount() > 0) {
-            $row = $createResult['data']->fetch();
-            $createStatement = $row['sql'];
-            $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
-            return ['success' => true, 'sql' => $createStatement];
+        $info = getTableInfo($pdo, $table);
+        if ($info['success']) {
+            $sql = buildCreateTableStatement($table, [
+                'columns' => array_combine(
+                    array_column($info['data']['columns'], 'Field'),
+                    array_map(function ($c) {
+                        return [
+                            'type' => $c['Type'],
+                            'nullable' => ($c['Null'] === 'YES'),
+                            'default' => $c['Default'],
+                            'extra' => $c['Extra'] ?? ''
+                        ];
+                    }, $info['data']['columns'])
+                ),
+                'primary_key' => $info['data']['keys']['PRIMARY'] ?? []
+            ]);
+            return ['success' => true, 'sql' => $sql . ';'];
         }
         return ['success' => false, 'message' => 'Failed to get create table SQL'];
     }
+}
+
+/**
+ * Split SQL text into statements, handling:
+ *  - single/double quoted strings
+ *  - MySQL backslash escapes
+ *  - PostgreSQL dollar-quoted bodies ($$ ... $$, $tag$ ... $tag$)
+ *  - line and block comments
+ */
+function splitSqlStatements($sql)
+{
+    $statements = [];
+    $current = '';
+    $len = strlen($sql);
+    $i = 0;
+
+    $inSingle = false;
+    $inDouble = false;
+    $inLineComment = false;
+    $inBlockComment = false;
+    $dollarTag = null;
+
+    while ($i < $len) {
+        $char = $sql[$i];
+        $next = ($i + 1 < $len) ? $sql[$i + 1] : '';
+
+        if ($inLineComment) {
+            $current .= $char;
+            if ($char === "\n") $inLineComment = false;
+            $i++;
+            continue;
+        }
+        if ($inBlockComment) {
+            $current .= $char;
+            if ($char === '*' && $next === '/') {
+                $current .= $next;
+                $i += 2;
+                $inBlockComment = false;
+                continue;
+            }
+            $i++;
+            continue;
+        }
+        if ($dollarTag !== null) {
+            if ($char === '$' && substr($sql, $i, strlen($dollarTag)) === $dollarTag) {
+                $current .= $dollarTag;
+                $i += strlen($dollarTag);
+                $dollarTag = null;
+                continue;
+            }
+            $current .= $char;
+            $i++;
+            continue;
+        }
+        if ($inSingle) {
+            if ($char === '\\' && $i + 1 < $len) {
+                $current .= $char . $next;
+                $i += 2;
+                continue;
+            }
+            if ($char === "'") {
+                if ($next === "'") {
+                    $current .= "''";
+                    $i += 2;
+                    continue;
+                }
+                $inSingle = false;
+            }
+            $current .= $char;
+            $i++;
+            continue;
+        }
+        if ($inDouble) {
+            if ($char === '\\' && $i + 1 < $len) {
+                $current .= $char . $next;
+                $i += 2;
+                continue;
+            }
+            if ($char === '"') {
+                if ($next === '"') {
+                    $current .= '""';
+                    $i += 2;
+                    continue;
+                }
+                $inDouble = false;
+            }
+            $current .= $char;
+            $i++;
+            continue;
+        }
+
+        if ($char === '-' && $next === '-') {
+            $inLineComment = true;
+            $current .= $char . $next;
+            $i += 2;
+            continue;
+        }
+        if ($char === '#') {
+            $inLineComment = true;
+            $current .= $char;
+            $i++;
+            continue;
+        }
+        if ($char === '/' && $next === '*') {
+            $inBlockComment = true;
+            $current .= $char . $next;
+            $i += 2;
+            continue;
+        }
+        if ($char === "'") {
+            $inSingle = true;
+            $current .= $char;
+            $i++;
+            continue;
+        }
+        if ($char === '"') {
+            $inDouble = true;
+            $current .= $char;
+            $i++;
+            continue;
+        }
+        if ($char === '$') {
+            if (preg_match('/^\$[A-Za-z0-9_]*\$/', substr($sql, $i), $m)) {
+                $dollarTag = $m[0];
+                $current .= $dollarTag;
+                $i += strlen($dollarTag);
+                continue;
+            }
+        }
+        if ($char === ';') {
+            $stmt = trim($current);
+            if ($stmt !== '') $statements[] = $stmt;
+            $current = '';
+            $i++;
+            continue;
+        }
+        $current .= $char;
+        $i++;
+    }
+    $stmt = trim($current);
+    if ($stmt !== '') $statements[] = $stmt;
+    return $statements;
+}
+
+/**
+ * Rewrite a statement so it is valid on the current driver when the source
+ * dump was written for a different one. Conservative: only rewrites the
+ * boilerplate that PDO cannot abstract.
+ */
+function adaptStatementForDriver($stmt)
+{
+    $trimmed = ltrim($stmt);
+
+    if (isPostgres()) {
+        if (preg_match('/^SET\s+(FOREIGN_KEY_CHECKS|UNIQUE_CHECKS|SQL_MODE|TIME_ZONE|NAMES)\b/i', $trimmed)) {
+            return null;
+        }
+        if (preg_match('/^USE\s+/i', $trimmed)) {
+            return null;
+        }
+        $stmt = preg_replace('/\bINSERT\s+IGNORE\s+INTO\b/i', 'INSERT INTO', $stmt);
+        $stmt = preg_replace('/\bAUTO_INCREMENT\b/i', '', $stmt);
+        $stmt = preg_replace('/\bENGINE\s*=\s*\w+/i', '', $stmt);
+        $stmt = preg_replace('/\bDEFAULT\s+CHARSET\s*=\s*\w+/i', '', $stmt);
+        $stmt = preg_replace('/\bCHARACTER\s+SET\s+\w+/i', '', $stmt);
+        $stmt = preg_replace('/\bCOLLATE\s+\w+/i', '', $stmt);
+        $stmt = preg_replace('/\bUNSIGNED\b/i', '', $stmt);
+        $stmt = preg_replace_callback('/\b(tinyint|smallint|mediumint|int|integer|bigint)\s*\(\s*\d+\s*\)/i', function ($m) {
+            return mysqlTypeToPg($m[0]);
+        }, $stmt);
+        $stmt = preg_replace_callback('/\b(datetime|timestamp)\b/i', function () {
+            return 'timestamp';
+        }, $stmt);
+        if (preg_match('/^INSERT\s+INTO/i', $trimmed) && stripos($stmt, 'ON CONFLICT') === false) {
+            $stmt = rtrim(rtrim($stmt), ';') . ' ON CONFLICT DO NOTHING';
+        }
+        return $stmt;
+    }
+
+    if (isMysql()) {
+        if (preg_match('/^SET\s+session_replication_role\b/i', $trimmed)) {
+            return null;
+        }
+        $stmt = preg_replace('/\bON\s+CONFLICT\s+DO\s+NOTHING\b/i', 'ON DUPLICATE KEY UPDATE id=id', $stmt);
+        $stmt = preg_replace('/\bRETURNING\s+\*/i', '', $stmt);
+        $stmt = preg_replace('/::[a-zA-Z_][a-zA-Z0-9_]*/', '', $stmt);
+        $stmt = preg_replace_callback('/\b(boolean|bool)\b/i', function () {
+            return 'tinyint(1)';
+        }, $stmt);
+        $stmt = preg_replace_callback('/\b(integer|int4)\b/i', function () {
+            return 'int';
+        }, $stmt);
+        $stmt = preg_replace_callback('/\b(bigint|int8)\b/i', function () {
+            return 'bigint';
+        }, $stmt);
+        $stmt = preg_replace_callback('/\b(double\s+precision|float8)\b/i', function () {
+            return 'double';
+        }, $stmt);
+        $stmt = preg_replace_callback('/\b(serial|bigserial)\b/i', function () {
+            return 'int AUTO_INCREMENT';
+        }, $stmt);
+        $stmt = preg_replace('/\bbytea\b/i', 'longblob', $stmt);
+        $stmt = preg_replace('/\bjsonb\b/i', 'json', $stmt);
+        return $stmt;
+    }
+
+    return $stmt;
 }
 
 function importSQL($pdo, $sql, $isFile = false)
@@ -638,45 +996,7 @@ function importSQL($pdo, $sql, $isFile = false)
         return ['success' => false, 'message' => 'SQL is empty'];
     }
 
-    $statements = [];
-    $current = '';
-    $inString = false;
-    $stringChar = '';
-    $len = strlen($sql);
-    for ($i = 0; $i < $len; $i++) {
-        $char = $sql[$i];
-        if ($inString) {
-            if ($char == '\\' && $i + 1 < $len) {
-                $current .= $char . $sql[++$i];
-                continue;
-            }
-            if ($char == $stringChar) {
-                $inString = false;
-                $stringChar = '';
-            }
-            $current .= $char;
-            continue;
-        }
-        if ($char == "'" || $char == '"') {
-            $inString = true;
-            $stringChar = $char;
-            $current .= $char;
-            continue;
-        }
-        if ($char == ';') {
-            $stmt = trim($current);
-            if (!empty($stmt)) {
-                $statements[] = $stmt;
-            }
-            $current = '';
-            continue;
-        }
-        $current .= $char;
-    }
-    $stmt = trim($current);
-    if (!empty($stmt)) {
-        $statements[] = $stmt;
-    }
+    $statements = splitSqlStatements($sql);
 
     if (empty($statements)) {
         return ['success' => false, 'message' => 'No valid SQL statements found'];
@@ -690,11 +1010,18 @@ function importSQL($pdo, $sql, $isFile = false)
         $stmt = trim($stmt);
         if (empty($stmt)) continue;
 
+        $adapted = adaptStatementForDriver($stmt);
+        if ($adapted === null) {
+            continue;
+        }
+        $adapted = trim($adapted);
+        if ($adapted === '') continue;
+
         try {
-            $pdo->exec($stmt);
+            $pdo->exec($adapted);
             $successCount++;
         } catch (PDOException $e) {
-            $errors[] = "Error in statement: " . substr($stmt, 0, 100) . "... - " . $e->getMessage();
+            $errors[] = "Error in statement: " . substr($adapted, 0, 100) . "... - " . $e->getMessage();
         }
     }
 
@@ -718,21 +1045,22 @@ function executeCustomQuery($pdo, $sql)
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
-        
-        $isSelect = stripos(trim($sql), 'SELECT') === 0;
-        
+
+        $isSelect = stripos(trim($sql), 'SELECT') === 0
+                 || stripos(trim($sql), 'WITH') === 0;
+
         if ($isSelect) {
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return [
-                'success' => true, 
-                'data' => $data, 
+                'success' => true,
+                'data' => $data,
                 'rowCount' => count($data),
                 'isSelect' => true
             ];
         } else {
             $rowCount = $stmt->rowCount();
             return [
-                'success' => true, 
+                'success' => true,
                 'rowCount' => $rowCount,
                 'isSelect' => false,
                 'message' => "Query executed successfully. $rowCount row(s) affected."
@@ -745,8 +1073,6 @@ function executeCustomQuery($pdo, $sql)
 
 function getDBTimezone($pdo)
 {
-    global $driver;
-    
     try {
         if (isMysql()) {
             $sql = "SELECT DATE_FORMAT(NOW(), '%M %e %Y %l:%i%p') AS cdate, CONCAT(IF(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) >= 0, '+', '-'), DATE_FORMAT(SEC_TO_TIME(ABS(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()))), '%H:%i')) AS timezone";
@@ -763,7 +1089,7 @@ function getDBTimezone($pdo)
                 return ["timezone"=>$row['timezone'], "ctime"=>$row['cdate'] ?? null] ?? 'Unknown';
             }
         } elseif (isSqlite()) {
-            return 'SQLite (UTC)';
+            return ['timezone' => 'UTC', 'ctime' => date('F j Y g:ia')];
         }
         return 'Unknown';
     } catch (Exception $e) {
@@ -790,7 +1116,7 @@ function exportSchemaJSON($pdo, $singleTable = null)
             'database'    => DB_NAME,
             'driver'      => $GLOBALS['driver'],
             'exported_at' => date('Y-m-d H:i:s'),
-            'version'     => 1
+            'version'     => 2
         ],
         'tables' => []
     ];
@@ -851,21 +1177,79 @@ function getLiveSchemaCanonical($pdo)
     return ['success' => true, 'schema' => $live];
 }
 
+/**
+ * Canonical type for comparison: convert to the local driver's dialect,
+ * strip length hints that differ across engines, and normalize synonyms.
+ */
+function canonicalType($type)
+{
+    $t = strtolower(trim((string)$type));
+    if ($t === '') return '';
+
+    $t = preg_replace('/\s+unsigned\b/i', '', $t);
+    $t = preg_replace('/\s+zerofill\b/i', '', $t);
+    $t = preg_replace('/\s+without time zone\b/i', '', $t);
+
+    if (isPostgres()) {
+        $t = mysqlTypeToPg($t);
+    } elseif (isMysql()) {
+        $t = pgTypeToMysql($t);
+    }
+
+    $t = strtolower($t);
+
+    $aliases = [
+        'int'                 => 'integer',
+        'int4'                => 'integer',
+        'int8'                => 'bigint',
+        'int2'                => 'smallint',
+        'bool'                => 'boolean',
+        'float8'              => 'double precision',
+        'float4'              => 'real',
+        'character varying'   => 'varchar',
+        'double'              => 'double precision',
+        'numeric'             => 'decimal',
+    ];
+    if (isset($aliases[$t])) return $aliases[$t];
+
+    if (preg_match('/^varchar\((\d+)\)$/', $t, $m)) return 'varchar(' . (int)$m[1] . ')';
+    if ($t === 'varchar') return 'varchar(255)';
+    if (preg_match('/^decimal(\((\d+),(\d+)\))?$/', $t, $m)) {
+        if (!empty($m[2])) return 'decimal(' . (int)$m[2] . ',' . (int)$m[3] . ')';
+        return 'decimal';
+    }
+    if ($t === 'timestamp' || $t === 'datetime') return 'timestamp';
+    if ($t === 'text' || $t === 'longtext' || $t === 'mediumtext' || $t === 'tinytext') return 'text';
+    if ($t === 'bytea' || $t === 'blob' || $t === 'longblob' || $t === 'mediumblob' || $t === 'tinyblob') return 'bytea';
+    if ($t === 'json' || $t === 'jsonb') return 'json';
+
+    return $t;
+}
+
+function normalizeDefaultForCompare($default)
+{
+    if ($default === null) return '__NULL__';
+    $d = strtolower(trim((string)$default));
+    if ($d === 'null') return '__NULL__';
+    if (in_array($d, ['current_timestamp', 'current_timestamp()', 'now()', 'current_timestamp(6)'], true)) {
+        return 'current_timestamp';
+    }
+    if (preg_match("/^'(.*)'$/", $d, $m)) return $m[1];
+    return $d;
+}
+
 function normalizeColumnForCompare($col)
 {
-    $type    = strtolower(trim((string)($col['type'] ?? '')));
-    $nullable= !empty($col['nullable']);
-    $default = $col['default'];
-    if ($default === null) {
-        $defaultNorm = '__NULL__';
-    } else {
-        $defaultNorm = strtolower(trim((string)$default));
-    }
-    $extra = strtolower(trim((string)($col['extra'] ?? '')));
+    $type     = canonicalType($col['type'] ?? '');
+    $nullable = !empty($col['nullable']);
+    $default  = normalizeDefaultForCompare($col['default'] ?? null);
+    $extra    = strtolower(trim((string)($col['extra'] ?? '')));
+    if (strpos($extra, 'auto_increment') !== false) $extra = 'auto_increment';
+    if (strpos($extra, 'on update current_timestamp') !== false) $extra = trim($extra . ' on update current_timestamp');
     return [
         'type'     => $type,
         'nullable' => $nullable,
-        'default'  => $defaultNorm,
+        'default'  => $default,
         'extra'    => $extra
     ];
 }
@@ -883,21 +1267,43 @@ function columnsMatch($a, $b)
 function renderColumnDefinition($name, $col)
 {
     $qname = quoteIdentifier($name);
-    $type  = $col['type'];
+    $type  = toLocalType($col['type'] ?? 'text');
+    $extra = strtolower((string)($col['extra'] ?? ''));
+    $isAuto = (strpos($extra, 'auto_increment') !== false);
+
+    if (isPostgres()) {
+        if ($isAuto) {
+            $type = preg_match('/^bigint/', $type) ? 'bigserial' : 'serial';
+            return "$qname $type";
+        }
+        $def = "$qname $type";
+        if (empty($col['nullable'])) $def .= " NOT NULL";
+        if ($col['default'] !== null && $col['default'] !== '') {
+            $lower = strtolower((string)$col['default']);
+            if (in_array($lower, ['current_timestamp', 'current_timestamp()', 'now()'], true)) {
+                $def .= " DEFAULT CURRENT_TIMESTAMP";
+            } elseif ($lower === 'null') {
+                $def .= " DEFAULT NULL";
+            } elseif (is_numeric($col['default'])) {
+                $def .= " DEFAULT " . $col['default'];
+            } else {
+                $def .= " DEFAULT " . var_export((string)$col['default'], true);
+            }
+        }
+        return $def;
+    }
 
     $def = "$qname $type";
+    if (empty($col['nullable'])) $def .= " NOT NULL";
 
-    if (empty($col['nullable'])) {
-        $def .= " NOT NULL";
-    }
+    if ($isAuto) $def .= " AUTO_INCREMENT";
 
     if ($col['default'] !== null && $col['default'] !== '') {
         $defaultVal = $col['default'];
         $lower = strtolower((string)$defaultVal);
-
-        if ($lower === 'current_timestamp' || $lower === 'now()' || $lower === 'current_timestamp()') {
+        if (in_array($lower, ['current_timestamp', 'now()', 'current_timestamp()'], true)) {
             $def .= " DEFAULT CURRENT_TIMESTAMP";
-        } elseif (preg_match('/^(int|tinyint|smallint|mediumint|bigint|decimal|float|double|bit|serial)/i', $type)) {
+        } elseif (preg_match('/^(int|tinyint|smallint|mediumint|bigint|decimal|numeric|float|double|real|bit|serial)/i', $type)) {
             $def .= " DEFAULT " . $defaultVal;
         } elseif ($lower === 'null') {
             $def .= " DEFAULT NULL";
@@ -906,14 +1312,8 @@ function renderColumnDefinition($name, $col)
         }
     }
 
-    if (!empty($col['extra'])) {
-        $extra = strtolower($col['extra']);
-        if (strpos($extra, 'auto_increment') !== false) {
-            $def .= " AUTO_INCREMENT";
-        }
-        if (strpos($extra, 'on update current_timestamp') !== false) {
-            $def .= " ON UPDATE CURRENT_TIMESTAMP";
-        }
+    if (strpos($extra, 'on update current_timestamp') !== false) {
+        $def .= " ON UPDATE CURRENT_TIMESTAMP";
     }
 
     return $def;
@@ -963,8 +1363,8 @@ function buildMigrationPlan($sourceJson, $liveSchema)
 
                     $srcNorm  = normalizeColumnForCompare($srcCol);
                     $liveNorm = normalizeColumnForCompare($liveCol);
-                    if (preg_match('/varchar\((\d+)\)/i', $liveNorm['type'], $m1)
-                        && preg_match('/varchar\((\d+)\)/i', $srcNorm['type'], $m2)) {
+                    if (preg_match('/varchar\((\d+)\)/', $liveNorm['type'], $m1)
+                        && preg_match('/varchar\((\d+)\)/', $srcNorm['type'], $m2)) {
                         if ((int)$m2[1] < (int)$m1[1]) {
                             $plan['warnings'][] = "Column `$table`.`$colName` is being shrunk from {$liveNorm['type']} to {$srcNorm['type']} — existing data may be truncated.";
                         }
@@ -1000,16 +1400,7 @@ function applyMigrationPlan($pdo, $plan)
     $errors   = [];
 
     foreach ($plan['tables_to_create'] as $table => $srcTable) {
-        $colDefs = [];
-        foreach ($srcTable['columns'] as $colName => $col) {
-            $colDefs[] = renderColumnDefinition($colName, $col);
-        }
-        if (!empty($srcTable['primary_key'])) {
-            $pkCols = array_map('quoteIdentifier', $srcTable['primary_key']);
-            $colDefs[] = "PRIMARY KEY (" . implode(', ', $pkCols) . ")";
-        }
-        $qTable = quoteIdentifier($table);
-        $sql = "CREATE TABLE IF NOT EXISTS $qTable (\n  " . implode(",\n  ", $colDefs) . "\n)";
+        $sql = buildCreateTableStatement($table, $srcTable);
         $res = executeQuery($pdo, $sql);
         if ($res['success']) {
             $executed++;
@@ -1020,8 +1411,7 @@ function applyMigrationPlan($pdo, $plan)
 
     foreach ($plan['columns_to_add'] as $change) {
         $qTable = quoteIdentifier($change['table']);
-        $qCol   = quoteIdentifier($change['column']);
-        $sql = "ALTER TABLE $qTable ADD COLUMN $qCol " . $change['definition'];
+        $sql = "ALTER TABLE $qTable ADD COLUMN " . $change['definition'];
         $res = executeQuery($pdo, $sql);
         if ($res['success']) {
             $executed++;
@@ -1033,13 +1423,38 @@ function applyMigrationPlan($pdo, $plan)
     foreach ($plan['columns_to_modify'] as $change) {
         $qTable = quoteIdentifier($change['table']);
         $qCol   = quoteIdentifier($change['column']);
+        $toType = toLocalType($change['to']['type'] ?? '');
+        $nullable = !empty($change['to']['nullable']);
+        $default  = $change['to']['default'] ?? null;
+        $extra = strtolower((string)($change['to']['extra'] ?? ''));
+        $isAuto = (strpos($extra, 'auto_increment') !== false);
+
+        $res = ['success' => true];
         if (isMysql()) {
-            $sql = "ALTER TABLE $qTable MODIFY COLUMN $qCol " . $change['definition'];
+            $sql = "ALTER TABLE $qTable MODIFY COLUMN " . $change['definition'];
             $res = executeQuery($pdo, $sql);
         } elseif (isPostgres()) {
-            $typeOnly = $change['to']['type'];
-            $sql = "ALTER TABLE $qTable ALTER COLUMN $qCol TYPE $typeOnly";
-            $res = executeQuery($pdo, $sql);
+            if (!$isAuto) {
+                $sql = "ALTER TABLE $qTable ALTER COLUMN $qCol TYPE $toType";
+                $res = executeQuery($pdo, $sql);
+                if ($res['success']) {
+                    $nullSql = $nullable
+                        ? "ALTER TABLE $qTable ALTER COLUMN $qCol DROP NOT NULL"
+                        : "ALTER TABLE $qTable ALTER COLUMN $qCol SET NOT NULL";
+                    $res = executeQuery($pdo, $nullSql);
+                }
+                if ($res['success']) {
+                    if ($default === null) {
+                        $res = executeQuery($pdo, "ALTER TABLE $qTable ALTER COLUMN $qCol DROP DEFAULT");
+                    } else {
+                        $lower = strtolower((string)$default);
+                        $defExpr = in_array($lower, ['current_timestamp', 'now()', 'current_timestamp()'], true)
+                            ? 'CURRENT_TIMESTAMP'
+                            : (is_numeric($default) ? $default : $pdo->quote((string)$default));
+                        $res = executeQuery($pdo, "ALTER TABLE $qTable ALTER COLUMN $qCol SET DEFAULT $defExpr");
+                    }
+                }
+            }
         } else {
             $res = ['success' => false, 'message' => 'SQLite does not support MODIFY COLUMN.'];
         }

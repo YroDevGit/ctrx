@@ -32,7 +32,17 @@ function deleteFolderCommand($dir)
 function AddAllBaseTable($dbname)
 {
     $pdo = pdo($dbname);
-    $stmnt = $pdo->prepare("SHOW TABLES");
+    $driver = strtolower(env('dbdriver') ?? 'mysql');
+    if (in_array($driver, ['pgsql', 'postgres', 'postgresql'])) {
+        $stmnt = $pdo->prepare("
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        ");
+    } else {
+        $stmnt = $pdo->prepare("SHOW TABLES");
+    }
     $stmnt->execute();
     $tables = $stmnt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -1240,7 +1250,12 @@ if ($route == "run" || $route == "server") {
     include_once "app/php/core/partials/be.php";
     include "app/php/core/partials/backend.php";
     $pdo = pdo($dbname, true);
-    $stmnt = $pdo->prepare("SHOW DATABASES LIKE '" . $dbname . "'");
+    if(isPostgresDriver()){
+        $stmnt = $pdo->prepare("SELECT 1 FROM pg_database WHERE datname = '$dbname'");
+    }
+    if(isMysqlDriver() || isMariaDBDriver()){
+        $stmnt = $pdo->prepare("SHOW DATABASES LIKE '" . $dbname . "'");
+    }
     $stmnt->execute();
     $rowcount = $stmnt->rowCount();
     if (! $rowcount) {
@@ -1276,7 +1291,7 @@ if ($route == "run" || $route == "server") {
     include "app/php/core/partials/backend.php";
     try {
         $pdo = pdo($dbname, true);
-        $stmnt = $pdo->prepare("Create database `$dbname`;");
+        $stmnt = $pdo->prepare("Create database $dbname;");
         $stmnt->execute();
         $rowcount = $stmnt->rowCount();
         echo "✔️ Database $dbname created\n\n";

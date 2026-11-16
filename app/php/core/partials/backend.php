@@ -2,19 +2,22 @@
 $transaction_active = false;
 
 if (! function_exists("pdo")) {
-    /** (Any) returns the value of the get */
     function pdo(string|null|array $db = null, $no_database = false)
     {
         static $pdo = null;
         try {
             if (is_array($db)) {
+                static $charsSTDB = "";
                 $host = $db['host'] ?? "localhost";
                 $user =  $db['user'] ?? "root";
                 $pass = $db['password'] ?? "";
                 $driver = $db['driver'] ?? "mysql";
                 $dbname = $db['database'];
                 $dbport = $db['port'] ?? "3306";
-                $charSet = $db['charset'] ?? env('dbcharset') ?? "utf8mb4";
+                $charSet = $db['charset'] ?? env('dbcharset');
+                if(! $charsSTDB && $charSet){
+                    $charsSTDB = "charset=$charSet;";
+                }
                 $pdoDriver = ($driver === 'mariadb') ? 'mysql' : $driver;
                 if (! $dbname) {
                     $ms = "No database found. please check DB()";
@@ -27,7 +30,7 @@ if (! function_exists("pdo")) {
                 }
 
                 if ($pdo == null) {
-                    $pdo = new PDO("$pdoDriver:host=$host;port=$dbport;dbname=$dbname;charset=$charSet;", "$user", "$pass", [
+                    $pdo = new PDO("$pdoDriver:host=$host;port=$dbport;dbname=$dbname;$charsSTDB", "$user", "$pass", [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                         PDO::ATTR_EMULATE_PREPARES => false,
@@ -36,11 +39,15 @@ if (! function_exists("pdo")) {
                 }
                 return $pdo;
             }
+            static $charsST = "";
             $host = env('dbhost');
             $user =  env('dbuser');
             $pass = env('dbpass');
             $port = env('dbport');
-            $charSet = env('dbcharset') ?? "utf8mb4";
+            $charSet = env('dbcharset');
+            if(! $charsST && $charSet){
+                $charsST = "charset=$charSet;";
+            }
             $dbname = $db == null ? env('database') : $db;
             if ($dbname == "" || $dbname == null) {
                 $ms = "No database found. please check .env file";
@@ -58,7 +65,7 @@ if (! function_exists("pdo")) {
                 if ($no_database) {
                     $ddb = "";
                 }
-                $pdo = new PDO("$pdoDriver:host=$host;port=$port;".$ddb."charset=$charSet;", "$user", "$pass", [
+                $pdo = new PDO("$pdoDriver:host=$host;port=$port;".$ddb.$charsST, "$user", "$pass", [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
@@ -74,6 +81,35 @@ if (! function_exists("pdo")) {
             add_sql_log($e->getMessage(), "error");
             error_response(["code" => env("error_code"), "status" => "PDO exception error", "message" => $e->getMessage()]);
         }
+    }
+}
+
+if (! function_exists("isPostgresDriver")) {
+    function isPostgresDriver()
+    {
+        $driver = env("dbdriver");
+        if (! $driver) return false;
+        return isset(['pgsql' => 1, 'postgres' => 2, 'postgresql' => 3][$driver]);
+    }
+}
+
+if (! function_exists("isMysqlDriver")) {
+    function isMysqlDriver()
+    {
+        $driver = env("dbdriver");
+        if (! $driver) return false;
+        if ($driver == "mysql") return true;
+        return false;
+    }
+}
+
+if (! function_exists("isMariaDBDriver")) {
+    function isMariaDBDriver()
+    {
+        $driver = env("dbdriver");
+        if (! $driver) return false;
+        if ($driver == "mariadb") return true;
+        return false;
     }
 }
 
@@ -513,15 +549,14 @@ function makeRoute(
     string|null $method = null,
     string|null $controller = null,
     string|null $as = null
-    )
-{
-    if(! $method){
+) {
+    if (! $method) {
         $method = "get";
     }
-    if(! $controller){
+    if (! $controller) {
         throw new Exception("Route Register error: controller not set.!");
     }
-    if($as){
+    if ($as) {
         return [$method => "$controller >> $as"];
     }
     return [$method => $controller];
@@ -535,29 +570,29 @@ function sendResponse(
     int|null $status = null,
     int|null|float $count = null,
     array|null $var = null,
-){
-    if(! $code){
+) {
+    if (! $code) {
         $code = 200;
     }
     $resp = \Classes\Response::code($code);
-    if($message){
+    if ($message) {
         $resp->message($message);
     }
-    if($data){
+    if ($data) {
         $resp->data($data);
     }
-    if($errors){
+    if ($errors) {
         $resp->errors($errors);
     }
-    if($count){
+    if ($count) {
         $resp->count($count);
     }
-    if($var){
+    if ($var) {
         $resp->var($var);
     }
-    if($status){
+    if ($status) {
         $resp->send($status);
-    }else{
+    } else {
         $resp->send();
     }
 }
