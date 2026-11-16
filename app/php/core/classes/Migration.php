@@ -9,6 +9,10 @@ include "app/php/core/partials/bin/migration_const.php";
 
 class Migration
 {
+    /**
+     * @author Tyrone Limen Malocon
+     * @codeyro
+     */
     private static $lastQuery = "";
     private static $varcharDefaultLenght = 50;
     private static $intDefaultLenght = 11;
