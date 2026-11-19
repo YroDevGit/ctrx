@@ -102,41 +102,59 @@ $constants = $pdo->query("SELECT * FROM constants ORDER BY key ASC")->fetchAll()
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CTRX Constants Management</title>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         h1, h2 { color: #2c3e50; margin-top: 0; }
-        .message { padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 15px; }
+        .message { padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 15px; word-wrap: break-word; }
         .error { background: #f8d7da; color: #721c24; }
-        .table-container { max-height: 65vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 0; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .table-container { max-height: 65vh; overflow-y: auto; overflow-x: auto; border: 1px solid #eee; border-radius: 4px; -webkit-overflow-scrolling: touch; }
+        table { border-collapse: collapse; margin-top: 0; table-layout: fixed; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; vertical-align: top; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         th { background: #f8f9fa; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+        th:nth-child(1), td:nth-child(1) { width: 260px; max-width: 260px; }
+        th:nth-child(2), td:nth-child(2) { width: 340px; max-width: 340px; }
+        th:nth-child(3), td:nth-child(3) { width: 110px; max-width: 110px; }
+        th:nth-child(4), td:nth-child(4) { width: 200px; max-width: 200px; }
+        th:nth-child(5), td:nth-child(5) { width: 190px; max-width: 190px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; display: inline-block; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007bff; color: #fff; }
         .btn-warning { background: #ffc107; color: #333; }
         .btn-danger { background: #dc3545; color: #fff; }
         .btn-secondary { background: #6c757d; color: #fff; }
         .btn-success { background: #28a745; color: #fff; }
         .btn:hover { opacity: 0.8; }
-        .actions { display: flex; gap: 5px; }
+        .actions { display: flex; gap: 5px; flex-wrap: nowrap; }
         .status-active { color: green; font-weight: bold; }
         .status-inactive { color: red; }
         .grid-layout { display: grid; grid-template-columns: 350px 1fr; gap: 30px; margin-top: 20px; }
+        .grid-layout > div { min-width: 0; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .header-bar h1 { margin: 0; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         @media (max-width: 900px) {
             .grid-layout { grid-template-columns: 1fr; }
             .table-container { max-height: 50vh; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 12px; }
+            .header-bar { flex-direction: column; align-items: flex-start; }
+            .header-actions { width: 100%; }
+            .header-actions .btn { flex: 1; text-align: center; }
+            th, td { padding: 8px; font-size: 13px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">Constants Management</h1>
-        <div style="display: flex; gap: 10px;">
+    <div class="header-bar">
+        <h1>Constants Management</h1>
+        <div class="header-actions">
             <a href="/ctrx/constants?action=export" class="btn btn-success">Export JSON</a>
             <button type="button" class="btn btn-primary" onclick="document.getElementById('importFile').click();">Import JSON</button>
             <a href="/ctrx" class="btn btn-secondary">Home</a>
@@ -209,8 +227,8 @@ $constants = $pdo->query("SELECT * FROM constants ORDER BY key ASC")->fetchAll()
 
                         <?php foreach ($constants as $c): ?>
                         <tr>
-                            <td><code><?= $c['key']?></code></td>
-                            <td><?= $c['value'] ?></td>
+                            <td title="<?= htmlspecialchars($c['key']) ?>"><b><code><?= $c['key']?></code></b></td>
+                            <td title="<?= htmlspecialchars($c['value']) ?>"><?= $c['value'] ?></td>
                             <td>
                                 <?php if ($c['active']): ?>
                                     <span class="status-active">Active</span>
